@@ -77,7 +77,7 @@ struct AgentView: View {
                     }
             }
         }
-        .navigationTitle("Tu súper")
+        .navigationTitle("Barasu")
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {

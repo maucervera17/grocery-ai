@@ -9,6 +9,8 @@ struct AgentSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                PermissionSettingsSection()
+
                 Section("Backend") {
                     LabeledContent("Servidor", value: APIConfiguration.baseURL.absoluteString)
                     SecureField("Contraseña de acceso", text: $accessPassword)

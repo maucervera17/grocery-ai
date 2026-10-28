@@ -41,12 +41,15 @@
 		4F2B8DD6BBB507F842DF9CEA /* VoiceToolError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D4160535294289A2C70801 /* VoiceToolError.swift */; };
 		5451E83375E2746B1779F2EB /* FrequentProductCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38690442536412CA0D311D22 /* FrequentProductCard.swift */; };
 		570E979E01FC34E436E76630 /* MockFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F0310330630475B36E591E /* MockFixtures.swift */; };
+		5712B16C5CD1CBE50F5D2711 /* PermissionSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67F069D12F795F1A5AC3FC6D /* PermissionSettingsModel.swift */; };
 		5C9E24192D50B2A55E70851A /* AgentComposerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5401874FEAE41AAAF511E542 /* AgentComposerState.swift */; };
 		5F0E753FF0DE0A885DA4CA89 /* AppTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60A23FC2EA2441D0FED2259 /* AppTypography.swift */; };
 		615DC4BA908D48DB3625C524 /* ProductRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491DC2E48BA90882AABA387E /* ProductRequest.swift */; };
 		61C4775D9243A8713C523A61 /* VoiceSessionTokenClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8113F3102B165304DE4204D /* VoiceSessionTokenClient.swift */; };
 		6405FA0FF8E257AB814DEAA1 /* GroceryAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 551D996A7F6CB77765DF42B0 /* GroceryAPIClient.swift */; };
+		69721C9EC7113FFCA2AA889D /* PermissionSettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 618C0EBCA34DFEBAFFED2B15 /* PermissionSettingsSection.swift */; };
 		6CF47A8B08C30E2F50D5A363 /* ComparisonLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47ADA0A92550B05A06B256CC /* ComparisonLoadingView.swift */; };
+		6E10B7353D8B88FFFA0E2D4E /* AgentAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43D7F1FECF23DC4C8A22B78 /* AgentAvatarView.swift */; };
 		6FF0603D864139C4182F1C8E /* AgentEmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F010639CCBD65E3E400F4C4 /* AgentEmptyStateView.swift */; };
 		7326760670A6339636C813D6 /* MatchStatusLegend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2953656679D50BF168E6FA05 /* MatchStatusLegend.swift */; };
 		76E37C672C209F66716F59A7 /* SurfaceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF16497776533993B56DD4AE /* SurfaceCard.swift */; };
@@ -168,8 +171,10 @@
 		5F00942B8D96ECB90F8593BD /* LocalAppStateRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAppStateRecord.swift; sourceTree = "<group>"; };
 		5F010639CCBD65E3E400F4C4 /* AgentEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentEmptyStateView.swift; sourceTree = "<group>"; };
 		5FB047900170B56BD9873455 /* MockAgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAgentService.swift; sourceTree = "<group>"; };
+		618C0EBCA34DFEBAFFED2B15 /* PermissionSettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSettingsSection.swift; sourceTree = "<group>"; };
 		64CAC3336991D7DB040171FF /* AppControlSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppControlSize.swift; sourceTree = "<group>"; };
 		65EF0D4E800BBDC9E365CB84 /* AgentServicing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentServicing.swift; sourceTree = "<group>"; };
+		67F069D12F795F1A5AC3FC6D /* PermissionSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionSettingsModel.swift; sourceTree = "<group>"; };
 		6805BEAD9D47597FB06D2CD3 /* StoreResultCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreResultCard.swift; sourceTree = "<group>"; };
 		690A553D4365218C726E1681 /* ProductHistoryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductHistoryRow.swift; sourceTree = "<group>"; };
 		6A81DC18DE399458356CB899 /* AppTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTab.swift; sourceTree = "<group>"; };
@@ -224,6 +229,7 @@
 		EE63C75EF2D0604398B89343 /* VoiceStatusLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceStatusLabel.swift; sourceTree = "<group>"; };
 		EEEBC6E913E7D0E7A7D15835 /* SelectableProduct.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectableProduct.swift; sourceTree = "<group>"; };
 		EFA490702D3C43952D224B85 /* AddContentSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddContentSection.swift; sourceTree = "<group>"; };
+		F43D7F1FECF23DC4C8A22B78 /* AgentAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentAvatarView.swift; sourceTree = "<group>"; };
 		F60A23FC2EA2441D0FED2259 /* AppTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTypography.swift; sourceTree = "<group>"; };
 		FD2FBE4E1A21122F6829DEED /* ChatModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModels.swift; sourceTree = "<group>"; };
 		FDCF5F9BEEAC829562060E0E /* StorePlanItemRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorePlanItemRow.swift; sourceTree = "<group>"; };
@@ -402,6 +408,7 @@
 				EFA490702D3C43952D224B85 /* AddContentSection.swift */,
 				12FCC28DFA763DBEC82A346C /* AddProductsButton.swift */,
 				8306736ABAEEA67EBE38ABDB /* AddToConversationView.swift */,
+				F43D7F1FECF23DC4C8A22B78 /* AgentAvatarView.swift */,
 				4A719341441F510F48F2B029 /* AgentComposer.swift */,
 				0773E448C0A70A8B974D7633 /* AgentComposerOverlay.swift */,
 				5401874FEAE41AAAF511E542 /* AgentComposerState.swift */,
@@ -418,6 +425,8 @@
 				38690442536412CA0D311D22 /* FrequentProductCard.swift */,
 				7D5F63814FB39C33CE19F5D2 /* FrequentProductOption.swift */,
 				D5424C3BA7E99FF150771006 /* LocationFlowSheet.swift */,
+				67F069D12F795F1A5AC3FC6D /* PermissionSettingsModel.swift */,
+				618C0EBCA34DFEBAFFED2B15 /* PermissionSettingsSection.swift */,
 				28580A5F647FF8FD93571FFA /* PreviousOrderPickerView.swift */,
 				11B83D60DD75EF5A272BEC5E /* PreviousOrderSelectionView.swift */,
 				04906BF6079257460996293B /* ProductPickerView.swift */,
@@ -626,6 +635,7 @@
 				1428FE7CA3339A863104F4E0 /* AddContentSection.swift in Sources */,
 				E068B70D21CC17FB225610A3 /* AddProductsButton.swift in Sources */,
 				0F713BCBACB72768BA431DF1 /* AddToConversationView.swift in Sources */,
+				6E10B7353D8B88FFFA0E2D4E /* AgentAvatarView.swift in Sources */,
 				36344E71DED4BB8E573EAF45 /* AgentComposer.swift in Sources */,
 				F1936AD5078704DA9F057D44 /* AgentComposerOverlay.swift in Sources */,
 				5C9E24192D50B2A55E70851A /* AgentComposerState.swift in Sources */,
@@ -682,6 +692,8 @@
 				AA898184A3531A40607694D2 /* OrderDetailView.swift in Sources */,
 				37B88507FB05BB0B0B02C774 /* OrderHistoryList.swift in Sources */,
 				37EDFC904823386CFEAA087B /* OrderHistoryRow.swift in Sources */,
+				5712B16C5CD1CBE50F5D2711 /* PermissionSettingsModel.swift in Sources */,
+				69721C9EC7113FFCA2AA889D /* PermissionSettingsSection.swift in Sources */,
 				A185243C864A7195C82ACE2F /* PostalCodeLocator.swift in Sources */,
 				30F323C21DF14D225A6D5523 /* PreviousOrderPickerView.swift in Sources */,
 				D22518A581579B1CE2F0D6E2 /* PreviousOrderSelectionView.swift in Sources */,
@@ -766,9 +778,9 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Grocery AI usa tu ubicación para encontrar precios cercanos.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Grocery AI usa el micrófono para agregar y modificar productos por voz.";
+				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Barasu usa el micrófono para agregar y modificar productos por voz.";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -861,9 +873,9 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Grocery AI usa tu ubicación para encontrar precios cercanos.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Grocery AI usa el micrófono para agregar y modificar productos por voz.";
+				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Barasu usa el micrófono para agregar y modificar productos por voz.";
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

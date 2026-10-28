@@ -13,12 +13,7 @@ struct ChatMessageBubble: View {
             if message.role == .user { Spacer(minLength: 48) }
 
             if message.role == .agent {
-                Image(systemName: "sparkles")
-                    .font(.headline)
-                    .foregroundStyle(colors.brandOnPrimary)
-                    .frame(width: AppControlSize.minimumTapTarget, height: AppControlSize.minimumTapTarget)
-                    .background(colors.brandPrimary, in: .circle)
-                    .accessibilityHidden(true)
+                AgentAvatarView()
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: AppSpacing.extraSmall) {

@@ -23,9 +23,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.groceryai.app
         GENERATE_INFOPLIST_FILE: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: barasu-icon
-        INFOPLIST_KEY_CFBundleDisplayName: Grocery AI
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Grocery AI usa tu ubicación para encontrar precios cercanos.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: Grocery AI usa el micrófono para agregar y modificar productos por voz.
+        INFOPLIST_KEY_CFBundleDisplayName: Barasu
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Barasu usa tu ubicación para encontrar precios cercanos.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Barasu usa el micrófono para agregar y modificar productos por voz.
         INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
