@@ -79,6 +79,10 @@ final class AppState {
         return result
     }
 
+    var canStartNewList: Bool {
+        loadingState == .idle && (!draft.isEmpty || !messages.isEmpty || comparisonPlan != nil)
+    }
+
     func configurePersistence(_ context: ModelContext) {
         guard modelContext == nil else { return }
         modelContext = context
@@ -223,6 +227,16 @@ final class AppState {
         ))
         draft = ShoppingDraft()
         self.comparisonPlan = nil
+        persist()
+    }
+
+    func startNewList() {
+        guard loadingState == .idle else { return }
+        draft = ShoppingDraft()
+        messages = []
+        comparisonPlan = nil
+        failedInput = nil
+        selectedTab = .agent
         persist()
     }
 

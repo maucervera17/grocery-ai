@@ -7,6 +7,7 @@ struct AgentView: View {
 
     @State private var composerOverlayHeight: CGFloat = 0
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
+    @State private var isShowingNewListConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -15,8 +16,7 @@ struct AgentView: View {
 
                 if appState.messages.isEmpty && appState.draft.isEmpty {
                     AgentEmptyStateView()
-                        .frame(maxWidth: .infinity)
-                        .containerRelativeFrame(.vertical, count: 5, span: 3, spacing: 0)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ForEach(appState.messages) { message in
                         ChatMessageBubble(message: message)
@@ -35,6 +35,11 @@ struct AgentView: View {
                     }
                 }
             }
+            .containerRelativeFrame(
+                .vertical,
+                alignment: .top,
+                { length, _ in length }
+            )
             .padding(AppSpacing.large)
         }
         .contentMargins(.bottom, composerOverlayHeight, for: .scrollContent)
@@ -75,8 +80,23 @@ struct AgentView: View {
         .navigationTitle("Tu súper")
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button("Nueva lista", systemImage: "square.and.pencil", action: showNewListConfirmation)
+                    .labelStyle(.iconOnly)
+                    .disabled(!appState.canStartNewList)
+                    .confirmationDialog(
+                        "¿Empezar una nueva lista?",
+                        isPresented: $isShowingNewListConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Nueva lista", role: .destructive, action: startNewList)
+                        Button("Cancelar", role: .cancel) {}
+                    } message: {
+                        Text("Se eliminarán el borrador y los mensajes actuales. Tu historial de compras se conservará.")
+                    }
+
                 Button("Configuración", systemImage: "gearshape", action: showSettings)
+                    .labelStyle(.iconOnly)
             }
         }
         .sheet(item: $composerState.presentedSheet) { destination in
@@ -107,5 +127,18 @@ struct AgentView: View {
 
     private func showSettings() {
         composerState.presentedSheet = .settings
+    }
+
+    private func showNewListConfirmation() {
+        isShowingNewListConfirmation = true
+    }
+
+    private func startNewList() {
+        Task {
+            await voiceController.endConversation()
+            composerState.text = ""
+            composerState.presentedSheet = nil
+            appState.startNewList()
+        }
     }
 }

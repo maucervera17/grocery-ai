@@ -11,6 +11,7 @@
 		059855AABACEF9384E971D8D /* AppThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD0B8A0F167E07FF3CB8E09 /* AppThemeColors.swift */; };
 		09FE52D717C855B15D7DC556 /* VoiceSessionError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7CC4D5051BEB1647321E3F /* VoiceSessionError.swift */; };
 		0F713BCBACB72768BA431DF1 /* AddToConversationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8306736ABAEEA67EBE38ABDB /* AddToConversationView.swift */; };
+		11FFEFFB6CF7452B0C0FBCF1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 48B0A3C1BCFFF687FFCFAEB4 /* LaunchScreen.storyboard */; };
 		1428FE7CA3339A863104F4E0 /* AddContentSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFA490702D3C43952D224B85 /* AddContentSection.swift */; };
 		17F36DDDB9E04241EB633330 /* VoiceDraftToolResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11215EF0E80E7A97474BDA3 /* VoiceDraftToolResult.swift */; };
 		1B29ADB96843A2ABBF08B35E /* ChatMessageBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4987B799DEA10BB595F9243 /* ChatMessageBubble.swift */; };
@@ -152,6 +153,7 @@
 		452E0D6A3797DCCF18F66E90 /* RetailerID.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetailerID.swift; sourceTree = "<group>"; };
 		4657EDCC51807F1D68049666 /* ProductThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductThumbnail.swift; sourceTree = "<group>"; };
 		47ADA0A92550B05A06B256CC /* ComparisonLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonLoadingView.swift; sourceTree = "<group>"; };
+		48B0A3C1BCFFF687FFCFAEB4 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		491DC2E48BA90882AABA387E /* ProductRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductRequest.swift; sourceTree = "<group>"; };
 		4A719341441F510F48F2B029 /* AgentComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentComposer.swift; sourceTree = "<group>"; };
 		4A8C537E89E4560477FE1038 /* ShoppingDraft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingDraft.swift; sourceTree = "<group>"; };
@@ -253,6 +255,7 @@
 			isa = PBXGroup;
 			children = (
 				A376D8C7FF12A4FD999F1641 /* Assets.xcassets */,
+				48B0A3C1BCFFF687FFCFAEB4 /* LaunchScreen.storyboard */,
 				309840013930361612435FE3 /* Brand */,
 			);
 			path = Resources;
@@ -608,6 +611,7 @@
 				C23D37B0CA85950ACC9F4737 /* Assets.xcassets in Resources */,
 				8E08652B044693C4FBD17619 /* BarasuDots.svg in Resources */,
 				DE3BC2AE2736D1A574E60629 /* BarasuWordmarkDark.svg in Resources */,
+				11FFEFFB6CF7452B0C0FBCF1 /* LaunchScreen.storyboard in Resources */,
 				A348BA82CE0460C857513C79 /* barasu-icon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -765,6 +769,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Grocery AI usa tu ubicación para encontrar precios cercanos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Grocery AI usa el micrófono para agregar y modificar productos por voz.";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -859,6 +864,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Grocery AI usa tu ubicación para encontrar precios cercanos.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Grocery AI usa el micrófono para agregar y modificar productos por voz.";
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

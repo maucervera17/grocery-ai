@@ -127,6 +127,26 @@ struct SmokeTests {
         #expect(appState.loadingState == .idle)
     }
 
+    @Test @MainActor
+    func startingANewListClearsConversationButPreservesHistoryAndLocation() {
+        let appState = AppState(
+            agentService: MockAgentService(),
+            comparisonService: MockComparisonService()
+        )
+        appState.draft = MockFixtures.draft
+        appState.messages = MockFixtures.welcomeMessages
+        appState.orders = MockFixtures.previousOrders
+        appState.postalCode = "06700"
+        let storedOrderIDs = appState.orders.map(\.id)
+
+        appState.startNewList()
+
+        #expect(appState.draft.isEmpty)
+        #expect(appState.messages.isEmpty)
+        #expect(appState.orders.map(\.id) == storedOrderIDs)
+        #expect(appState.postalCode == "06700")
+    }
+
     @Test
     func activeVoiceStatesKeepTheInlineComposerInVoiceMode() {
         #expect(VoiceConversationState.connecting.isActive)
