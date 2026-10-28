@@ -20,6 +20,8 @@ Cuando el usuario pide «selecciona las mejores opciones de precio de mi lista»
 
 Ahorro muestra por separado listas preparadas (estimado) y compras realizadas (declaradas). El usuario confirma el importe efectivamente pagado por los productos de la lista, sin otros artículos ni envío. El registro conserva una copia de los productos y sus referencias. Sin referencia completa el ahorro es desconocido; los importes negativos se conservan. Se rechaza registrar dos veces la misma semana. «Nueva semana» conserva productos pero crea otra identidad de registro. El almacenamiento es local al navegador.
 
+La página **Tu ahorro** muestra primero la diferencia registrada y el número de compras con referencia completa. Una lista preparada aparece en una sección separada con la etiqueta «Solo estimación». Cada compra muestra lo pagado y la referencia habitual; el detalle explica la resta y permite eliminar o restaurar un registro. Si todavía no hay compras, la página lo dice claramente y ofrece un acceso a Mi lista. La cifra acumulada nunca incluye listas sin compra ni registros con referencias incompletas.
+
 ## Salida al comercio
 
 Se prepara una lista por tienda con cantidades, enlaces y descarga de texto. El usuario agrega cada artículo al carrito del comercio. No existe todavía una transferencia automática de carrito, una reserva de inventario o pago dentro de Barasu. No se encontraron contratos públicos verificados para crear carritos completos de las tres tiendas. No se debe etiquetar un enlace de producto como checkout completado.
