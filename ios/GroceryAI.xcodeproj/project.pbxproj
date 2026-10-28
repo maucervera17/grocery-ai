@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+ BABA00000000000000000005 = {isa = PBXBuildFile; productRef = BABA00000000000000000006; };
 		BABA00000000000000000003 /* PostalCodeLocator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABA00000000000000000004 /* PostalCodeLocator.swift */; };
 		BABA00000000000000000001 /* GroceryAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BABA00000000000000000002 /* GroceryAPIClient.swift */; };
 		042D27BD6AEB93B20D93258B /* DraftCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC9F9E65EE32DBCBA8DA833 /* DraftCard.swift */; };
@@ -347,12 +348,22 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXFrameworksBuildPhase section */
+ BABA00000000000000000007 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (BABA00000000000000000005,); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+/* Begin XCRemoteSwiftPackageReference section */
+ BABA00000000000000000008 = {isa = XCRemoteSwiftPackageReference; repositoryURL = "https://github.com/elevenlabs/elevenlabs-swift-sdk.git"; requirement = {kind = revision; revision = 24e2c3c9ab80f4571d4d77ce71c1781094115dbb; }; };
+/* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+ BABA00000000000000000006 = {isa = XCSwiftPackageProductDependency; package = BABA00000000000000000008; productName = ElevenLabs; };
+/* End XCSwiftPackageProductDependency section */
 /* Begin PBXNativeTarget section */
 		7E503B2EE24CBC4826F476D7 /* GroceryAI */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 714DA19A2D73007E70CEF9EE /* Build configuration list for PBXNativeTarget "GroceryAI" */;
 			buildPhases = (
 				3F9AE001C844B1898024C335 /* Sources */,
+ BABA00000000000000000007,
 			);
 			buildRules = (
 			);
@@ -360,6 +371,7 @@
 			);
 			name = GroceryAI;
 			packageProductDependencies = (
+ BABA00000000000000000006,
 			);
 			productName = GroceryAI;
 			productReference = DF81DE44889BAC08B984A764 /* GroceryAI.app */;
@@ -410,6 +422,7 @@
 			mainGroup = D954D1B765FC8CB87EADC793;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
+ packageReferences = (BABA00000000000000000008,);
 			productRefGroup = 58B53E77518BD1C2E5C3115B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -526,6 +539,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Barasu usa el micrófono para conversar contigo mediante ElevenLabs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -618,6 +632,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Barasu usa el micrófono para conversar contigo mediante ElevenLabs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

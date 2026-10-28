@@ -87,6 +87,7 @@ struct SavingsPurchase: Codable, Identifiable, Sendable {
     var differenceCents: Int? { referenceCents.map { $0 - paidCents } }
 }
 struct SavingsLedger: Codable, Sendable {
+    var savedProducts: [SavedDiscovery]?
     var basketID = UUID()
     var products: [SelectedProduct] = []
     var purchases: [SavingsPurchase] = []
@@ -109,5 +110,24 @@ struct SavingsLedger: Codable, Sendable {
         guard value.range(of:#"^\d{1,7}(\.\d{1,2})?$"#,options:.regularExpression) != nil,
               let amount = Decimal(string:value,locale:Locale(identifier:"en_US_POSIX")), amount <= 1_000_000 else { return nil }
         return NSDecimalNumber(decimal:amount * 100).intValue
+    }
+}
+
+struct SavedPriceObservation: Codable, Sendable {
+    var priceCents: Int
+    var checkedAt: String
+    var scope: String
+    var postalCode: String?
+}
+struct SavedDiscovery: Codable, Identifiable, Sendable {
+    var id: String { listing.productUrl }
+    var listing: PriceListing
+    var query: String
+    var observations: [SavedPriceObservation]
+    var changeCents: Int? {
+        guard let latest = observations.last else { return nil }
+        let same = observations.filter { $0.scope == latest.scope && $0.postalCode == latest.postalCode }
+        guard same.count > 1 else { return nil }
+        return latest.priceCents - same[same.count-2].priceCents
     }
 }

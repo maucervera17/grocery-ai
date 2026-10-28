@@ -1,9 +1,12 @@
 import SwiftUI
+import Combine
+import ElevenLabs
 
 struct AgentView: View {
     @Bindable var appState: AppState
 
     @State private var input = ""
+    @State private var showVoice = false
     @State private var presentedSheet: AgentSheet?
     @State private var editingProduct: ProductRequest?
     @State private var selectedOffer: PriceOffer?
@@ -20,10 +23,7 @@ struct AgentView: View {
                         }
 
                         if let comparison = appState.productComparison {
-                            PriceDiscoveryView(comparison:comparison) { selectedOffer = $0 }
-                        }
-                        if !appState.savings.products.isEmpty {
-                            SavingsBasketView(appState:appState)
+                            PriceDiscoveryView(comparison:comparison) { appState.saveDiscovery($0,comparison:comparison); appState.selectedTab = .savings }
                         }
                         if !appState.draft.isEmpty {
                             DraftCard(
@@ -58,10 +58,14 @@ struct AgentView: View {
                 onAddPreviousOrder: { presentedSheet = .previousOrders }
             )
         }
+        .sheet(isPresented:$showVoice) { BarasuVoiceView(appState:appState) }
         .navigationTitle("Barasu")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button(appState.postalCode.isEmpty ? "Ubicación" : "CP \(appState.postalCode)", systemImage:"location") { presentedSheet = .settings }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Voz",systemImage:"waveform") { showVoice = true }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Comparar", systemImage: "cart.badge.questionmark") {
@@ -181,8 +185,8 @@ private struct PriceDiscoveryView: View {
                                 Text(MoneyFormatter.string(cents:offer.listing.priceCents,currencyCode:"MXN")).bold()
                             }
                         }
-                        if let url = URL(string:offer.listing.productUrl) { Link("Ver producto",destination:url) }
-                        Button("Añadir a mi cesta",systemImage:"plus.circle") { onSelect(offer) }.disabled(comparison.data_mode != "live")
+                        if let url = URL(string:offer.listing.productUrl) { Link("Ver en la tienda",destination:url) }
+                        Button("Guardar en Barasu",systemImage:"heart") { onSelect(offer) }.disabled(comparison.data_mode != "live")
                     }
                 }
             }
@@ -253,6 +257,103 @@ private struct SavingsBasketView: View {
                     }.disabled(SavingsLedger.cents(paid)==nil || appState.savings.products.isEmpty)
                 }.navigationTitle("Compra realizada")
             }
+        }
+    }
+}
+
+@MainActor
+private final class BarasuVoiceModel: ObservableObject {
+    @Published var conversation: Conversation?
+    @Published var status = "Listo para conversar"
+    @Published var connecting = false
+    private var connectionTask: Task<Void,Never>?
+    private var toolsTask: Task<Void,Never>?
+    private var generation = UUID()
+    func start(appState: AppState) {
+        guard !connecting, conversation == nil else { return }
+        connecting = true; status = "Conectando…"
+        let id = UUID(); generation = id
+        connectionTask = Task {
+            do {
+                var request = URLRequest(url:APIConfiguration.baseURL.appendingPathComponent("v1/voice/session"))
+                request.httpMethod = "POST"; request.timeoutInterval = 15
+                let (data,response) = try await URLSession.shared.data(for:request)
+                struct Session: Decodable { var conversation_token: String }
+                struct Failure: Decodable { var message: String }
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                    throw GroceryAPIError(message:(try? JSONDecoder().decode(Failure.self,from:data).message) ?? "No se pudo iniciar la voz.")
+                }
+                let token = try JSONDecoder().decode(Session.self,from:data).conversation_token
+                try Task.checkCancellation()
+                let connected = try await ElevenLabs.startConversation(conversationToken:token)
+                guard !Task.isCancelled, generation == id else { await connected.endConversation(); return }
+                conversation = connected; connecting = false; status = "Conversación activa"
+                toolsTask = Task { [weak self] in
+                    var handled = Set<String>()
+                    for await calls in connected.$pendingToolCalls.values {
+                        guard !Task.isCancelled, self?.generation == id else { return }
+                        for call in calls where !handled.contains(call.toolCallId) {
+                            handled.insert(call.toolCallId)
+                            let parameters = try? call.getParameters()
+                            let result: String
+                            if call.toolName == "barasu_search", let message = parameters?["message"] as? String, let action = parameters?["action"] as? String {
+                                result = await appState.voiceSearch(action:action,message:message)
+                            } else { result = "Herramienta no disponible. No se realizaron cambios." }
+                            guard !Task.isCancelled, self?.generation == id else { return }
+                            try? await connected.sendToolResult(for:call.toolCallId,result:result)
+                        }
+                    }
+                }
+            } catch {
+                guard generation == id else { return }
+                connecting = false; status = error is CancellationError ? "Voz finalizada" : error.localizedDescription
+            }
+        }
+    }
+    func end() async {
+        generation = UUID(); connectionTask?.cancel(); toolsTask?.cancel()
+        let current = conversation; conversation = nil; connecting = false; status = "Voz finalizada"
+        await current?.endConversation()
+    }
+}
+
+private struct BarasuVoiceView: View {
+    let appState: AppState
+    @StateObject private var voice = BarasuVoiceModel()
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            VStack(spacing:20) {
+                Image(systemName:"waveform.circle.fill").font(.system(size:64)).foregroundStyle(.green)
+                Text("Habla con Barasu").font(.title2.bold())
+                Text("Al iniciar, ElevenLabs procesa tu audio y transcripción. Puedes interrumpir al agente. Guardar productos no realiza compras.").font(.footnote)
+                Text(voice.status).accessibilityAddTraits(.updatesFrequently)
+                if let conversation = voice.conversation {
+                    NativeVoiceConversation(conversation:conversation)
+                    Button("Terminar y ver resultados") { Task { await voice.end(); dismiss() } }
+                } else {
+                    Button("Iniciar conversación") { voice.start(appState:appState) }.disabled(voice.connecting)
+                }
+                if voice.connecting { Button("Cancelar conexión") { Task { await voice.end() } } }
+            }.padding().navigationTitle("Modo de voz")
+                .toolbar { Button("Cerrar") { Task { await voice.end(); dismiss() } } }
+        }
+        .onDisappear { Task { await voice.end() } }
+        .onChange(of:scenePhase) { _,phase in if phase != .active { Task { await voice.end() } } }
+    }
+}
+private struct NativeVoiceConversation: View {
+    @ObservedObject var conversation: Conversation
+    var body: some View {
+        VStack {
+            Text(String(describing:conversation.agentState))
+            ScrollView {
+                ForEach(conversation.messages) { message in
+                    Text(message.content).frame(maxWidth:.infinity,alignment:.leading).padding(8)
+                }
+            }
+            Button(conversation.isMuted ? "Activar micrófono" : "Silenciar") { Task { try? await conversation.toggleMute() } }
         }
     }
 }

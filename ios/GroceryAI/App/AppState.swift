@@ -109,6 +109,46 @@ final class AppState {
         localPrices = verifyLocal
         persist()
     }
+    func saveDiscovery(_ offer: PriceOffer, comparison: ProductPriceComparison) {
+        guard comparison.data_mode == "live" else { return }
+        var saved = savings.savedProducts ?? []
+        var entry = saved.first { $0.id == offer.id } ?? SavedDiscovery(listing:offer.listing,query:comparison.query,observations:[])
+        let observed = SavedPriceObservation(priceCents:offer.listing.priceCents,checkedAt:offer.listing.checkedAt,scope:comparison.scope,postalCode:comparison.requested_postal_code)
+        if !entry.observations.contains(where: { $0.checkedAt == observed.checkedAt && $0.scope == observed.scope && $0.postalCode == observed.postalCode }) { entry.observations.append(observed) }
+        entry.observations = Array(entry.observations.suffix(60))
+        entry.listing = offer.listing
+        saved.removeAll { $0.id == entry.id }; saved.insert(entry,at:0)
+        savings.savedProducts = saved; persist()
+    }
+    func removeSaved(_ id: String) { savings.savedProducts?.removeAll { $0.id == id }; persist() }
+    func refreshSaved(_ product: SavedDiscovery) async -> String {
+        guard loadingState == .idle else { return "Espera la consulta en curso." }
+        loadingState = .updatingDraft
+        defer { loadingState = .idle }
+        do {
+            let (_, result) = try await GroceryAPIClient().productPrices(message:product.query,items:[],postalCode:product.observations.last?.postalCode ?? "",local:product.observations.last?.scope == "local")
+            guard let result, let offer = result.offers.first(where: { $0.id == product.id }) else { return "No se pudo actualizar. Conservamos el precio y fecha anteriores." }
+            saveDiscovery(offer,comparison:result)
+            return "Precio actualizado desde la fuente."
+        } catch { return "No se pudo actualizar. Conservamos el precio y fecha anteriores." }
+    }
+    func voiceSearch(action: String, message: String) async -> String {
+        guard loadingState == .idle, !message.isEmpty, message.count <= 2000 else { return "Espera la consulta actual o revisa el mensaje." }
+        loadingState = .updatingDraft
+        defer { loadingState = .idle }
+        do {
+            if action == "product_prices" {
+                let (reply,result) = try await GroceryAPIClient().productPrices(message:message,items:draft.items,postalCode:postalCode,local:localPrices)
+                productComparison = result
+                return reply
+            } else if action == "update_draft" {
+                let result = try await agentService.updateDraft(message:message,currentItems:draft.items)
+                draft.replaceItems(with:result.draftItems);persist()
+                return result.reply
+            }
+            return "Acción no admitida. No se realizaron cambios."
+        } catch { return "La consulta falló. No hay nuevos precios confirmados." }
+    }
     func selectOffer(_ offer: PriceOffer, packages: Int, usualCents: Int?) {
         guard productComparison?.data_mode == "live", (1...99).contains(packages), (0...100_000_000).contains(offer.listing.priceCents),
               usualCents == nil || (0...100_000_000).contains(usualCents!) else { return }

@@ -7,9 +7,9 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "node --env-file-if-exists=.env --import tsx backend/server.ts",
+    "dev": "npm run build:voice && node --env-file-if-exists=.env --import tsx backend/server.ts",
     "start": "node --env-file-if-exists=.env dist/backend/server.js",
-    "build": "tsc",
+    "build": "tsc && npm run build:voice",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "contracts": "node --import tsx contracts/export.ts",
@@ -17,16 +17,19 @@
     "smoke": "node --import tsx scripts/smoke.ts",
     "format": "prettier --write backend scrapers contracts tests scripts",
     "smoke:db": "node --env-file-if-exists=.env --import tsx scripts/database-smoke.ts",
-    "smoke:scrapers": "node --env-file-if-exists=.env --import tsx scripts/scrape-smoke.ts"
+    "smoke:scrapers": "node --env-file-if-exists=.env --import tsx scripts/scrape-smoke.ts",
+    "build:voice": "esbuild web/voice-sdk.js --bundle --format=esm --platform=browser --outfile=dist/web/voice-sdk.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.90",
+    "@elevenlabs/client": "^1.32.0",
     "ai": "^7.0.155",
     "fastify": "^5.12.7",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
     "prettier": "^3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
