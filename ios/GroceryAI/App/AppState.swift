@@ -70,6 +70,7 @@ final class AppState {
 
         messages.append(ChatMessage(role: .user, text: trimmed))
         loadingState = .updatingDraft
+        productComparison = nil
         do {
             if trimmed.range(of:"precio|barat[oa]|cu[aá]nto cuesta|compar[aá]",options:[.regularExpression,.caseInsensitive]) != nil {
                 let (reply, result) = try await GroceryAPIClient().productPrices(message:trimmed,items:draft.items,postalCode:postalCode,local:localPrices)
