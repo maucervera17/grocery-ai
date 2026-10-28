@@ -15,6 +15,9 @@ struct RootView: View {
                 }
             }
 
+            Tab("Ahorro",systemImage:"chart.bar",value:AppTab.savings) {
+                NavigationStack { SavingsStatisticsView(ledger:appState.savings,onDelete:appState.deletePurchase) }
+            }
             Tab("Historial", systemImage: "clock", value: AppTab.history) {
                 NavigationStack {
                     HistoryView(

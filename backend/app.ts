@@ -20,6 +20,7 @@ export function buildApp(options: Options) {
     ["/", "index.html", "text/html; charset=utf-8"],
     ["/style.css", "style.css", "text/css"],
     ["/app.js", "app.js", "text/javascript"],
+    ["/savings.js", "savings.js", "text/javascript"],
   ]) {
     app.get(route, async (_request, reply) =>
       reply

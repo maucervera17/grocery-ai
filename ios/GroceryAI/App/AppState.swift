@@ -10,6 +10,9 @@ final class AppState {
     var messages = MockFixtures.welcomeMessages
     var orders: [CompletedOrder] = []
     var postalCode = ""
+    var localPrices = false
+    var productComparison: ProductPriceComparison?
+    var savings = SavingsLedger()
     var loadingState: ChatLoadingState = .idle
     var comparisonPlan: ComparisonPlan?
 
@@ -68,6 +71,14 @@ final class AppState {
         messages.append(ChatMessage(role: .user, text: trimmed))
         loadingState = .updatingDraft
         do {
+            if trimmed.range(of:"precio|barat[oa]|cu[aá]nto cuesta|compar[aá]",options:[.regularExpression,.caseInsensitive]) != nil {
+                let (reply, result) = try await GroceryAPIClient().productPrices(message:trimmed,items:draft.items,postalCode:postalCode,local:localPrices)
+                productComparison = result
+                messages.append(ChatMessage(role:.agent,text:reply,kind:.comparison))
+                loadingState = .idle
+                persist()
+                return
+            }
             let response = try await agentService.updateDraft(
                 message: trimmed,
                 currentItems: draft.items
@@ -78,11 +89,36 @@ final class AppState {
             loadingState = .idle
             persist()
         } catch {
-            let message = "No pude interpretar esa lista. Prueba con: 2 litros de leche, 12 huevos."
+            let message = error.localizedDescription
             messages.append(ChatMessage(role: .agent, text: message, kind: .error))
             loadingState = .failed(message: message)
         }
     }
+
+    func setLocation(_ code: String, verifyLocal: Bool = true) {
+        guard code.range(of:"^[0-9]{5}$",options:.regularExpression) != nil else { return }
+        if postalCode != code {
+            postalCode = code
+            comparisonPlan = nil
+            productComparison = nil
+            // Confirmed purchases remain history; provisional local selections are invalidated.
+            savings.products = []
+            savings.basketID = UUID()
+        }
+        localPrices = verifyLocal
+        persist()
+    }
+    func selectOffer(_ offer: PriceOffer, packages: Int, usualCents: Int?) {
+        guard productComparison?.data_mode == "live", (1...99).contains(packages), (0...100_000_000).contains(offer.listing.priceCents),
+              usualCents == nil || (0...100_000_000).contains(usualCents!) else { return }
+        let item = SelectedProduct(listing:offer.listing,packages:packages,usualPriceCents:usualCents)
+        if let index = savings.products.firstIndex(where: { $0.listing.productUrl == offer.id }) { savings.products[index] = item }
+        else { savings.products.append(item) }
+        persist()
+    }
+    func removeSelection(_ id: UUID) { savings.products.removeAll { $0.id == id }; persist() }
+    func deletePurchase(_ id: UUID) { savings.purchases.removeAll { $0.id == id }; persist() }
+    func confirmPurchase(paidCents: Int) { savings.confirm(paidCents:paidCents); persist() }
 
     func updateProduct(_ product: ProductRequest) {
         guard let index = draft.items.firstIndex(where: { $0.id == product.id }) else { return }
@@ -133,7 +169,7 @@ final class AppState {
 
     func compare(postalCode: String) async {
         guard loadingState == .idle else { return }
-        self.postalCode = postalCode
+        setLocation(postalCode)
         comparisonPlan = nil
         loadingState = .comparing
         do {
@@ -179,6 +215,7 @@ final class AppState {
             messages = storedMessages
         }
         postalCode = record.postalCode
+        if let data = record.savingsData, let ledger = try? decoder.decode(SavingsLedger.self,from:data) { savings = ledger }
     }
 
     private func persist() {
@@ -188,6 +225,7 @@ final class AppState {
         record.ordersData = (try? encoder.encode(orders)) ?? Data()
         record.messagesData = (try? encoder.encode(messages)) ?? Data()
         record.postalCode = postalCode
+        record.savingsData = try? encoder.encode(savings)
         try? modelContext.save()
     }
 }

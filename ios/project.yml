@@ -18,8 +18,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.groceryai.app
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Grocery AI
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Grocery AI usa tu ubicación para encontrar precios cercanos.
+        INFOPLIST_KEY_CFBundleDisplayName: Barasu
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Barasu usa tu ubicación para encontrar precios cercanos.
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
     scheme:

@@ -75,3 +75,29 @@ struct HistoryView: View {
         )
     }
 }
+
+struct SavingsStatisticsView: View {
+    let ledger: SavingsLedger
+    var onDelete: (UUID) -> Void = { _ in }
+    var body: some View {
+        List {
+            Section("Tu ahorro con Barasu") {
+                LabeledContent("Compras registradas",value:"\(ledger.purchases.count)")
+                LabeledContent("Compras con referencia",value:"\(ledger.referencedPurchases)")
+                LabeledContent("Diferencia acumulada",value:MoneyFormatter.string(cents:ledger.recordedDifference,currencyCode:"MXN"))
+                Text("Total pagado declarado frente a tu precio habitual declarado. No prueba cuánto habrías gastado sin la app; no incluye comparaciones sin compra. Los valores negativos son gasto adicional. Se guarda en este dispositivo.").font(.footnote)
+            }
+            Section("Compras confirmadas") {
+                ForEach(ledger.purchases) { purchase in
+                    VStack(alignment:.leading,spacing:8) {
+                        Text(purchase.date,style:.date).font(.headline)
+                        Text("\(purchase.products.count) productos · pagaste \(MoneyFormatter.string(cents:purchase.paidCents,currencyCode:"MXN"))")
+                        if let delta = purchase.differenceCents {
+                            Text("Diferencia: \(MoneyFormatter.string(cents:delta,currencyCode:"MXN"))")
+                        } else { Text("Sin precio habitual completo: excluida de ahorro.") }
+                    }.swipeActions { Button("Eliminar",role:.destructive) { onDelete(purchase.id) } }
+                }
+            }
+        }.navigationTitle("Mi ahorro")
+    }
+}

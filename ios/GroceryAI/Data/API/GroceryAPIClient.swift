@@ -2,7 +2,7 @@ import Foundation
 
 // Change this single value for a physical device or deployed backend.
 enum APIConfiguration {
-    static let baseURL = URL(string: "http://127.0.0.1:3000")!
+    static let baseURL = URL(string: Bundle.main.object(forInfoDictionaryKey:"BARASU_API_BASE_URL") as? String ?? "http://127.0.0.1:3000")!
 }
 
 struct GroceryAPIError: LocalizedError {
@@ -41,6 +41,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         let items: [ItemBody]
         let location: Location?
         let preferences: Preferences?
+        let price_scope: String?
     }
     private struct Issue: Decodable {
         let code: String; let message: String; let client_item_id: UUID?; let retryable: Bool
@@ -49,6 +50,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
     private struct WireResponse: Decodable {
         let reply: String; let status: AgentOperationStatus
         let draft_items: [ProductRequest]; let plan: WirePlan?; let errors: [Issue]
+        let comparison: ProductPriceComparison?
     }
     private struct WirePlan: Decodable {
         let total_price_cents: Int; let estimated_savings_cents: Int?; let currency: String
@@ -96,7 +98,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
     }
     private func call(_ body: Request) async throws -> WireResponse {
         var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
-        request.httpMethod = "POST"; request.timeoutInterval = 30
+        request.httpMethod = "POST"; request.timeoutInterval = 95
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
         request.httpBody = try JSONEncoder().encode(body)
         let (data, response) = try await session.data(for:request)
@@ -109,11 +111,15 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         return result
     }
     func updateDraft(message: String, currentItems: [ProductRequest]) async throws -> AgentResponse {
-        let r = try await call(Request(action:"update_draft",message:message,items:currentItems.map(ItemBody.init),location:nil,preferences:nil))
+        let r = try await call(Request(action:"update_draft",message:message,items:currentItems.map(ItemBody.init),location:nil,preferences:nil,price_scope:nil))
         return AgentResponse(reply:r.reply,status:r.status,draftItems:r.draft_items,errors:r.errors.map(\.model))
     }
+    func productPrices(message: String, items: [ProductRequest], postalCode: String, local: Bool) async throws -> (String, ProductPriceComparison?) {
+        let r = try await call(Request(action:"product_prices",message:message,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil : Location(postal_code:postalCode),preferences:nil,price_scope:local ? "local" : "published"))
+        return (r.reply,r.comparison)
+    }
     func compare(items: [ProductRequest], postalCode: String) async throws -> ComparisonPlan {
-        let r = try await call(Request(action:"compare",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2)))
+        let r = try await call(Request(action:"compare",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2),price_scope:nil))
         guard let plan = r.plan else { throw GroceryAPIError(message:r.reply) }
         var model = try plan.model(requested:items)
         model.responseStatus = r.status

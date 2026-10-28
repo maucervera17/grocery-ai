@@ -525,8 +525,8 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Grocery AI usa tu ubicación para encontrar precios cercanos.";
+				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -617,8 +617,8 @@
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Grocery AI";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Grocery AI usa tu ubicación para encontrar precios cercanos.";
+				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

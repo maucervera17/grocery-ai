@@ -23,5 +23,9 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate native savings calculations
+        run: |
+          swiftc ios/GroceryAI/Domain/Models/*.swift scripts/swift-savings/main.swift -o /tmp/savings-test
+          /tmp/savings-test
       - name: Build the integrated iOS app
         run: xcodebuild -project ios/GroceryAI.xcodeproj -scheme GroceryAI -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
