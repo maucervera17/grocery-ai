@@ -20,7 +20,7 @@ struct ManualListView: View {
             }
         }
         .navigationTitle("Escribir una lista")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             PrimaryButton("Agregar lista", systemImage: "plus") {
                 onSubmit(list)

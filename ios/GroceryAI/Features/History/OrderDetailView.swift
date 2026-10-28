@@ -42,7 +42,7 @@ struct OrderDetailView: View {
             .padding(AppSpacing.large)
         }
         .navigationTitle("Compra anterior")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.inline)
     }
 
     private var summaryCard: some View {

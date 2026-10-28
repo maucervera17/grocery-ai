@@ -89,9 +89,10 @@ struct AgentView: View {
                 ComparisonResultView(plan: plan, onDone: appState.completeComparison)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Cerrar") {
+                            Button("Cerrar", systemImage: "xmark") {
                                 appState.comparisonPlan = nil
                             }
+                            .labelStyle(.iconOnly)
                         }
                     }
             }

@@ -28,6 +28,8 @@ struct ComparisonResultView: View {
                     Text("Tiendas")
                         .font(.title2.bold())
 
+                    MatchStatusLegend()
+
                     ForEach(plan.stores) { store in
                         StoreResultCard(store: store, currencyCode: plan.currencyCode)
                     }
@@ -49,7 +51,7 @@ struct ComparisonResultView: View {
         }
         .background(colors.backgroundPrimary)
         .navigationTitle("Comparación")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.inline)
     }
 }
 

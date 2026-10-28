@@ -12,14 +12,18 @@ struct StorePlanItemRow: View {
 
         VStack(alignment: .leading, spacing: AppSpacing.small) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                    Text(item.productName)
-                        .font(.body.weight(.semibold))
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
+                    MatchStatusIndicator(isAlternative: isAlternative)
 
-                    if let brand = item.brand, !brand.isEmpty {
-                        Text(brand)
-                            .font(.caption)
-                            .foregroundStyle(colors.textSecondary)
+                    VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
+                        Text(item.productName)
+                            .font(.body.weight(.semibold))
+
+                        if let brand = item.brand, !brand.isEmpty {
+                            Text(brand)
+                                .font(.caption)
+                                .foregroundStyle(colors.textSecondary)
+                        }
                     }
                 }
 
@@ -35,15 +39,6 @@ struct StorePlanItemRow: View {
 
             HStack(spacing: AppSpacing.small) {
                 DataStatusBadge(status: item.dataStatus)
-
-                if item.matchType.rawValue == "similar" {
-                    Text("Sustituto")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, AppSpacing.small)
-                        .padding(.vertical, AppSpacing.extraSmall)
-                        .background(colors.statusWarning.opacity(0.16), in: .capsule)
-                        .foregroundStyle(colors.statusWarning)
-                }
             }
 
             DisclosureGroup("Detalles") {
@@ -91,6 +86,10 @@ struct StorePlanItemRow: View {
             unit: item.packageUnit
         )
         return "\(item.packageCount) × \(packageSize) · \(MoneyFormatter.string(cents: item.priceCents, currencyCode: currencyCode)) c/u"
+    }
+
+    private var isAlternative: Bool {
+        item.matchType.rawValue == "similar"
     }
 
     private var unitPriceDescription: String? {

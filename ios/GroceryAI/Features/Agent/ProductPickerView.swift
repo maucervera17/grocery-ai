@@ -35,6 +35,6 @@ struct ProductPickerView: View {
             }
         }
         .navigationTitle("Productos frecuentes")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.inline)
     }
 }

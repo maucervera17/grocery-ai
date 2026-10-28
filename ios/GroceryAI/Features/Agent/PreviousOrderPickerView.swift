@@ -27,6 +27,6 @@ struct PreviousOrderPickerView: View {
             }
         }
         .navigationTitle("Compras anteriores")
-        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbarTitleDisplayMode(.inline)
     }
 }

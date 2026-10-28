@@ -32,7 +32,7 @@ struct ProductEditorView: View {
                 }
             }
             .navigationTitle("Editar producto")
-            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
