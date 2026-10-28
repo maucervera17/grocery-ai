@@ -28,6 +28,8 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}) {
     ["/wishlist.js", "wishlist.js", "text/javascript"],
     ["/voice.js", "voice.js", "text/javascript"],
     ["/savings.js", "savings.js", "text/javascript"],
+    ["/weekly.js", "weekly.js", "text/javascript"],
+    ["/weekly-plan.js", "weekly-plan.js", "text/javascript"],
   ]) {
     app.get(route, async (_request, reply) =>
       reply

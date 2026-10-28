@@ -130,7 +130,9 @@ export function parseProduct(
     if (!visible || cents(visible[1]) !== cents(price))
       throw new Error("Price evidence mismatch");
   } else {
-    price = primary.match(/Precio actual MXN\$([\d,]+(?:\.\d{2})?)/)?.[1];
+    price = primary.match(
+      /Precio actual (?:MXN\s*)?\$([\d,]+(?:\.\d{2})?)/,
+    )?.[1];
     regular = primary.match(/costaba \$([\d,]+(?:\.\d{2})?)/)?.[1];
     storeName = primary
       .match(/(?:Recoge en tienda,|Pickup sin costo,)[^\n]*? en ([^\n]+)/)?.[1]
@@ -151,6 +153,13 @@ export function parseProduct(
       /(\d+(?:\.\d+)?)\s*(kg|g|ml|l|piezas?|pzas?|pz|docenas?)\b/gi,
     ),
   ];
+  const perKg = /\bpor\s+(?:kg|kilo(?:gramo)?)\b/i.test(sizeText);
+  if (perKg)
+    sizes.splice(0, sizes.length, [
+      "por kg",
+      "1",
+      "kg",
+    ] as unknown as RegExpMatchArray);
   if (!sizes.length) throw new Error("Unknown package size");
   if (
     !multi &&
@@ -159,7 +168,7 @@ export function parseProduct(
   )
     throw new Error("Ambiguous multipack");
   const size = sizes[sizes.length - 1],
-    rawUnit = (multi?.[3] ?? size[2]).toLowerCase();
+    rawUnit = (perKg ? "kg" : (multi?.[3] ?? size[2])).toLowerCase();
   const unit =
     rawUnit === "l"
       ? "L"
@@ -168,9 +177,11 @@ export function parseProduct(
         : ["g", "kg", "ml"].includes(rawUnit)
           ? rawUnit
           : "piece";
-  const quantity = multi
-    ? Number(multi[1]) * Number(multi[2])
-    : Number(size[1]);
+  const quantity = perKg
+    ? 1
+    : multi
+      ? Number(multi[1]) * Number(multi[2])
+      : Number(size[1]);
   // Never turn an old Firecrawl cache hit into a newly verified price.
   const checkedAt =
     metadata.cacheState === "hit" ? String(metadata.cachedAt ?? "") : now;

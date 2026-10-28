@@ -13,3 +13,5 @@ test("plural supermarket categories and explicit common typo normalize without c
   assert.ok(matches("Detergente Ariel líquido 1 L", "detergentes Ariel"));
   assert.equal(tokens("Dove")[0], "dove");
 });
+
+test('product qualifiers remain bound to the attribute they describe',()=>{assert.equal(matches('Pechuga de pollo con hueso y sin piel por kg','pechuga de pollo sin hueso'),false);assert.equal(matches('Pechuga de pollo sin hueso por kg','pechuga de pollo sin hueso'),true);});

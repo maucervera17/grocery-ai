@@ -77,3 +77,30 @@ test("Chedraui discounted primary price can share its line with the previous pri
   assert.equal(row.priceCents, 1590);
   assert.equal(row.quantity, 400);
 });
+test("explicit per-kg meat has a one-kilo price basis; unspecified sizes still fail", () => {
+  const original = JSON.parse(
+    readFileSync("fixtures/walmart.scrape.json", "utf8"),
+  );
+  const page = structuredClone(original);
+  page.markdown = "# Carne molida de res por kg\n\nPrecio actual MXN$180.00\n";
+  page.metadata.ogTitle = "Carne molida de res por kg";
+  const parsed = parseProduct(RETAILERS[2], page.metadata.url, page);
+  assert.equal(parsed.quantity, 1);
+  assert.equal(parsed.unit, "kg");
+  assert.equal(parsed.priceCents, 18000);
+  page.markdown = "# Carne molida de res\n\nPrecio actual MXN$180.00\n";
+  page.metadata.ogTitle = "Carne molida de res";
+  assert.throws(() => parseProduct(RETAILERS[2], page.metadata.url, page));
+});
+
+test("fresh-food price per kilo is not assigned to the approximate tray weight", () => {
+  const page = JSON.parse(readFileSync("fixtures/walmart.scrape.json", "utf8"));
+  const title =
+    "Pechuga de pollo sin hueso por Kilogramo Peso Aproximado por Charola 600 g a 700 g";
+  page.metadata.ogTitle = title;
+  page.markdown = "# " + title + "\nPrecio actual $180.00/kg\n";
+  const result = parseProduct(RETAILERS[2], page.metadata.url, page);
+  assert.equal(result.quantity, 1);
+  assert.equal(result.unit, "kg");
+  assert.equal(result.priceCents, 18000);
+});

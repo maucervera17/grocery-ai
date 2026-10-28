@@ -28,6 +28,19 @@ export function tokens(value: string): string[] {
     );
 }
 export function matches(name: string, query: string): boolean {
+  // Preserve the relationship in "sin hueso": words elsewhere in the title
+  // ("con hueso y sin piel") must not satisfy a boneless query.
+  const qualifiers = [
+    ...canonical(query).matchAll(
+      /\b(sin|con)\s+(hueso|piel|azucar|lactosa|gluten|sal)\b/g,
+    ),
+  ];
+  if (
+    qualifiers.some(
+      (q) => !new RegExp(`\\b${q[1]}\\s+${q[2]}\\b`).test(canonical(name)),
+    )
+  )
+    return false;
   const hay = tokens(name),
     need = tokens(query).filter(
       (w) => !(w === "pasta" && tokens(query).includes("espagueti")),

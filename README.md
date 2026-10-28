@@ -1,4 +1,6 @@
-# Barasu — comparación, guardados y voz
+# Barasu — súper semanal, guardados y voz
+
+Nuevo flujo de [lista semanal, conveniencia y ahorro](docs/WEEKLY_SHOPPING.md).
 
 Estado actual y pruebas de wishlist, GPS y ElevenLabs: [guía de integración](docs/VOICE_LOCATION_WISHLIST.md). Las secciones iniciales siguientes conservan documentación histórica del MVP; para ejecutar usa [setup](docs/setup.md).
 

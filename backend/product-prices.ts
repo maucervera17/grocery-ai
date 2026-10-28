@@ -113,7 +113,9 @@ export async function productPrices(
       (r) =>
         Date.now() - Date.parse(r.checkedAt) >= 0 &&
         Date.now() - Date.parse(r.checkedAt) < 300000 &&
-        inScope(r),
+        inScope(r) &&
+        (!/\bpor\s+(?:kg|kilo(?:gramo)?)\b/i.test(r.productName) ||
+          (r.unit === "kg" && r.quantity === 1)),
     );
     if (
       (new Set(
