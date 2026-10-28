@@ -37,7 +37,7 @@ struct StorePlanItemRow: View {
                 .font(.subheadline)
                 .foregroundStyle(colors.textSecondary)
 
-            HStack(spacing: AppSpacing.small) {
+            if item.dataStatus.rawValue != "demo" {
                 DataStatusBadge(status: item.dataStatus)
             }
 

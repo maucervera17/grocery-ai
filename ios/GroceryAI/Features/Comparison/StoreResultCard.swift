@@ -14,7 +14,7 @@ struct StoreResultCard: View {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                        Text(store.retailer)
+                        Text(displayRetailer)
                             .font(.headline)
 
                         if let storeName = store.storeName, !storeName.isEmpty {
@@ -41,5 +41,13 @@ struct StoreResultCard: View {
                 }
             }
         }
+    }
+
+    private var displayRetailer: String {
+        store.retailer.replacingOccurrences(
+            of: " (demo)",
+            with: "",
+            options: .caseInsensitive
+        )
     }
 }

@@ -8,7 +8,6 @@ struct AgentSettingsView: View {
             Form {
                 Section("Backend") {
                     LabeledContent("Servidor", value: APIConfiguration.baseURL.absoluteString)
-                    LabeledContent("Datos", value: "Demostración")
                 }
             }
             .navigationTitle("Configuración")

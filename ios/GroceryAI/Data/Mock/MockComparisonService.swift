@@ -18,7 +18,7 @@ struct MockComparisonService: ComparisonServicing {
                 unmatchedItems.append(
                     UnmatchedItem(
                         requestedItem: item,
-                        reason: "No encontramos una presentación comparable en los datos de demostración."
+                        reason: "No encontramos una presentación comparable en los datos disponibles."
                     )
                 )
                 continue
