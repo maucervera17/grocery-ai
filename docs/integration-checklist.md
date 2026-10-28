@@ -14,7 +14,7 @@ probada de dependencias externas; no declara terminado el proyecto iOS.
 - [x] Reimportación idempotente, historial de precios, aislamiento postal y demo/live.
 - [x] Roles públicos sin acceso al catálogo ni RPC; credenciales solo en backend.
 - [x] Datos antiguos no reemplazan precios o metadatos nuevos.
-- [x] `npm test`: 31 pruebas. `npm run build`: correcto.
+- [x] `npm test`: 34 pruebas. `npm run build`: correcto.
 - [x] `npm run smoke:db`: API → Supabase → dos tiendas, total 13400 centavos.
 - [x] `npm run smoke`: Claude real → borrador → Supabase local → total 13400, ahorro 600.
 - [x] Web muestra fuente, fecha, precio por paquete y por unidad, demo/vencido y similares.
@@ -28,8 +28,8 @@ probada de dependencias externas; no declara terminado el proyecto iOS.
   aplicados mediante SQL Editor en una transacción; ocho ofertas y dos tiendas verificadas.
 - [x] Backend local conectado a Supabase remoto con credencial exclusiva del servidor.
   `smoke:db` y `smoke` aprobados: Claude → API → base remota → total 13400, ahorro 600.
-- [ ] Prueba de Firecrawl REST desde backend con credenciales de aplicación.
-  El login MCP no equivale a esta conexión. Pestaña de login preparada.
+- [x] Firecrawl REST configurado y probado con leche entera en las tres tiendas,
+  persistencia remota y comparación HTTP. Cobertura general aún parcial.
 - [ ] Cliente HTTP iOS conectado en la copia local de feat/ios. Sintaxis y proyecto plist
   revisados. Compilación iOS aprobada en GitHub Actions (run 40621570223); Xcode no está instalado en este Mac.
 - [ ] Flujo obligatorio en dispositivo/simulador, VoiceOver, Dynamic Type y temas.

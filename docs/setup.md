@@ -21,8 +21,8 @@ adaptadores configurados; no es una comprobación de conectividad externa.
 - El modo demo consulta Supabase si se configuró; ante error usa el seed de
   respaldo y devuelve una advertencia, sin cambiar su etiqueta demo.
 - El modo live no usa el seed de demo. Caché por producto/código postal, TTL 1 hora.
-  Si falta cobertura en alguna de las dos fuentes, pide refresh.
-- Dos productos se consultan concurrentemente, máximo cuatro llamadas de fuente
+  Si falta cobertura en alguna de las tres fuentes (Chedraui, Bodega Aurrera y Walmart), pide refresh.
+- Dos productos se consultan concurrentemente, máximo seis llamadas de fuente
   simultáneas por petición. Deadline total 25 s. Falla de una fuente => parcial.
 - Cada producto se compara por el costo de paquetes completos necesarios. Hasta
   dos tiendas; una combinación parcial prioriza cubrir más productos.

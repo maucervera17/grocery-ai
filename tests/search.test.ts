@@ -282,14 +282,22 @@ test("live unconfigured mode never substitutes demo prices", async () => {
   assert.equal(out.status, "error");
   assert.equal(out.plan!.stores.length, 0);
 });
-test("fresh cache covers two retailers and avoids Firecrawl", async () => {
+test("fresh cache covers all retailers and avoids Firecrawl", async () => {
   let calls = 0;
   const search = createSearch({
     mode: "live",
     fixtures,
     repository: {
       search: async () =>
-        fixtures.map((r) => ({ ...r, checkedAt: new Date().toISOString() })),
+        [
+          ...fixtures,
+          ...fixtures.map((r) => ({
+            ...r,
+            source: "walmart",
+            retailer: "Walmart",
+            priceCents: 99999,
+          })),
+        ].map((r) => ({ ...r, checkedAt: new Date().toISOString() })),
       upsert: async () => {},
     },
     scraper: {
@@ -399,7 +407,7 @@ test("Firecrawl searches then scrapes only allowed product pages; snippets are n
     calls++;
     const p = JSON.parse(init!.body as string);
     if (String(url).endsWith("/search")) {
-      const i = p.includeDomains[0] === RETAILERS[0].host ? 0 : 1;
+      const i = RETAILERS.findIndex((r) => r.host === p.includeDomains[0]);
       return Response.json({
         success: true,
         data: { web: [{ url: urls[i] }, { url: "https://evil.test/product" }] },
@@ -409,15 +417,15 @@ test("Firecrawl searches then scrapes only allowed product pages; snippets are n
     assert.equal(p.proxy, "basic");
     return Response.json({
       success: true,
-      data: pages[p.url === urls[0] ? 0 : 1],
+      data: pages[urls.indexOf(p.url)],
     });
   };
   const result = await new FirecrawlScraper("test", fetcher).scrape(
     { query: "leche" },
     AbortSignal.timeout(1000),
   );
-  assert.equal(calls, 4);
-  assert.equal(result.listings.length, 2);
+  assert.equal(calls, RETAILERS.length * 2);
+  assert.equal(result.listings.length, RETAILERS.length);
   assert.equal(result.errors.length, 0);
 });
 test("Firecrawl does not retry auth errors; retries temporary errors once per source", async () => {
@@ -426,14 +434,14 @@ test("Firecrawl does not retry auth errors; retries temporary errors once per so
     count++;
     return new Response("{}", { status: 401 });
   }).scrape({ query: "leche" }, AbortSignal.timeout(1000));
-  assert.equal(count, 2);
+  assert.equal(count, RETAILERS.length);
   assert.equal(unauthorized.errors[0].code, "FIRECRAWL_AUTH");
   count = 0;
   await new FirecrawlScraper("test", async () => {
     count++;
     return new Response("{}", { status: 503 });
   }).scrape({ query: "leche" }, AbortSignal.timeout(2000));
-  assert.equal(count, 4);
+  assert.equal(count, RETAILERS.length * 2);
 });
 test("empty comparison is valid and does not invent savings", async () => {
   const out = await createSearch({ mode: "demo", fixtures })({
@@ -444,8 +452,82 @@ test("empty comparison is valid and does not invent savings", async () => {
   assert.equal(out.plan!.total_price_cents, 0);
   assert.equal(out.plan!.estimated_savings_cents, null);
 });
-test("second representative product: rice parses both retailers", () => {
-  RETAILERS.forEach((s, i) => {
+test("Walmart uses primary price and observed branch, rejecting related-only prices", () => {
+  const r = parseProduct(RETAILERS[2], urls[2], pages[2]);
+  assert.equal(r.retailer, "Walmart");
+  assert.equal(r.priceCents, 2000);
+  assert.equal(r.quantity, 1);
+  assert.equal(r.unit, "L");
+  assert.equal(r.storeName, "SC TOREO");
+  assert.equal(productUrl(urls[2], RETAILERS[1]), null);
+  assert.equal(
+    productUrl(
+      "https://www.walmart.com.mx.evil.test/ip/milk/123",
+      RETAILERS[2],
+    ),
+    null,
+  );
+  assert.throws(
+    () =>
+      parseProduct(RETAILERS[2], urls[2], {
+        ...pages[2],
+        markdown:
+          "# Leche Great Value entera 1 l\n## Artículos similares\nPrecio actual MXN$1.00",
+      }),
+    /Missing price/,
+  );
+});
+test("third retailer can win while the planner preserves the one/two-store limit", () => {
+  const walmart = {
+    ...fixtures[0],
+    source: "walmart",
+    retailer: "Walmart",
+    priceCents: 1000,
+  };
+  const offers = mapped(basket, [...fixtures, walmart]);
+  const two = planBasket(basket, offers, 2);
+  assert.ok(two.stores.some((s) => s.retailer === "Walmart"));
+  assert.equal(two.stores.length, 2);
+  assert.equal(two.unmatched_items.length, 0);
+  const one = planBasket(basket, offers, 1);
+  assert.equal(one.stores.length, 1);
+  assert.equal(one.unmatched_items.length, 0);
+});
+test("two-source cache still refreshes to discover Walmart", async () => {
+  let calls = 0;
+  const item = basket[0];
+  const search = createSearch({
+    mode: "live",
+    fixtures: [],
+    repository: {
+      search: async () =>
+        fixtures.map((r) => ({ ...r, checkedAt: new Date().toISOString() })),
+      upsert: async () => {},
+    },
+    scraper: {
+      scrape: async () => {
+        calls++;
+        return {
+          listings: [
+            {
+              ...fixtures[0],
+              source: "walmart",
+              retailer: "Walmart",
+              priceCents: 1000,
+              checkedAt: new Date().toISOString(),
+            },
+          ],
+          errors: [],
+        };
+      },
+    },
+  });
+  const result = await search({ ...input, items: [item] });
+  assert.equal(calls, 1);
+  assert.equal(result.plan!.stores[0].retailer, "Walmart");
+});
+test("second representative product: rice parses both original retailers", () => {
+  RETAILERS.slice(0, 2).forEach((s, i) => {
     const page = JSON.parse(
       readFileSync(`./fixtures/${s.id}.rice.scrape.json`, "utf8"),
     );

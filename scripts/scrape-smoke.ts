@@ -1,5 +1,6 @@
 import { FirecrawlScraper } from "../scrapers/firecrawl.js";
 import { ScrapedListing } from "../contracts/schema.js";
+import { RETAILERS } from "../scrapers/retailers.js";
 const key = process.env.FIRECRAWL_API_KEY;
 if (!key)
   throw Error(
@@ -19,6 +20,6 @@ for (const query of ["leche", "arroz"]) {
       2,
     ),
   );
-  if (new Set(result.listings.map((r) => r.source)).size < 2)
+  if (new Set(result.listings.map((r) => r.source)).size < RETAILERS.length)
     process.exitCode = 1;
 }

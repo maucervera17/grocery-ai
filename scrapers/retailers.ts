@@ -6,6 +6,7 @@ export const RETAILERS = [
     retailer: "Bodega Aurrera",
     host: "www.bodegaaurrera.com.mx",
   },
+  { id: "walmart", retailer: "Walmart", host: "www.walmart.com.mx" },
 ] as const;
 export type Retailer = (typeof RETAILERS)[number];
 export type Page = { markdown?: string; metadata?: Record<string, unknown> };
@@ -65,7 +66,9 @@ export function parseProduct(
   if (heading < 0) throw new Error("Primary product not found");
   const primary = markdown
     .slice(heading)
-    .split(/\n# Promociones|\n## Información|\nProductos relacionados/)[0];
+    .split(
+      /\n# Promociones|\n## Información|\nProductos relacionados|\n## Artículos similares/,
+    )[0];
   if (/agotado|no disponible|sin existencia/i.test(primary))
     throw new Error("Unavailable product");
   let price: string | undefined,
@@ -82,13 +85,13 @@ export function parseProduct(
     price = primary.match(/Precio actual MXN\$([\d,]+(?:\.\d{2})?)/)?.[1];
     regular = primary.match(/costaba \$([\d,]+(?:\.\d{2})?)/)?.[1];
     storeName = primary
-      .match(/Recoge en tienda,[^\n]*? en ([^\n]+)/)?.[1]
+      .match(/(?:Recoge en tienda,|Pickup sin costo,)[^\n]*? en ([^\n]+)/)?.[1]
       ?.trim();
   }
   if (!price) throw new Error("Missing price");
   // Multipacks must expose total contents unambiguously, e.g. 6 piezas de 1 L c/u.
   const sizeText =
-    source.id === "bodega-aurrera"
+    source.id !== "chedraui"
       ? (primary.match(/Tamaño:\s*([^\n]+)/)?.[1] ?? title)
       : title;
   const multi =

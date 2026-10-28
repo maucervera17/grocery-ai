@@ -1,4 +1,4 @@
-# Firecrawl: Chedraui y Bodega Aurrera
+# Firecrawl: Chedraui, Bodega Aurrera y Walmart
 
 `retailers.ts` define dominios y parsers; `firecrawl.ts` implementa descubrimiento y extracción. No hay API pública paralela ni escritura directa a base de datos.
 
@@ -8,9 +8,9 @@
 4. Parsear solo la ficha principal. Validar con ScrapedListing.
 5. Devolver listings y errores por fuente; el backend calcula el plan y decide persistencia.
 
-Cada fuente procesa máximo dos fichas por producto. 429/5xx admite un reintento con espera breve y respetando la señal global. 401/402 no se reintentan. No se extraen precios desde snippets ni se confunden cuotas/promociones con precio base. Una ficha inválida no elimina las fichas válidas de la otra fuente.
+Cada fuente procesa máximo dos fichas por producto. 429/5xx admite un reintento con espera breve y respetando la señal global. 401/402 no se reintentan. No se extraen precios desde snippets ni se confunden cuotas/promociones con precio base. Una ficha inválida no elimina las fichas válidas de las demás fuentes.
 
-Se preserva cachedAt cuando Firecrawl declara cacheState=hit; si falta, se rechaza. Chedraui requiere MXN explícito en metadatos y coincidencia del precio con el visible. Bodega Aurrera requiere Precio actual MXN$ y usa la variante de Tamaño cuando existe.
+Se preserva cachedAt cuando Firecrawl declara cacheState=hit; si falta, se rechaza. Chedraui requiere MXN explícito en metadatos y coincidencia del precio con el visible. Bodega Aurrera y Walmart requieren Precio actual MXN$ y usa la variante de Tamaño cuando existe.
 
 Limitaciones: HTML/Markdown puede cambiar; formato desconocido produce SOURCE_INVALID. No se asegura stock, no se resuelven sesiones de código postal y no se aplican combos o membresías. No hay cobertura general validada de categorías. Ver `docs/source-validation.md`.
 
