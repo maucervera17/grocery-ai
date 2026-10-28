@@ -1,5 +1,7 @@
 # Barasu — súper semanal, guardados y voz
 
+**Para integrar otra app o agente con el backend y Supabase:** [guía actual de conexión](docs/BACKEND_SUPABASE_INTEGRATION.md). Los apartados históricos de este README pueden describir estados anteriores del prototipo.
+
 Nuevo flujo de [lista semanal, conveniencia y ahorro](docs/WEEKLY_SHOPPING.md).
 
 Estado actual y pruebas de wishlist, GPS y ElevenLabs: [guía de integración](docs/VOICE_LOCATION_WISHLIST.md). Las secciones iniciales siguientes conservan documentación histórica del MVP; para ejecutar usa [setup](docs/setup.md).
