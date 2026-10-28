@@ -53,6 +53,22 @@
                     "type": "null"
                   }
                 ]
+              },
+              "category_id": {
+                "type": "string",
+                "enum": [
+                  "produce",
+                  "dairy",
+                  "eggs",
+                  "meat",
+                  "bakery",
+                  "pantry",
+                  "beverages",
+                  "frozen",
+                  "household",
+                  "personal_care",
+                  "other"
+                ]
               }
             },
             "required": ["client_item_id", "name", "quantity", "unit", "notes"],
@@ -137,6 +153,22 @@
                     "type": "null"
                   }
                 ]
+              },
+              "category_id": {
+                "type": "string",
+                "enum": [
+                  "produce",
+                  "dairy",
+                  "eggs",
+                  "meat",
+                  "bakery",
+                  "pantry",
+                  "beverages",
+                  "frozen",
+                  "household",
+                  "personal_care",
+                  "other"
+                ]
               }
             },
             "required": ["client_item_id", "name", "quantity", "unit", "notes"],
@@ -218,6 +250,22 @@
                   {
                     "type": "null"
                   }
+                ]
+              },
+              "category_id": {
+                "type": "string",
+                "enum": [
+                  "produce",
+                  "dairy",
+                  "eggs",
+                  "meat",
+                  "bakery",
+                  "pantry",
+                  "beverages",
+                  "frozen",
+                  "household",
+                  "personal_care",
+                  "other"
                 ]
               }
             },

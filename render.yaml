@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: barasu-api
+    runtime: node
+    plan: free
+    repo: https://github.com/maucervera17/grocery-ai
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATA_MODE
+        value: live
+      - key: CLAUDE_MODEL
+        value: claude-haiku-5-5
+      - key: SUPABASE_URL
+        value: https://vlfqqniorpfveuxhqnpt.supabase.co
+      - key: BARASU_ACCESS_PASSWORD
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FIRECRAWL_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_AGENT_ID
+        sync: false

@@ -1,17 +1,39 @@
 import {registerLocation} from "./location.js";
 import { registerVoice, type VoiceOptions } from "./voice.js";
 import { readFile } from "node:fs/promises";
+import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify from "fastify";
 import { SearchRequest, SearchResponse } from "../contracts/schema.js";
 import { createSearch, failure, type Options } from "./service.js";
-export function buildApp(options: Options, voiceOptions: VoiceOptions = {}) {
+export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, accessPassword?: string) {
   const app = Fastify({
       bodyLimit: 32768,
       logger: false,
       requestTimeout: 100000,
     }),
     search = createSearch(options);
-  registerVoice(app, voiceOptions);
+  if (accessPassword) {
+    const expected = createHash("sha256").update(`barasu:${accessPassword}`).digest();
+    app.addHook("onRequest", async (request, reply) => {
+      if (request.url.split("?")[0] === "/health") return;
+      const header = request.headers.authorization;
+      const match = /^Basic ([A-Za-z0-9+/=]+)$/.exec(header ?? "");
+      let valid = false;
+      if (match) {
+        try {
+          const actual = createHash("sha256")
+            .update(Buffer.from(match[1], "base64").toString("utf8"))
+            .digest();
+          valid = timingSafeEqual(actual, expected);
+        } catch { /* Invalid authorization header. */ }
+      }
+      if (!valid)
+        return reply.header("WWW-Authenticate", 'Basic realm="Barasu"')
+          .header("Cache-Control", "no-store")
+          .code(401).send({ error: "ACCESS_DENIED" });
+    });
+  }
+  registerVoice(app, { ...voiceOptions, allowAuthenticatedRemote: Boolean(accessPassword) });
   registerLocation(app);
   const errorBody = (code: string, message: string) => ({
     reply: message,

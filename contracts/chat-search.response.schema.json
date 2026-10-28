@@ -45,6 +45,22 @@
                 "type": "null"
               }
             ]
+          },
+          "category_id": {
+            "type": "string",
+            "enum": [
+              "produce",
+              "dairy",
+              "eggs",
+              "meat",
+              "bakery",
+              "pantry",
+              "beverages",
+              "frozen",
+              "household",
+              "personal_care",
+              "other"
+            ]
           }
         },
         "required": ["client_item_id", "name", "quantity", "unit", "notes"],
@@ -82,6 +98,14 @@
               "items": {
                 "type": "object",
                 "properties": {
+                  "retailer_id": {
+                    "type": "string",
+                    "enum": ["chedraui", "bodega_aurrera", "walmart", "unknown"]
+                  },
+                  "retailer_name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
                   "retailer": {
                     "type": "string"
                   },
@@ -109,6 +133,22 @@
                         },
                         "brand": {
                           "type": ["string", "null"]
+                        },
+                        "category_id": {
+                          "type": "string",
+                          "enum": [
+                            "produce",
+                            "dairy",
+                            "eggs",
+                            "meat",
+                            "bakery",
+                            "pantry",
+                            "beverages",
+                            "frozen",
+                            "household",
+                            "personal_care",
+                            "other"
+                          ]
                         },
                         "requested_quantity": {
                           "type": "number",
@@ -189,6 +229,10 @@
                           "type": "string",
                           "pattern": "^https?:\\/\\/"
                         },
+                        "image_url": {
+                          "type": "string",
+                          "pattern": "^https:\\/\\/"
+                        },
                         "checked_at": {
                           "type": "string",
                           "format": "date-time",
@@ -216,6 +260,7 @@
                         "listing_id",
                         "product_name",
                         "brand",
+                        "category_id",
                         "requested_quantity",
                         "requested_unit",
                         "package_quantity",
@@ -235,6 +280,8 @@
                   }
                 },
                 "required": [
+                  "retailer_id",
+                  "retailer_name",
                   "retailer",
                   "store_name",
                   "subtotal_cents",
