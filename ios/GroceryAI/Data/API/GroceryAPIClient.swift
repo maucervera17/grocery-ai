@@ -147,16 +147,59 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         }
     }
     private func call(_ body: Request) async throws -> WireResponse {
+        ComparisonDiagnostics.event(
+            "Search request started: action=\(body.action), items=\(body.items.count), hasLocation=\(body.location != nil)"
+        )
         var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
-        request.httpMethod = "POST"; request.timeoutInterval = 100
+        request.httpMethod = "POST"
+        request.timeoutInterval = body.action == "compare" ? .infinity : 100
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
         try APIAccess.authorize(&request)
         request.httpBody = try JSONEncoder().encode(body)
-        let (data, response) = try await session.data(for:request)
-        guard let http = response as? HTTPURLResponse else { throw GroceryAPIError(message:"Respuesta HTTP inválida.") }
+        let clock = ContinuousClock()
+        let startedAt = clock.now
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for:request)
+        } catch {
+            ComparisonDiagnostics.error(
+                "Search transport failed after \(startedAt.duration(to: clock.now)): action=\(body.action), error=\(error.localizedDescription)"
+            )
+            throw error
+        }
+        guard let http = response as? HTTPURLResponse else {
+            ComparisonDiagnostics.error("Search endpoint returned a non-HTTP response")
+            throw GroceryAPIError(message:"Respuesta HTTP inválida.")
+        }
+        ComparisonDiagnostics.event(
+            "Search endpoint returned HTTP \(http.statusCode), bytes=\(data.count), action=\(body.action), contentType=\(http.value(forHTTPHeaderField: "Content-Type") ?? "unknown"), cfRay=\(http.value(forHTTPHeaderField: "CF-RAY") ?? "none")"
+        )
         if http.statusCode == 401 { throw GroceryAPIError(message:"Acceso incorrecto. Actualiza la contraseña en Ajustes.") }
-        let result = try JSONDecoder().decode(WireResponse.self, from:data)
-        guard (200..<300).contains(http.statusCode), result.status != .error else { throw GroceryAPIError(message:result.reply) }
+        guard (200..<300).contains(http.statusCode) else {
+            ComparisonDiagnostics.error(
+                "Search origin failed: HTTP \(http.statusCode), cfErrorType=\(http.value(forHTTPHeaderField: "cf-error-type") ?? "none")"
+            )
+            let message = http.statusCode == 520
+                ? "El servidor de precios cerró la conexión durante la comparación."
+                : "El servidor de precios respondió con el código \(http.statusCode)."
+            throw GroceryAPIError(message: message)
+        }
+        let result: WireResponse
+        do {
+            result = try JSONDecoder().decode(WireResponse.self, from:data)
+        } catch {
+            ComparisonDiagnostics.error(
+                "Search response decoding failed for action=\(body.action): \(error.localizedDescription)"
+            )
+            throw error
+        }
+        guard result.status != .error else {
+            ComparisonDiagnostics.error(
+                "Search request rejected: action=\(body.action), status=\(result.status.rawValue), issues=\(result.errors.count)"
+            )
+            throw GroceryAPIError(message:result.reply)
+        }
         let ids = result.draft_items.map(\.id)
         guard Set(ids).count == ids.count, ids.count <= 20,
               result.draft_items.allSatisfy({ !$0.name.isEmpty && $0.quantity.isFinite && $0.quantity > 0 }) else { throw GroceryAPIError(message:"Borrador inválido.") }
@@ -167,11 +210,22 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         return AgentResponse(reply:r.reply,status:r.status,draftItems:r.draft_items,errors:r.errors.map(\.model))
     }
     func compare(items: [ProductRequest], postalCode: String) async throws -> ComparisonPlan {
+        ComparisonDiagnostics.event(
+            "Comparison started: items=\(items.count), postalCodeLength=\(postalCode.count)"
+        )
         let r = try await call(Request(action:"compare",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2)))
-        guard let plan = r.plan else { throw GroceryAPIError(message:r.reply) }
+        guard let plan = r.plan else {
+            ComparisonDiagnostics.error(
+                "Comparison response did not contain a plan: status=\(r.status.rawValue), issues=\(r.errors.count)"
+            )
+            throw GroceryAPIError(message:r.reply)
+        }
         var model = try plan.model(requested:items)
         model.responseStatus = r.status
         model.warnings = r.errors.map(\.message)
+        ComparisonDiagnostics.event(
+            "Comparison completed: stores=\(model.stores.count), unmatched=\(model.unmatchedItems.count), status=\(r.status.rawValue)"
+        )
         return model
     }
 }

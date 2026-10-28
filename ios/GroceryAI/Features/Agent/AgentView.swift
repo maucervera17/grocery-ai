@@ -5,22 +5,30 @@ struct AgentView: View {
     @Bindable var composerState: AgentComposerState
     @Bindable var voiceController: VoiceConversationController
 
-    @State private var composerOverlayHeight: CGFloat = 0
+    @State private var composerContentMargin = AppControlSize.composer + (AppSpacing.medium * 2)
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
     @State private var isShowingNewListConfirmation = false
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: AppSpacing.large) {
-                AgentStatusView(loadingState: appState.loadingState)
-
                 if appState.messages.isEmpty && appState.draft.isEmpty {
                     AgentEmptyStateView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .containerRelativeFrame(.vertical) { length, _ in
+                            max(0, length - scrollClearance)
+                        }
                 } else {
                     ForEach(appState.messages) { message in
                         ChatMessageBubble(message: message)
                             .id(message.id)
+                    }
+
+                    switch appState.loadingState {
+                    case .updatingDraft, .comparing:
+                        AgentActivityIndicatorView(loadingState: appState.loadingState)
+                            .id("agent-activity")
+                    case .idle, .failed:
+                        EmptyView()
                     }
 
                     if !appState.draft.isEmpty {
@@ -34,15 +42,14 @@ struct AgentView: View {
                         .id("draft")
                     }
                 }
+
+                Color.clear
+                    .frame(height: scrollClearance)
+                    .id("composer-clearance")
             }
-            .containerRelativeFrame(
-                .vertical,
-                alignment: .top,
-                { length, _ in length }
-            )
-            .padding(AppSpacing.large)
+            .padding(.horizontal, AppSpacing.large)
+            .padding(.top, AppSpacing.large)
         }
-        .contentMargins(.bottom, composerOverlayHeight, for: .scrollContent)
         .defaultScrollAnchor(.bottom)
         .defaultScrollAnchor(.top, for: .alignment)
         .scrollPosition($scrollPosition)
@@ -52,8 +59,8 @@ struct AgentView: View {
                 scrollPosition.scrollTo(edge: .bottom)
             }
         }
-        .onChange(of: composerOverlayHeight) { previousHeight, height in
-            guard previousHeight == 0, height > 0 else { return }
+        .onChange(of: composerContentMargin) { previousHeight, height in
+            guard height > previousHeight else { return }
             Task { @MainActor in
                 await Task.yield()
                 scrollPosition.scrollTo(edge: .bottom)
@@ -62,7 +69,7 @@ struct AgentView: View {
         .overlay(alignment: .bottom) {
             ZStack(alignment: .bottom) {
                 BottomContentFade()
-                    .frame(height: composerOverlayHeight + AppControlSize.bottomContentFadeExtension)
+                    .frame(height: composerContentMargin + AppControlSize.bottomContentFadeExtension)
                     .ignoresSafeArea(edges: .bottom)
 
                 AgentComposerOverlay(
@@ -72,8 +79,8 @@ struct AgentView: View {
                 )
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.size.height
-                    } action: { height in
-                        composerOverlayHeight = height
+                    } action: { measuredHeight in
+                        updateComposerContentMargin(measuredHeight)
                     }
             }
         }
@@ -131,6 +138,14 @@ struct AgentView: View {
 
     private func showNewListConfirmation() {
         isShowingNewListConfirmation = true
+    }
+
+    private func updateComposerContentMargin(_ measuredHeight: CGFloat) {
+        composerContentMargin = max(composerContentMargin, measuredHeight)
+    }
+
+    private var scrollClearance: CGFloat {
+        composerContentMargin + AppControlSize.composerScrollClearance
     }
 
     private func startNewList() {

@@ -140,6 +140,11 @@ final class AppState {
         }
     }
 
+    func retryFailedSend() async {
+        guard let failedInput else { return }
+        await send(failedInput)
+    }
+
     func updateProduct(_ product: ProductRequest) {
         guard let index = draft.items.firstIndex(where: { $0.id == product.id }) else { return }
         draft.items[index] = product
@@ -202,6 +207,9 @@ final class AppState {
 
     func compare(postalCode: String) async {
         guard loadingState == .idle else { return }
+        ComparisonDiagnostics.event(
+            "App comparison requested: items=\(draft.items.count), postalCodeLength=\(postalCode.count)"
+        )
         self.postalCode = postalCode
         comparisonPlan = nil
         loadingState = .comparing
@@ -213,6 +221,7 @@ final class AppState {
             loadingState = .idle
             persist()
         } catch {
+            ComparisonDiagnostics.error("App comparison failed: \(error.localizedDescription)")
             loadingState = .failed(message: "No fue posible crear la comparación.")
         }
     }
@@ -283,6 +292,61 @@ final class AppState {
                 reply: "No pude actualizar la lista. Se conservó el borrador anterior.",
                 status: "error",
                 draftItems: draft.items
+            )
+        }
+    }
+
+    func compareFromVoice() async -> VoiceComparisonToolResult {
+        guard loadingState == .idle else {
+            return VoiceComparisonToolResult(
+                reply: "Hay otra operación en curso.",
+                status: "busy",
+                totalPriceCents: nil,
+                storeCount: 0,
+                unmatchedCount: draft.items.count
+            )
+        }
+        guard !draft.isEmpty else {
+            return VoiceComparisonToolResult(
+                reply: "La lista está vacía. Primero agrega productos.",
+                status: "empty",
+                totalPriceCents: nil,
+                storeCount: 0,
+                unmatchedCount: 0
+            )
+        }
+
+        comparisonPlan = nil
+        loadingState = .comparing
+        ComparisonDiagnostics.event(
+            "Voice comparison requested: items=\(draft.items.count), postalCodeLength=\(postalCode.count)"
+        )
+        do {
+            let plan = try await comparisonService.compare(
+                items: draft.items,
+                postalCode: postalCode
+            )
+            comparisonPlan = plan
+            loadingState = .idle
+            persist()
+            return VoiceComparisonToolResult(
+                reply: plan.unmatchedItems.isEmpty
+                    ? "Preparé la comparación de tu lista."
+                    : "Preparé una comparación parcial; algunos productos no tuvieron coincidencia.",
+                status: plan.responseStatus?.rawValue ?? "complete",
+                totalPriceCents: plan.totalPriceCents,
+                storeCount: plan.stores.count,
+                unmatchedCount: plan.unmatchedItems.count
+            )
+        } catch {
+            loadingState = .idle
+            ComparisonDiagnostics.error("Voice comparison failed: \(error.localizedDescription)")
+            return VoiceComparisonToolResult(
+                reply: "No pude comparar la lista. Conservé todos tus productos.",
+                status: "error",
+                totalPriceCents: nil,
+                storeCount: 0,
+                unmatchedCount: draft.items.count
             )
         }
     }

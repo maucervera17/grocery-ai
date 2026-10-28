@@ -8,6 +8,7 @@ struct AgentComposer: View {
     let onSend: () -> Void
     let onAddContent: () -> Void
     let voiceState: VoiceConversationState
+    let voiceFeedback: String
     let onToggleVoice: () -> Void
 
     @Environment(\.appTheme) private var theme
@@ -27,7 +28,10 @@ struct AgentComposer: View {
 
                 HStack(spacing: AppSpacing.small) {
                     if voiceState.isActive {
-                        VoiceStatusLabel(state: voiceState)
+                        VoiceStatusLabel(
+                            state: voiceState,
+                            feedback: voiceFeedback
+                        )
                             .frame(maxWidth: .infinity, alignment: .leading)
                     } else {
                         TextField(voiceState.promptOverride ?? prompt, text: $text, axis: .vertical)
@@ -44,22 +48,21 @@ struct AgentComposer: View {
                 .frame(minHeight: AppControlSize.composer)
                 .glassEffect(.regular.interactive(), in: .capsule)
 
-                Button("Enviar lista", systemImage: "arrow.up", action: onSend)
-                    .labelStyle(.iconOnly)
-                    .font(.headline)
-                    .frame(width: AppControlSize.composer, height: AppControlSize.composer)
-                    .foregroundStyle(colors.brandOnPrimary)
-                    .glassEffect(.regular.tint(colors.brandPrimary).interactive(), in: .circle)
-                    .overlay {
-                        if isLoading {
-                            ProgressView()
-                                .tint(colors.brandOnPrimary)
+                if !voiceState.isActive {
+                    Button("Enviar lista", systemImage: "arrow.up", action: onSend)
+                        .labelStyle(.iconOnly)
+                        .font(.headline)
+                        .frame(width: AppControlSize.composer, height: AppControlSize.composer)
+                        .foregroundStyle(colors.brandOnPrimary)
+                        .glassEffect(.regular.tint(colors.brandPrimary).interactive(), in: .circle)
+                        .overlay {
+                            if isLoading {
+                                ProgressView()
+                                    .tint(colors.brandOnPrimary)
+                            }
                         }
-                    }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
-                    .opacity(voiceState.isActive ? 0 : 1)
-                    .allowsHitTesting(!voiceState.isActive)
-                    .accessibilityHidden(voiceState.isActive)
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
+                }
             }
         }
         .padding(AppSpacing.medium)

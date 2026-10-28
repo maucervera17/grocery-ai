@@ -5,6 +5,7 @@ struct VoiceSessionTokenClient: Sendable {
     var session: URLSession = .shared
 
     func fetchToken() async throws -> String {
+        VoiceDiagnostics.event("Requesting temporary voice session from Barasu backend")
         var request = URLRequest(url: baseURL.appendingPathComponent("v1/voice/session"))
         request.httpMethod = "POST"
         request.timeoutInterval = 30
@@ -12,14 +13,19 @@ struct VoiceSessionTokenClient: Sendable {
 
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
+            VoiceDiagnostics.error("Voice session endpoint returned a non-HTTP response")
             throw VoiceSessionError.invalidResponse
         }
+
+        VoiceDiagnostics.event("Voice session endpoint returned HTTP \(httpResponse.statusCode)")
 
         if (200..<300).contains(httpResponse.statusCode) {
             let payload = try JSONDecoder().decode(TokenResponse.self, from: data)
             guard !payload.conversationToken.isEmpty else {
+                VoiceDiagnostics.error("Voice session response contained an empty token")
                 throw VoiceSessionError.invalidResponse
             }
+            VoiceDiagnostics.event("Temporary voice session received successfully")
             return payload.conversationToken
         }
 

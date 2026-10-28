@@ -10,7 +10,7 @@ struct AgentComposerOverlay: View {
     var body: some View {
         VStack(spacing: 0) {
             if case .failed = appState.loadingState {
-                AgentErrorActionsView(onRetry: send, onDismiss: appState.clearError)
+                AgentErrorActionsView(onRetry: retry, onDismiss: appState.clearError)
             }
 
             if composerState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -33,6 +33,7 @@ struct AgentComposerOverlay: View {
                 onSend: send,
                 onAddContent: showAddContent,
                 voiceState: voiceController.state,
+                voiceFeedback: voiceController.feedbackText,
                 onToggleVoice: toggleVoice
             )
         }
@@ -43,12 +44,18 @@ struct AgentComposerOverlay: View {
 
     private func send() {
         let message = composerState.text
+        guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        composerState.text = ""
         inputIsFocused = false
         Task {
-            let succeeded = await appState.send(message)
-            if succeeded, composerState.text == message {
-                composerState.text = ""
-            }
+            await appState.send(message)
+        }
+    }
+
+    private func retry() {
+        Task {
+            await appState.retryFailedSend()
         }
     }
 
