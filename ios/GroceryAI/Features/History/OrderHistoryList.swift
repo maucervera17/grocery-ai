@@ -20,22 +20,31 @@ struct OrderHistoryList: View {
             }
         } else {
             List(orders) { order in
-                SurfaceCard(padding: AppSpacing.medium) {
-                    HStack(spacing: AppSpacing.medium) {
-                        Button {
-                            selectedOrder = order
-                        } label: {
+                Button {
+                    selectedOrder = order
+                } label: {
+                    SurfaceCard(padding: AppSpacing.medium) {
+                        HStack(spacing: AppSpacing.medium) {
                             OrderHistoryRow(order: order)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Abre el detalle de la compra")
 
-                        Button("Repetir") {
-                            onRepeatOrder(order)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.bold())
+                                .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.roundedRectangle(radius: AppRadius.medium))
                     }
+                }
+                .buttonStyle(.plain)
+                .contentShape(.rect)
+                .accessibilityHint("Abre el detalle de la compra")
+                .accessibilityAction(named: "Repetir compra") {
+                    onRepeatOrder(order)
+                }
+                .swipeActions(edge: .trailing) {
+                    Button("Repetir", systemImage: "arrow.clockwise") {
+                        onRepeatOrder(order)
+                    }
+                    .tint(BarasuPalette.accent)
                 }
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)

@@ -4,6 +4,8 @@ struct OrderDetailView: View {
     let order: CompletedOrder
     let onRepeat: (CompletedOrder) -> Void
 
+    @State private var repeatOverlayHeight: CGFloat = 0
+
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: AppSpacing.large) {
@@ -35,14 +37,30 @@ struct OrderDetailView: View {
                     }
                 }
 
-                PrimaryButton("Repetir compra", systemImage: "arrow.clockwise") {
-                    onRepeat(order)
-                }
             }
             .padding(AppSpacing.large)
         }
+        .contentMargins(.bottom, repeatOverlayHeight, for: .scrollContent)
+        .overlay(alignment: .bottom) {
+            ZStack(alignment: .bottom) {
+                BottomContentFade()
+                    .frame(height: repeatOverlayHeight + AppControlSize.bottomContentFadeExtension)
+                    .ignoresSafeArea(edges: .bottom)
+
+                RepeatOrderOverlay(action: repeatOrder)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        repeatOverlayHeight = height
+                    }
+            }
+        }
         .navigationTitle("Compra anterior")
         .toolbarTitleDisplayMode(.inline)
+    }
+
+    private func repeatOrder() {
+        onRepeat(order)
     }
 
     private var summaryCard: some View {

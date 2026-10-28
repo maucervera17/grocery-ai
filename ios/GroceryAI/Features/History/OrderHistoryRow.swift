@@ -3,13 +3,18 @@ import SwiftUI
 struct OrderHistoryRow: View {
     let order: CompletedOrder
 
+    @Environment(\.appTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
+        let colors = theme.colors(for: colorScheme)
+
         HStack(spacing: AppSpacing.medium) {
             Image(systemName: "bag.fill")
                 .font(.title2)
-                .foregroundStyle(.green)
+                .foregroundStyle(colors.brandPrimary)
                 .frame(width: 48, height: 48)
-                .background(.green.opacity(0.12), in: .rect(cornerRadius: AppRadius.medium))
+                .background(colors.brandSecondary, in: .rect(cornerRadius: AppRadius.medium))
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {

@@ -26,7 +26,8 @@ struct RootView: View {
                 }
             }
         }
-        .tint(AppTheme.grocery.lightColors.brandPrimary)
+        .scrollEdgeEffectStyle(.soft, for: .all)
+        .tint(BarasuPalette.accent)
         .environment(\.appTheme, .grocery)
         .task {
             appState.configurePersistence(modelContext)
