@@ -4,14 +4,15 @@ import SwiftUI
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var appState = AppState()
+    @State private var composerState = AgentComposerState()
 
     var body: some View {
         @Bindable var appState = appState
 
         TabView(selection: $appState.selectedTab) {
-            Tab("Lista", systemImage: "sparkles", value: AppTab.agent) {
+            Tab("Agente", systemImage: "bubble.left.and.bubble.right", value: AppTab.agent) {
                 NavigationStack {
-                    AgentView(appState: appState)
+                    AgentView(appState: appState, composerState: composerState)
                 }
             }
 
@@ -25,7 +26,8 @@ struct RootView: View {
                 }
             }
         }
-        .tint(AppTheme.grocery.lightColors.brandPrimary)
+        .scrollEdgeEffectStyle(.soft, for: .all)
+        .tint(BarasuPalette.accent)
         .environment(\.appTheme, .grocery)
         .task {
             appState.configurePersistence(modelContext)

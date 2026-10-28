@@ -5,7 +5,12 @@ struct DraftProductRow: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
 
+    @Environment(\.appTheme) private var theme
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
+        let colors = theme.colors(for: colorScheme)
+
         Button(action: onEdit) {
             HStack(spacing: AppSpacing.medium) {
                 VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
@@ -20,6 +25,9 @@ struct DraftProductRow: View {
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
+            .padding(AppSpacing.medium)
+            .frame(maxWidth: .infinity, minHeight: AppControlSize.minimumTapTarget, alignment: .leading)
+            .background(colors.cellBackground, in: .rect(cornerRadius: AppRadius.medium))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

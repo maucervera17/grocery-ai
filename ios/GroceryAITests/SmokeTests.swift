@@ -48,4 +48,41 @@ struct SmokeTests {
             )
         }
     }
+
+    @Test @MainActor
+    func addingAStoredProductReplacesItsDraftQuantity() {
+        let appState = AppState(
+            agentService: MockAgentService(),
+            comparisonService: MockComparisonService()
+        )
+        appState.draft.items = [ProductRequest(name: "Leche", quantity: 1, unit: .liter)]
+
+        appState.addProducts([ProductRequest(name: "Leche", quantity: 3, unit: .liter)])
+
+        #expect(appState.draft.items.count == 1)
+        #expect(appState.draft.items[0].quantity == 3)
+    }
+
+    @Test @MainActor
+    func retryingAFailedMessageDoesNotDuplicateTheUserMessage() async {
+        let appState = AppState(
+            agentService: AlwaysFailingAgentService(),
+            comparisonService: MockComparisonService()
+        )
+
+        _ = await appState.send("2 litros de leche")
+        _ = await appState.send("2 litros de leche")
+
+        #expect(appState.messages.filter { $0.role == .user }.count == 1)
+        #expect(appState.messages.filter { $0.kind == .error }.count == 1)
+    }
+}
+
+private struct AlwaysFailingAgentService: AgentServicing {
+    func updateDraft(
+        message: String,
+        currentItems: [ProductRequest]
+    ) async throws -> AgentResponse {
+        throw AgentServiceError.noProductsFound
+    }
 }

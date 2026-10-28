@@ -17,36 +17,38 @@ struct AppTheme {
 extension AppTheme {
     static let grocery = AppTheme(
         lightColors: AppThemeColors(
-            brandPrimary: Color(red: 0.08, green: 0.45, blue: 0.25),
+            brandPrimary: BarasuPalette.accent,
             brandOnPrimary: .white,
-            brandSecondary: Color(red: 0.88, green: 0.96, blue: 0.91),
-            backgroundPrimary: Color(red: 0.97, green: 0.98, blue: 0.97),
-            backgroundSecondary: Color(red: 0.93, green: 0.95, blue: 0.94),
+            brandSecondary: BarasuPalette.accent.opacity(0.10),
+            backgroundPrimary: .white,
+            backgroundSecondary: BarasuPalette.surface,
+            cellBackground: BarasuPalette.surface,
             surfacePrimary: .white,
-            surfaceElevated: .white,
-            textPrimary: Color(red: 0.08, green: 0.10, blue: 0.09),
-            textSecondary: Color(red: 0.35, green: 0.39, blue: 0.37),
-            borderSubtle: Color(red: 0.82, green: 0.85, blue: 0.83),
-            statusSuccess: Color(red: 0.08, green: 0.45, blue: 0.25),
-            statusWarning: Color(red: 0.67, green: 0.38, blue: 0.03),
+            surfaceElevated: BarasuPalette.surface,
+            textPrimary: BarasuPalette.primary,
+            textSecondary: BarasuPalette.primary.opacity(0.64),
+            borderSubtle: BarasuPalette.neutral,
+            statusSuccess: BarasuPalette.success,
+            statusWarning: BarasuPalette.alert,
             statusError: Color(red: 0.72, green: 0.12, blue: 0.13),
-            statusInformation: Color(red: 0.10, green: 0.36, blue: 0.66)
+            statusInformation: BarasuPalette.accent
         ),
         darkColors: AppThemeColors(
-            brandPrimary: Color(red: 0.35, green: 0.82, blue: 0.52),
-            brandOnPrimary: Color(red: 0.03, green: 0.13, blue: 0.07),
-            brandSecondary: Color(red: 0.10, green: 0.25, blue: 0.16),
-            backgroundPrimary: Color(red: 0.05, green: 0.07, blue: 0.06),
-            backgroundSecondary: Color(red: 0.09, green: 0.12, blue: 0.10),
-            surfacePrimary: Color(red: 0.11, green: 0.14, blue: 0.12),
-            surfaceElevated: Color(red: 0.15, green: 0.18, blue: 0.16),
-            textPrimary: Color(red: 0.94, green: 0.96, blue: 0.95),
-            textSecondary: Color(red: 0.69, green: 0.74, blue: 0.71),
-            borderSubtle: Color(red: 0.27, green: 0.32, blue: 0.29),
-            statusSuccess: Color(red: 0.35, green: 0.82, blue: 0.52),
-            statusWarning: Color(red: 0.96, green: 0.68, blue: 0.25),
+            brandPrimary: BarasuPalette.accent,
+            brandOnPrimary: .white,
+            brandSecondary: BarasuPalette.accent.opacity(0.18),
+            backgroundPrimary: Color(uiColor: .systemBackground),
+            backgroundSecondary: Color(uiColor: .secondarySystemBackground),
+            cellBackground: Color(uiColor: .secondarySystemBackground),
+            surfacePrimary: Color(uiColor: .systemBackground),
+            surfaceElevated: Color(uiColor: .tertiarySystemBackground),
+            textPrimary: .primary,
+            textSecondary: .secondary,
+            borderSubtle: Color(uiColor: .separator),
+            statusSuccess: BarasuPalette.success,
+            statusWarning: BarasuPalette.alert,
             statusError: Color(red: 1.00, green: 0.48, blue: 0.48),
-            statusInformation: Color(red: 0.45, green: 0.68, blue: 1.00)
+            statusInformation: BarasuPalette.accent
         )
     )
 }

@@ -6,6 +6,7 @@ struct HistoryView: View {
     let onRepeatOrder: (CompletedOrder) -> Void
 
     @State private var selection: HistorySection = .orders
+    @State private var searchText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,49 +21,35 @@ struct HistoryView: View {
 
             switch selection {
             case .orders:
-                ordersContent
+                OrderHistoryList(
+                    orders: filteredOrders,
+                    isSearching: !searchText.isEmpty,
+                    onRepeatOrder: onRepeatOrder
+                )
             case .products:
-                productsContent
+                ProductHistoryList(
+                    products: filteredProducts,
+                    isSearching: !searchText.isEmpty
+                )
             }
         }
         .navigationTitle("Historial")
+        .toolbarTitleDisplayMode(.inlineLarge)
+        .searchable(text: $searchText, prompt: "Buscar en el historial")
     }
 
-    @ViewBuilder
-    private var ordersContent: some View {
-        if orders.isEmpty {
-            ContentUnavailableView(
-                "Sin compras anteriores",
-                systemImage: "clock.arrow.circlepath",
-                description: Text("Las comparaciones completadas aparecerán aquí.")
-            )
-        } else {
-            List(orders) { order in
-                NavigationLink {
-                    OrderDetailView(order: order, onRepeat: onRepeatOrder)
-                } label: {
-                    OrderHistoryRow(order: order)
-                }
-                .accessibilityHint("Abre el detalle de la compra")
-            }
-            .listStyle(.plain)
+    private var filteredOrders: [CompletedOrder] {
+        guard !searchText.isEmpty else { return orders }
+        return orders.filter { order in
+            order.requestedItems.contains { $0.name.localizedCaseInsensitiveContains(searchText) }
+                || order.completedAt.formatted(date: .abbreviated, time: .omitted)
+                    .localizedCaseInsensitiveContains(searchText)
         }
     }
 
-    @ViewBuilder
-    private var productsContent: some View {
-        if frequentProducts.isEmpty {
-            ContentUnavailableView(
-                "Sin productos frecuentes",
-                systemImage: "basket",
-                description: Text("Los productos aparecerán después de completar comparaciones.")
-            )
-        } else {
-            List(frequentProducts) { product in
-                ProductHistoryRow(product: product)
-            }
-            .listStyle(.plain)
-        }
+    private var filteredProducts: [ProductRequest] {
+        guard !searchText.isEmpty else { return frequentProducts }
+        return frequentProducts.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 }
 

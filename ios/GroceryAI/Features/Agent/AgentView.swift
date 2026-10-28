@@ -2,135 +2,104 @@ import SwiftUI
 
 struct AgentView: View {
     @Bindable var appState: AppState
+    @Bindable var composerState: AgentComposerState
 
-    @State private var input = ""
-    @State private var presentedSheet: AgentSheet?
-    @State private var editingProduct: ProductRequest?
-    @FocusState private var inputIsFocused: Bool
+    @State private var composerOverlayHeight: CGFloat = 0
+    @State private var scrollPosition = ScrollPosition(edge: .bottom)
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: AppSpacing.medium) {
-                        ForEach(appState.messages) { message in
-                            ChatMessageBubble(message: message)
-                                .id(message.id)
-                        }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: AppSpacing.large) {
+                AgentStatusView(loadingState: appState.loadingState)
 
-                        if !appState.draft.isEmpty {
-                            DraftCard(
-                                draft: appState.draft,
-                                onEdit: { editingProduct = $0 },
-                                onDelete: appState.removeProducts
-                            )
-                            .id("draft")
-                        }
+                if appState.messages.isEmpty && appState.draft.isEmpty {
+                    AgentEmptyStateView()
+                        .frame(maxWidth: .infinity)
+                        .containerRelativeFrame(.vertical, count: 5, span: 3, spacing: 0)
+                } else {
+                    ForEach(appState.messages) { message in
+                        ChatMessageBubble(message: message)
+                            .id(message.id)
                     }
-                    .padding(AppSpacing.large)
-                }
-                .onChange(of: appState.messages.count) {
-                    withAnimation { proxy.scrollTo("draft", anchor: .bottom) }
+
+                    if !appState.draft.isEmpty {
+                        DraftCard(
+                            draft: appState.draft,
+                            onEdit: editProduct,
+                            onDelete: appState.removeProducts,
+                            onCompare: showLocation
+                        )
+                        .id("draft")
+                    }
                 }
             }
-
-            if case .failed(let message) = appState.loadingState {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal, AppSpacing.large)
-                    .onTapGesture { appState.clearError() }
-            }
-
-            AgentComposer(
-                text: $input,
-                isFocused: $inputIsFocused,
-                isLoading: appState.loadingState == .updatingDraft,
-                onSend: send,
-                onAddFrequent: { presentedSheet = .frequentProducts },
-                onAddPreviousOrder: { presentedSheet = .previousOrders }
-            )
+            .padding(AppSpacing.large)
         }
-        .navigationTitle("Mi súper")
+        .contentMargins(.bottom, composerOverlayHeight, for: .scrollContent)
+        .defaultScrollAnchor(.bottom)
+        .defaultScrollAnchor(.top, for: .alignment)
+        .scrollPosition($scrollPosition)
+        .scrollDismissesKeyboard(.interactively)
+        .onChange(of: appState.messages.count) {
+            withAnimation(.snappy) {
+                scrollPosition.scrollTo(edge: .bottom)
+            }
+        }
+        .onChange(of: composerOverlayHeight) { previousHeight, height in
+            guard previousHeight == 0, height > 0 else { return }
+            Task { @MainActor in
+                await Task.yield()
+                scrollPosition.scrollTo(edge: .bottom)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            ZStack(alignment: .bottom) {
+                BottomContentFade()
+                    .frame(height: composerOverlayHeight + AppControlSize.bottomContentFadeExtension)
+                    .ignoresSafeArea(edges: .bottom)
+
+                AgentComposerOverlay(appState: appState, composerState: composerState)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        composerOverlayHeight = height
+                    }
+            }
+        }
+        .navigationTitle("Tu súper")
+        .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Comparar", systemImage: "cart.badge.questionmark") {
-                    presentedSheet = .location
-                }
-                .disabled(appState.draft.isEmpty)
+                Button("Configuración", systemImage: "gearshape", action: showSettings)
             }
         }
-        .sheet(item: $editingProduct) { product in
-            ProductEditorView(product: product) { updated in
-                appState.updateProduct(updated)
-            }
-            .presentationDetents([.medium])
+        .sheet(item: $composerState.presentedSheet) { destination in
+            AgentSheetView(destination: destination, appState: appState)
         }
-        .sheet(item: $presentedSheet) { sheet in
-            sheetContent(sheet)
-        }
-        .fullScreenCover(isPresented: Binding(
-            get: { appState.comparisonPlan != nil },
-            set: { if !$0 { appState.comparisonPlan = nil } }
-        )) {
-            if let plan = appState.comparisonPlan {
-                NavigationStack {
-                    ComparisonResultView(plan: plan) {
-                        appState.completeComparison()
-                    }
+        .fullScreenCover(item: $appState.comparisonPlan) { plan in
+            NavigationStack {
+                ComparisonResultView(plan: plan, onDone: appState.completeComparison)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Cerrar") { appState.comparisonPlan = nil }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func sheetContent(_ sheet: AgentSheet) -> some View {
-        switch sheet {
-        case .frequentProducts:
-            ProductPickerView(products: appState.frequentProducts) { product in
-                appState.addProduct(product)
-            }
-        case .previousOrders:
-            PreviousOrderPickerView(orders: appState.orders) { order in
-                appState.repeatOrder(order)
-                presentedSheet = nil
-            }
-        case .location:
-            NavigationStack {
-                if appState.loadingState == .comparing {
-                    ComparisonLoadingView()
-                } else {
-                    LocationRequestView(initialPostalCode: appState.postalCode) { postalCode in
-                        Task {
-                            await appState.compare(postalCode: postalCode)
-                            if appState.comparisonPlan != nil {
-                                presentedSheet = nil
+                            Button("Cerrar", systemImage: "xmark") {
+                                appState.comparisonPlan = nil
                             }
+                            .labelStyle(.iconOnly)
                         }
                     }
-                }
             }
-            .presentationDetents([.large])
         }
     }
 
-    private func send() {
-        let message = input
-        input = ""
-        inputIsFocused = false
-        Task { await appState.send(message) }
+    private func editProduct(_ product: ProductRequest) {
+        composerState.presentedSheet = .editProduct(product)
     }
-}
 
-private enum AgentSheet: String, Identifiable {
-    case frequentProducts
-    case previousOrders
-    case location
+    private func showLocation() {
+        composerState.presentedSheet = .location
+    }
 
-    var id: String { rawValue }
+    private func showSettings() {
+        composerState.presentedSheet = .settings
+    }
 }

@@ -71,6 +71,8 @@ El resultado es `partial` porque el precio publicado no confirma existencias en 
 
 `ScrapedListing.imageUrl` es opcional y procede de metadatos de la ficha principal (`og:image`), con HTTPS y hosts CDN de las tiendas permitidos. No se toman imágenes de recomendaciones ni logotipos. La web las muestra después de la solicitud, con texto alternativo y respaldo si no cargan. Se renueva una caché que carece de imágenes. La migración 004 se aplicó en el proyecto Supabase de Barasu el 28 de octubre de 2026 mediante SQL Editor: cinco ofertas de leche devolvieron foto desde la API y una segunda lectura RPC devolvió las cinco URLs almacenadas. Las observaciones antiguas obtienen foto al volver a consultarse desde la fuente. El SQL Editor no registra la ejecución en el historial de Supabase CLI; antes de usar `supabase db push` en ese proyecto hay que conciliar las migraciones 001–004 con `supabase migration repair` desde una cuenta con acceso.
 
+Cuando una oferta seleccionada forma parte de un plan, `PlanLine.image_url` conserva esa misma imagen como un campo opcional. Los clientes deben mostrar un respaldo neutro si la fuente no proporciona una imagen o si la descarga falla.
+
 ## Consulta local explícita y robustez del catálogo
 
 `product_prices.price_scope` acepta `published` (predeterminado, precios de referencia) o `local` (requiere location). En local, tanto caché como resultados nuevos deben llevar evidencia coincidente de CP, modalidad, sucursal si aplica y observación menor a cinco minutos. Un fallo no cambia automáticamente a published. La web ofrece esa alternativa mediante una acción explícita, limpia resultados al cambiar ubicación y activa local al cambiar CP.

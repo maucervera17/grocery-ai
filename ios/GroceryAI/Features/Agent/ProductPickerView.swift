@@ -1,46 +1,45 @@
 import SwiftUI
 
 struct ProductPickerView: View {
-    let products: [ProductRequest]
-    let onAdd: (ProductRequest) -> Void
+    let onAdd: ([ProductRequest]) -> Void
 
-    @Environment(\.dismiss) private var dismiss
+    @State private var items: [SelectableProduct]
+
+    init(products: [ProductRequest], onAdd: @escaping ([ProductRequest]) -> Void) {
+        self.onAdd = onAdd
+        _items = State(initialValue: products.map { SelectableProduct(product: $0, isSelected: false) })
+    }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if products.isEmpty {
-                    EmptyStateView(
-                        title: "Sin productos frecuentes",
-                        systemImage: "repeat",
-                        message: "Completa una comparación para crear tu historial."
-                    )
-                } else {
-                    List(products) { product in
-                        Button {
-                            onAdd(product)
-                            dismiss()
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(product.name)
-                                    Text(product.quantityDescription)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "plus.circle.fill")
-                            }
-                        }
-                    }
+        Group {
+            if items.isEmpty {
+                ContentUnavailableView(
+                    "Sin productos frecuentes",
+                    systemImage: "basket",
+                    description: Text("Los productos aparecerán después de guardar comparaciones.")
+                )
+            } else {
+                List($items) { $item in
+                    SelectableProductRow(item: $item)
                 }
-            }
-            .navigationTitle("Productos frecuentes")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cerrar") { dismiss() }
+                .safeAreaInset(edge: .bottom) {
+                    AddProductsButton(title: addButtonTitle) {
+                        onAdd(selectedProducts)
+                    }
+                    .disabled(selectedProducts.isEmpty)
+                    .padding(.horizontal, AppSpacing.large)
+                    .padding(.vertical, AppSpacing.medium)
                 }
             }
         }
+    }
+
+    private var selectedProducts: [ProductRequest] {
+        items.filter(\.isSelected).map(\.product)
+    }
+
+    private var addButtonTitle: LocalizedStringKey {
+        let count = selectedProducts.count
+        return count == 1 ? "Agregar 1 producto" : "Agregar \(count) productos"
     }
 }

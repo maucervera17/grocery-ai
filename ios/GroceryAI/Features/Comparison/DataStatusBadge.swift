@@ -21,7 +21,7 @@ struct DataStatusBadge: View {
         switch status.rawValue {
         case "verified": "Verificado"
         case "stale": "Desactualizado"
-        default: "Demostración"
+        default: "Sin verificar"
         }
     }
 

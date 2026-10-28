@@ -11,7 +11,7 @@ struct ComparisonSummaryCard: View {
 
         SurfaceCard {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Label("Mejor combinación estimada", systemImage: "checkmark.seal.fill")
+                Label("Mejor opción", systemImage: "checkmark.seal.fill")
                     .font(.headline)
                     .foregroundStyle(colors.statusSuccess)
 

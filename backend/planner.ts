@@ -47,6 +47,7 @@ export function candidate(item: Item, offer: Offer): Candidate | null {
         ? Math.round((r.priceCents * 100000) / pack.amount)
         : null,
       product_url: r.productUrl,
+      ...(r.imageUrl ? { image_url: r.imageUrl } : {}),
       checked_at: r.checkedAt,
       data_status: offer.status,
       match_type: "similar",

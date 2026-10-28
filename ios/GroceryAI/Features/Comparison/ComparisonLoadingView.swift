@@ -20,15 +20,11 @@ struct ComparisonLoadingView: View {
                 Text(message)
                     .font(.title2.bold())
 
-                Text("Estamos buscando la combinación con el menor costo estimado.")
+                Text("Buscando el menor total.")
                     .font(.body)
                     .foregroundStyle(colors.textSecondary)
                     .multilineTextAlignment(.center)
             }
-
-            Text("Los totales no incluyen transporte ni entrega.")
-                .font(.footnote)
-                .foregroundStyle(colors.textSecondary)
         }
         .padding(AppSpacing.extraLarge)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

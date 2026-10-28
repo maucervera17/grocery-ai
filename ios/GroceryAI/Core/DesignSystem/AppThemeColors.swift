@@ -6,6 +6,7 @@ struct AppThemeColors {
     let brandSecondary: Color
     let backgroundPrimary: Color
     let backgroundSecondary: Color
+    let cellBackground: Color
     let surfacePrimary: Color
     let surfaceElevated: Color
     let textPrimary: Color

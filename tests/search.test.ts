@@ -198,6 +198,19 @@ test("round up packages and convert kg/g, L/ml, dozen/piece without float off-by
     2,
   );
 });
+test("selected plan lines preserve optional product images", () => {
+  const imageUrl = "https://cdn.example.com/products/milk.jpg";
+  const line = candidate(basket[0], {
+    listing: { ...fixtures[0], imageUrl },
+    status: "verified",
+  })!.line;
+  assert.equal(line.image_url, imageUrl);
+  assert.equal(
+    candidate(basket[0], { listing: fixtures[0], status: "verified" })!.line
+      .image_url,
+    undefined,
+  );
+});
 test("minimize actual spend, not unit price or cheapest package sticker", () => {
   const item = { ...basket[0], quantity: 1 };
   const rows = [

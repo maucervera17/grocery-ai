@@ -10,70 +10,74 @@ struct StorePlanItemRow: View {
     var body: some View {
         let colors = theme.colors(for: colorScheme)
 
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                    Text(item.productName)
-                        .font(.body.weight(.semibold))
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            HStack(alignment: .top, spacing: AppSpacing.medium) {
+                ProductThumbnail(imageURL: item.imageURL)
+
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
+                        MatchStatusIndicator(isAlternative: isAlternative)
+
+                        Text(item.productName)
+                            .font(.body.weight(.semibold))
+
+                        Spacer(minLength: AppSpacing.small)
+
+                        Text(MoneyFormatter.string(cents: item.lineTotalCents, currencyCode: currencyCode))
+                            .font(.body.weight(.semibold))
+                    }
 
                     if let brand = item.brand, !brand.isEmpty {
                         Text(brand)
                             .font(.caption)
                             .foregroundStyle(colors.textSecondary)
                     }
+
+                    Text(packageDescription)
+                        .font(.subheadline)
+                        .foregroundStyle(colors.textSecondary)
+
+                    if item.dataStatus.rawValue != "demo" {
+                        DataStatusBadge(status: item.dataStatus)
+                    }
                 }
-
-                Spacer(minLength: AppSpacing.medium)
-
-                Text(MoneyFormatter.string(cents: item.lineTotalCents, currencyCode: currencyCode))
-                    .font(.body.weight(.semibold))
             }
 
-            Text(packageDescription)
-                .font(.subheadline)
+            DisclosureGroup("Detalles") {
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    Label(
+                        "Solicitado: \(ProductQuantityFormatter.string(quantity: item.requestedQuantity, unit: item.requestedUnit))",
+                        systemImage: "cart"
+                    )
+
+                    if let unitPriceDescription {
+                        Label(unitPriceDescription, systemImage: "scalemass")
+                    }
+
+                    if let regularPrice = item.regularPriceCents, regularPrice > item.priceCents {
+                        Label(
+                            "Regular: \(MoneyFormatter.string(cents: regularPrice, currencyCode: currencyCode))",
+                            systemImage: "tag"
+                        )
+                    }
+
+                    HStack {
+                        Label(
+                            item.checkedAt.formatted(date: .abbreviated, time: .shortened),
+                            systemImage: "clock"
+                        )
+
+                        Spacer()
+
+                        Link("Fuente", destination: item.productURL)
+                    }
+                }
+                .font(.caption)
                 .foregroundStyle(colors.textSecondary)
-
-            HStack(spacing: AppSpacing.medium) {
-                Text(
-                    "Pediste \(ProductQuantityFormatter.string(quantity: item.requestedQuantity, unit: item.requestedUnit))"
-                )
-
-                if let unitPriceDescription {
-                    Text(unitPriceDescription)
-                }
+                .padding(.top, AppSpacing.small)
             }
-            .font(.caption)
-            .foregroundStyle(colors.textSecondary)
-
-            if let regularPrice = item.regularPriceCents, regularPrice > item.priceCents {
-                Text("Precio regular: \(MoneyFormatter.string(cents: regularPrice, currencyCode: currencyCode))")
-                    .font(.caption)
-                    .foregroundStyle(colors.textSecondary)
-            }
-
-            HStack(spacing: AppSpacing.small) {
-                DataStatusBadge(status: item.dataStatus)
-
-                if item.matchType.rawValue == "similar" {
-                    Text("Sustituto")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, AppSpacing.small)
-                        .padding(.vertical, AppSpacing.extraSmall)
-                        .background(colors.statusWarning.opacity(0.16), in: .capsule)
-                        .foregroundStyle(colors.statusWarning)
-                }
-            }
-
-            HStack {
-                Text("Revisado \(item.checkedAt.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.caption2)
-                    .foregroundStyle(colors.textSecondary)
-
-                Spacer()
-
-                Link("Ver fuente", destination: item.productURL)
-                    .font(.caption)
-            }
+            .font(.caption.weight(.medium))
+            .tint(colors.brandPrimary)
         }
         .accessibilityElement(children: .contain)
     }
@@ -84,6 +88,10 @@ struct StorePlanItemRow: View {
             unit: item.packageUnit
         )
         return "\(item.packageCount) × \(packageSize) · \(MoneyFormatter.string(cents: item.priceCents, currencyCode: currencyCode)) c/u"
+    }
+
+    private var isAlternative: Bool {
+        item.matchType.rawValue == "similar"
     }
 
     private var unitPriceDescription: String? {
