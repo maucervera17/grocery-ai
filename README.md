@@ -6,6 +6,32 @@ Estado actual y pruebas de wishlist, GPS y ElevenLabs: [guía de integración](d
 
 Backend local TypeScript/Node.js 22+ con Fastify, Zod y Vercel AI SDK. Implementa el acuerdo actualizado: un endpoint, borrador sin estado y comparación de una lista con hasta dos tiendas. Fuentes elegidas: **Chedraui y Bodega Aurrera**.
 
+## Tecnologías y dependencias
+
+| Área | Tecnología | Versión o integración |
+|---|---|---|
+| Runtime | Node.js | 22 o posterior |
+| Backend | TypeScript | 7.0.2 |
+| Servidor HTTP | Fastify | 5.12.7 |
+| Validación de datos | Zod | 4.6.7 |
+| Agentes IA | Vercel AI SDK | 7.0.155 |
+| Proveedor IA | `@ai-sdk/anthropic` | 4.0.90 |
+| Voz | `@elevenlabs/client` | 1.32.0 |
+| Frontend | JavaScript, HTML y CSS vanilla | Interfaz web estática |
+| Base de datos | Supabase y PostgreSQL | REST/RPC y migraciones SQL |
+| Scraping | Firecrawl REST API | Chedraui, Bodega Aurrera y Walmart |
+| Geolocalización | Nominatim/OpenStreetMap | Resolución de coordenadas a código postal |
+| Aplicación móvil | SwiftUI y SwiftData | iOS 26, Swift 6 |
+| Ubicación móvil | CoreLocation y MapKit | Servicios nativos de iOS |
+
+### Herramientas de desarrollo
+
+- `tsx` 4.23.15
+- esbuild 0.28.2
+- Prettier 3.9.10
+- `@types/node` 26.6.5
+- Node Test Runner (`node:test`)
+
 ## Arranque local
 
 ```sh
