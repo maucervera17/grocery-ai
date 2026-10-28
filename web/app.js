@@ -27,8 +27,24 @@ function save(){try{localStorage.setItem('baras-draft-v2',JSON.stringify(items))
 function notice(text){$('notice').innerHTML=text?`<div class="notice">${esc(text)}</div>`:''}
 function bubble(text,role){const div=document.createElement('div');div.className='bubble '+role;div.textContent=text;$('conversation').append(div)}
 function view(name){$('weekly-view').hidden=name!=='weekly';$('savings-view').hidden=name!=='savings';if(name==='weekly'){weekly.setDraft(items);weekly.show();}if(name==='savings')renderSavingsStats();$('agent-view').hidden=name!=='agent';$('history-view').hidden=name!=='history';$('composer').hidden=name!=='agent';document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='history'){renderWishlist();renderHistory();renderSavingsStats()}}
-function render(){save();const legacyUnspecified=items.length>=4&&items.every(i=>i.quantity===1&&i.unit==='piece');$('draft').innerHTML=requestedVisuals&&items.length?`<div class="draft-card"><div class="card-top"><h3>Tu lista para la semana <span style="color:var(--green)">✓</span></h3><span class="count">${items.length} productos</span></div><div class="products">${items.map(i=>`<div class="product"><span class="emoji">${emoji(i.name)}</span><strong>${esc(i.name)}</strong><small>${legacyUnspecified||i.unit==='package'&&i.quantity===1?'Presentación por elegir':`${esc(i.quantity)} ${esc(unit(i.unit))}`}</small></div>`).join('')}</div><button class="primary full" id="compare">Ver opciones de mi lista <span style="float:right">→</span></button><button class="secondary outline full" id="edit">Editar productos</button></div>`:'';
- $('compare')?.addEventListener('click',()=>{weekly.setDraft(items);view('weekly')});$('edit')?.addEventListener('click',editor);if(busy)lock(true);}
+function render(){
+ save();
+ if(requestedVisuals&&items.length)$('conversation').querySelector('.welcome')?.remove();
+ const legacyUnspecified=items.length>=4&&items.every(i=>i.quantity===1&&i.unit==='piece');
+ $('draft').innerHTML=requestedVisuals&&items.length?`<div class="draft-card"><div class="card-top"><h3>Tu lista para la semana <span style="color:var(--green)">✓</span></h3><span class="count">${items.length} productos</span></div><div class="draft-carousel-nav"><span>Desliza para ver todos</span><div><button type="button" id="draft-prev" aria-label="Productos anteriores">‹</button><button type="button" id="draft-next" aria-label="Productos siguientes">›</button></div></div><div class="products" id="draft-products" role="region" aria-label="Productos de tu lista" tabindex="0">${items.map(i=>`<div class="product"><span class="emoji">${emoji(i.name)}</span><strong>${esc(i.name)}</strong><small>${legacyUnspecified||i.unit==='package'&&i.quantity===1?'Presentación por elegir':`${esc(i.quantity)} ${esc(unit(i.unit))}`}</small></div>`).join('')}</div><button class="primary full" id="compare">Comparar lista completa <span style="float:right">→</span></button><button class="secondary outline full" id="edit">Editar productos</button></div>`:'';
+ const strip=$('draft-products');
+ if(strip){
+  const previous=$('draft-prev'),next=$('draft-next');
+  const sync=()=>{previous.disabled=strip.scrollLeft<=2;next.disabled=strip.scrollLeft+strip.clientWidth>=strip.scrollWidth-2};
+  previous.onclick=()=>strip.scrollBy({left:-strip.clientWidth*.8,behavior:'smooth'});
+  next.onclick=()=>strip.scrollBy({left:strip.clientWidth*.8,behavior:'smooth'});
+  strip.addEventListener('scroll',sync,{passive:true});
+  requestAnimationFrame(sync);
+ }
+ $('compare')?.addEventListener('click',()=>{weekly.setDraft(items);view('weekly');weekly.autoSelect()});
+ $('edit')?.addEventListener('click',editor);
+ if(busy)lock(true);
+}
 function lock(value){busy=value;document.querySelectorAll('button,input').forEach(e=>{if(!e.closest('#modal')&&!e.closest('#voice-panel')&&e.id!=='voice-open')e.disabled=value});}
 async function request(body){lock(true);notice('');const loading=document.createElement('div');loading.className='loading';loading.textContent=body.action==='product_prices'?'Buscando y comparando precios publicados':body.action==='compare'?'Comparando tu lista':'Organizando tu lista';$('conversation').append(loading);try{const r=await fetch('/v1/chat/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(95000)});const d=await r.json();if(!r.ok||(d.status==='error'&&!d.plan&&!d.comparison))throw Error(d.reply||'No se pudo completar. Intenta de nuevo.');return d;}catch(e){notice(e.name==='TimeoutError'?'El agente tardó más de lo esperado. Intenta de nuevo.':e.message);return null}finally{loading.remove();lock(false)}}
 async function requestWeekly(query){
