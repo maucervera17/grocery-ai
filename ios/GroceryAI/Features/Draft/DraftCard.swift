@@ -24,8 +24,6 @@ struct DraftCard: View {
                     } onDelete: {
                         onDelete(IndexSet(integer: index))
                     }
-
-                    if index < draft.items.count - 1 { Divider() }
                 }
 
                 PrimaryButton("Comparar precios", systemImage: "cart.badge.questionmark", action: onCompare)
