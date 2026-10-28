@@ -42,7 +42,7 @@ struct OrderDetailView: View {
             .padding(AppSpacing.large)
         }
         .navigationTitle("Compra anterior")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inlineLarge)
     }
 
     private var summaryCard: some View {
@@ -54,7 +54,7 @@ struct OrderDetailView: View {
                 Text(MoneyFormatter.string(cents: order.totalPriceCents, currencyCode: order.currencyCode))
                     .font(.largeTitle.bold())
 
-                Text("\(order.stores.count) tiendas · No incluye transporte ni entrega")
+                Label("\(order.stores.count) tiendas", systemImage: "storefront")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

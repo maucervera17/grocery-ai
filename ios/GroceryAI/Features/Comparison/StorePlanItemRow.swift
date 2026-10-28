@@ -33,24 +33,6 @@ struct StorePlanItemRow: View {
                 .font(.subheadline)
                 .foregroundStyle(colors.textSecondary)
 
-            HStack(spacing: AppSpacing.medium) {
-                Text(
-                    "Pediste \(ProductQuantityFormatter.string(quantity: item.requestedQuantity, unit: item.requestedUnit))"
-                )
-
-                if let unitPriceDescription {
-                    Text(unitPriceDescription)
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(colors.textSecondary)
-
-            if let regularPrice = item.regularPriceCents, regularPrice > item.priceCents {
-                Text("Precio regular: \(MoneyFormatter.string(cents: regularPrice, currencyCode: currencyCode))")
-                    .font(.caption)
-                    .foregroundStyle(colors.textSecondary)
-            }
-
             HStack(spacing: AppSpacing.small) {
                 DataStatusBadge(status: item.dataStatus)
 
@@ -64,16 +46,41 @@ struct StorePlanItemRow: View {
                 }
             }
 
-            HStack {
-                Text("Revisado \(item.checkedAt.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.caption2)
-                    .foregroundStyle(colors.textSecondary)
+            DisclosureGroup("Detalles") {
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    Label(
+                        "Solicitado: \(ProductQuantityFormatter.string(quantity: item.requestedQuantity, unit: item.requestedUnit))",
+                        systemImage: "cart"
+                    )
 
-                Spacer()
+                    if let unitPriceDescription {
+                        Label(unitPriceDescription, systemImage: "scalemass")
+                    }
 
-                Link("Ver fuente", destination: item.productURL)
-                    .font(.caption)
+                    if let regularPrice = item.regularPriceCents, regularPrice > item.priceCents {
+                        Label(
+                            "Regular: \(MoneyFormatter.string(cents: regularPrice, currencyCode: currencyCode))",
+                            systemImage: "tag"
+                        )
+                    }
+
+                    HStack {
+                        Label(
+                            item.checkedAt.formatted(date: .abbreviated, time: .shortened),
+                            systemImage: "clock"
+                        )
+
+                        Spacer()
+
+                        Link("Fuente", destination: item.productURL)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(colors.textSecondary)
+                .padding(.top, AppSpacing.small)
             }
+            .font(.caption.weight(.medium))
+            .tint(colors.brandPrimary)
         }
         .accessibilityElement(children: .contain)
     }

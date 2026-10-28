@@ -7,31 +7,26 @@ struct PreviousOrderPickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if orders.isEmpty {
-                    EmptyStateView(
-                        title: "Sin compras anteriores",
-                        systemImage: "clock.arrow.circlepath",
-                        message: "Tus comparaciones guardadas aparecerán aquí."
-                    )
-                } else {
-                    List(orders) { order in
-                        Button {
-                            onSelect(order)
-                        } label: {
-                            OrderHistoryRow(order: order)
-                        }
-                        .buttonStyle(.plain)
+        Group {
+            if orders.isEmpty {
+                EmptyStateView(
+                    title: "Sin compras anteriores",
+                    systemImage: "clock.arrow.circlepath",
+                    message: "Tus comparaciones guardadas aparecerán aquí."
+                )
+            } else {
+                List(orders) { order in
+                    Button {
+                        onSelect(order)
+                        dismiss()
+                    } label: {
+                        OrderHistoryRow(order: order)
                     }
-                }
-            }
-            .navigationTitle("Compra anterior")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cerrar") { dismiss() }
+                    .buttonStyle(.plain)
                 }
             }
         }
+        .navigationTitle("Compras anteriores")
+        .toolbarTitleDisplayMode(.inlineLarge)
     }
 }

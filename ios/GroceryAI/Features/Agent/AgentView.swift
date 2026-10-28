@@ -5,41 +5,65 @@ struct AgentView: View {
 
     @State private var input = ""
     @State private var presentedSheet: AgentSheet?
-    @State private var editingProduct: ProductRequest?
     @FocusState private var inputIsFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: AppSpacing.medium) {
-                        ForEach(appState.messages) { message in
-                            ChatMessageBubble(message: message)
-                                .id(message.id)
-                        }
+                    LazyVStack(alignment: .leading, spacing: AppSpacing.large) {
+                        AgentStatusView(loadingState: appState.loadingState)
 
-                        if !appState.draft.isEmpty {
-                            DraftCard(
-                                draft: appState.draft,
-                                onEdit: { editingProduct = $0 },
-                                onDelete: appState.removeProducts
-                            )
-                            .id("draft")
+                        if appState.messages.isEmpty && appState.draft.isEmpty {
+                            AgentEmptyStateView()
+                                .frame(maxWidth: .infinity)
+                                .containerRelativeFrame(.vertical, count: 5, span: 3, spacing: 0)
+                        } else {
+                            ForEach(appState.messages) { message in
+                                ChatMessageBubble(message: message)
+                                    .id(message.id)
+                            }
+
+                            if !appState.draft.isEmpty {
+                                DraftCard(
+                                    draft: appState.draft,
+                                    onEdit: editProduct,
+                                    onDelete: appState.removeProducts,
+                                    onCompare: showLocation
+                                )
+                                .id("draft")
+                            }
                         }
                     }
                     .padding(AppSpacing.large)
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: appState.messages.count) {
-                    withAnimation { proxy.scrollTo("draft", anchor: .bottom) }
+                    withAnimation(.snappy) {
+                        if appState.draft.isEmpty {
+                            proxy.scrollTo(appState.messages.last?.id, anchor: .bottom)
+                        } else {
+                            proxy.scrollTo("draft", anchor: .bottom)
+                        }
+                    }
                 }
             }
 
             if case .failed(let message) = appState.loadingState {
-                Text(message)
+                Button("Descartar error: \(message)", systemImage: "exclamationmark.circle", action: appState.clearError)
                     .font(.footnote)
                     .foregroundStyle(.red)
                     .padding(.horizontal, AppSpacing.large)
-                    .onTapGesture { appState.clearError() }
+                    .padding(.vertical, AppSpacing.small)
+            }
+
+            if !appState.orders.isEmpty || !appState.frequentProducts.isEmpty {
+                AgentQuickActionsView(
+                    canRepeatLastOrder: !appState.orders.isEmpty,
+                    onRepeatLastOrder: repeatLastOrder,
+                    onAddFrequentProducts: showAddContent
+                )
+                .padding(.vertical, AppSpacing.extraSmall)
             }
 
             AgentComposer(
@@ -47,75 +71,30 @@ struct AgentView: View {
                 isFocused: $inputIsFocused,
                 isLoading: appState.loadingState == .updatingDraft,
                 onSend: send,
-                onAddFrequent: { presentedSheet = .frequentProducts },
-                onAddPreviousOrder: { presentedSheet = .previousOrders }
+                onAddContent: showAddContent
             )
         }
-        .navigationTitle("Mi súper")
+        .navigationTitle("Tu súper")
+        .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Comparar", systemImage: "cart.badge.questionmark") {
-                    presentedSheet = .location
-                }
-                .disabled(appState.draft.isEmpty)
+                Button("Configuración", systemImage: "gearshape", action: showSettings)
             }
         }
-        .sheet(item: $editingProduct) { product in
-            ProductEditorView(product: product) { updated in
-                appState.updateProduct(updated)
-            }
-            .presentationDetents([.medium])
+        .sheet(item: $presentedSheet) { destination in
+            AgentSheetView(destination: destination, appState: appState)
         }
-        .sheet(item: $presentedSheet) { sheet in
-            sheetContent(sheet)
-        }
-        .fullScreenCover(isPresented: Binding(
-            get: { appState.comparisonPlan != nil },
-            set: { if !$0 { appState.comparisonPlan = nil } }
-        )) {
-            if let plan = appState.comparisonPlan {
-                NavigationStack {
-                    ComparisonResultView(plan: plan) {
-                        appState.completeComparison()
-                    }
+        .fullScreenCover(item: $appState.comparisonPlan) { plan in
+            NavigationStack {
+                ComparisonResultView(plan: plan, onDone: appState.completeComparison)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
-                            Button("Cerrar") { appState.comparisonPlan = nil }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func sheetContent(_ sheet: AgentSheet) -> some View {
-        switch sheet {
-        case .frequentProducts:
-            ProductPickerView(products: appState.frequentProducts) { product in
-                appState.addProduct(product)
-            }
-        case .previousOrders:
-            PreviousOrderPickerView(orders: appState.orders) { order in
-                appState.repeatOrder(order)
-                presentedSheet = nil
-            }
-        case .location:
-            NavigationStack {
-                if appState.loadingState == .comparing {
-                    ComparisonLoadingView()
-                } else {
-                    LocationRequestView(initialPostalCode: appState.postalCode) { postalCode in
-                        Task {
-                            await appState.compare(postalCode: postalCode)
-                            if appState.comparisonPlan != nil {
-                                presentedSheet = nil
+                            Button("Cerrar") {
+                                appState.comparisonPlan = nil
                             }
                         }
                     }
-                }
             }
-            .presentationDetents([.large])
         }
     }
 
@@ -125,12 +104,25 @@ struct AgentView: View {
         inputIsFocused = false
         Task { await appState.send(message) }
     }
-}
 
-private enum AgentSheet: String, Identifiable {
-    case frequentProducts
-    case previousOrders
-    case location
+    private func editProduct(_ product: ProductRequest) {
+        presentedSheet = .editProduct(product)
+    }
 
-    var id: String { rawValue }
+    private func showAddContent() {
+        presentedSheet = .addContent
+    }
+
+    private func showLocation() {
+        presentedSheet = .location
+    }
+
+    private func showSettings() {
+        presentedSheet = .settings
+    }
+
+    private func repeatLastOrder() {
+        guard let order = appState.orders.first else { return }
+        appState.repeatOrder(order)
+    }
 }

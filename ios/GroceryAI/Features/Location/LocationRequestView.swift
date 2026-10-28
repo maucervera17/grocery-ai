@@ -5,7 +5,7 @@ struct LocationRequestView: View {
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var locator = PostalCodeLocator()
+    @State private var locator = PostalCodeLocator()
     @State private var postalCode: String
     @FocusState private var isPostalCodeFocused: Bool
 
@@ -23,24 +23,18 @@ struct LocationRequestView: View {
         ScrollView {
             VStack(spacing: AppSpacing.extraLarge) {
                 Image(systemName: "location.circle.fill")
-                    .font(.system(size: 64))
+                    .font(.system(size: 52))
                     .foregroundStyle(colors.brandPrimary)
                     .accessibilityHidden(true)
 
-                VStack(spacing: AppSpacing.small) {
-                    Text("Busca precios cerca de ti")
-                        .font(.title.bold())
-                        .multilineTextAlignment(.center)
-
-                    Text("Usaremos tu código postal para consultar tiendas cercanas. No guardaremos tu ubicación exacta.")
-                        .font(.body)
-                        .foregroundStyle(colors.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
+                Text("Indica un código postal para buscar tiendas cercanas.")
+                    .font(.body)
+                    .foregroundStyle(colors.textSecondary)
+                    .multilineTextAlignment(.center)
 
                 SurfaceCard {
                     VStack(alignment: .leading, spacing: AppSpacing.large) {
-                        Button(locator.isLoading ? "Buscando código postal…" : "Usar mi ubicación", systemImage: "location.fill") {
+                        Button(locator.isLoading ? "Buscando…" : "Usar ubicación actual", systemImage: "location.fill") {
                             locator.request()
                             isPostalCodeFocused = false
                         }
@@ -54,7 +48,7 @@ struct LocationRequestView: View {
                         }
                         HStack {
                             Divider()
-                            Text("o ingresa tu código postal")
+                            Text("o escribe el código postal")
                                 .font(.caption)
                                 .foregroundStyle(colors.textSecondary)
                                 .fixedSize()
@@ -83,18 +77,21 @@ struct LocationRequestView: View {
                 }
                 .disabled(!isValidPostalCode)
 
-                Text("La ubicación solo se usa para esta comparación.")
+                Label("Solo se usa en esta comparación", systemImage: "lock")
                     .font(.footnote)
                     .foregroundStyle(colors.textSecondary)
-                    .multilineTextAlignment(.center)
             }
             .padding(AppSpacing.extraLarge)
         }
         .background(colors.backgroundPrimary)
-        .onReceive(locator.$postalCode) { code in if let code { postalCode = code } }
+        .onChange(of: locator.postalCode) {
+            if let code = locator.postalCode {
+                postalCode = code
+            }
+        }
         .onDisappear { locator.cancel() }
         .navigationTitle("Ubicación")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inlineLarge)
     }
 
     private var isValidPostalCode: Bool {

@@ -7,7 +7,7 @@ import SwiftData
 final class AppState {
     var selectedTab: AppTab = .agent
     var draft = ShoppingDraft()
-    var messages = MockFixtures.welcomeMessages
+    var messages: [ChatMessage] = []
     var orders: [CompletedOrder] = []
     var postalCode = ""
     var loadingState: ChatLoadingState = .idle

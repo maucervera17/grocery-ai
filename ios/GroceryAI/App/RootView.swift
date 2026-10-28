@@ -9,7 +9,7 @@ struct RootView: View {
         @Bindable var appState = appState
 
         TabView(selection: $appState.selectedTab) {
-            Tab("Lista", systemImage: "sparkles", value: AppTab.agent) {
+            Tab("Agente", systemImage: "bubble.left.and.bubble.right", value: AppTab.agent) {
                 NavigationStack {
                     AgentView(appState: appState)
                 }

@@ -19,11 +19,13 @@ struct ComparisonResultView: View {
             LazyVStack(alignment: .leading, spacing: AppSpacing.extraLarge) {
                 ComparisonSummaryCard(plan: plan)
                 ForEach(Array((plan.warnings ?? []).enumerated()), id: \.offset) { _, warning in
-                    Text(warning).font(.footnote).foregroundStyle(colors.textSecondary)
+                    Label(warning, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(colors.textSecondary)
                 }
 
                 VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    Text("Plan por supermercado")
+                    Text("Tiendas")
                         .font(.title2.bold())
 
                     ForEach(plan.stores) { store in
@@ -35,7 +37,7 @@ struct ComparisonResultView: View {
                     UnmatchedItemsCard(items: plan.unmatchedItems)
                 }
 
-                Text("Los precios son estimados y no incluyen transporte ni entrega.")
+                Label("Precios estimados; entrega no incluida", systemImage: "info.circle")
                     .font(.footnote)
                     .foregroundStyle(colors.textSecondary)
 
@@ -47,7 +49,7 @@ struct ComparisonResultView: View {
         }
         .background(colors.backgroundPrimary)
         .navigationTitle("Comparación")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inlineLarge)
     }
 }
 
