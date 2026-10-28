@@ -25,6 +25,7 @@ export type Options = {
   timeoutMs?: number;
   ttlMs?: number;
 };
+const DEFAULT_SEARCH_TIMEOUT_MS = 75_000;
 export function failure(
   code: string,
   message: string,
@@ -35,7 +36,9 @@ export function failure(
 }
 export function createSearch(options: Options) {
   return async (input: SearchInput): Promise<Response> => {
-    const signal = AbortSignal.timeout(options.timeoutMs ?? 90000),
+    const signal = AbortSignal.timeout(
+        options.timeoutMs ?? DEFAULT_SEARCH_TIMEOUT_MS,
+      ),
       errors: Failure[] = [];
     if (input.action === "product_prices")
       return productPrices(input, options, signal);
