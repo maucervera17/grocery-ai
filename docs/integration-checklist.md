@@ -24,8 +24,10 @@ probada de dependencias externas; no declara terminado el proyecto iOS.
 
 ## Implementado, con verificación externa pendiente
 
-- [ ] Aplicar migración a Supabase remoto de la cuenta indicada. Organización Baras creada;
-  proyecto remoto vlfqqniorpfveuxhqnpt creado; tablas y conexión remotas pendientes.
+- [x] Supabase remoto Baras (`vlfqqniorpfveuxhqnpt`): ambas migraciones y seed
+  aplicados mediante SQL Editor en una transacción; ocho ofertas y dos tiendas verificadas.
+- [x] Backend local conectado a Supabase remoto con credencial exclusiva del servidor.
+  `smoke:db` y `smoke` aprobados: Claude → API → base remota → total 13400, ahorro 600.
 - [ ] Prueba de Firecrawl REST desde backend con credenciales de aplicación.
   El login MCP no equivale a esta conexión. Pestaña de login preparada.
 - [ ] Cliente HTTP iOS conectado en la copia local de feat/ios. Sintaxis y proyecto plist
@@ -35,7 +37,7 @@ probada de dependencias externas; no declara terminado el proyecto iOS.
 - [x] Fixtures contractuales de respuesta lenta y datos vencidos.
 - [ ] Pruebas nativas del cliente HTTP en Xcode.
 - [ ] Video de respaldo real del flujo.
-- [x] Integración publicada en PR #2; checks de backend e iOS aprobados.
+- [x] Integración fusionada en PR #2; checks de backend e iOS aprobados.
 
 ## Evidencia
 
