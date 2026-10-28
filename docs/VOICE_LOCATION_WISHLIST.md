@@ -19,7 +19,7 @@ El CP no demuestra cobertura de un supermercado. La verificación de existencias
 
 El servidor entrega un token temporal WebRTC, nunca la clave. El agente usa `barasu_search` para consultar la API real y `barasu_save` para guardar una oferta de la última búsqueda ante petición explícita. El audio y la transcripción se procesan en ElevenLabs. Los límites del agente son 5 minutos por conversación, 2 conversaciones simultáneas y 20 diarias; el servidor limita inicios a 5/minuto.
 
-El endpoint de voz admite loopback solamente mientras no exista autenticación de usuarios. Funciona en el navegador local y el simulador conectado a localhost. Un iPhone físico o despliegue público requiere autenticación y servidor HTTPS accesible; no basta cambiar HOST. Las credenciales nunca se incluyen en la app.
+El endpoint de voz admite loopback en local. En el despliegue de demo, el backend exige HTTP Basic sobre HTTPS antes de emitir un token; si la solicitud lleva `Origin`, debe coincidir con el origen del servicio. Un cliente iOS debe configurar la URL HTTPS, presentar las credenciales de acceso al usuario y registrar `barasu_search` como herramienta cliente. La clave de ElevenLabs nunca se incluye en la app. Para un lanzamiento público se necesita autenticación individual en vez de la contraseña compartida de demo.
 
 ## Evidencia de esta entrega
 

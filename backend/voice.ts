@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 
 export type VoiceOptions = { apiKey?: string; agentId?: string; fetcher?: typeof fetch; allowedOrigins?: string[]; allowAuthenticatedRemote?: boolean };
-// This prototype has no user authentication yet. Do not expose paid voice tokens remotely.
+// Remote voice is enabled only when the app's access guard is configured.
 export function registerVoice(app: FastifyInstance, options: VoiceOptions = {}) {
   const configured = Boolean(options.apiKey && options.agentId);
   const attempts = new Map<string, { start: number; count: number }>();
@@ -15,7 +15,7 @@ export function registerVoice(app: FastifyInstance, options: VoiceOptions = {}) 
     if ((!loopback && !options.allowAuthenticatedRemote) ||
         (req.headers.origin && !origins.includes(req.headers.origin) &&
           !(options.allowAuthenticatedRemote && remoteOrigin)))
-      return reply.code(403).send({ error: 'VOICE_ACCESS_DENIED', message: 'La voz está habilitada solo en el entorno local. El despliegue requiere autenticación de usuarios.' });
+      return reply.code(403).send({ error: 'VOICE_ACCESS_DENIED', message: 'La solicitud de voz no proviene de un origen permitido.' });
     if (!configured) return reply.code(503).send({ error:'VOICE_NOT_CONFIGURED', message:'Falta configurar ElevenLabs en el servidor.' });
     const now = Date.now();
     const counter = attempts.get(req.ip);

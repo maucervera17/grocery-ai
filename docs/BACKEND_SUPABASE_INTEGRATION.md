@@ -66,7 +66,7 @@ La fuente de verdad es `contracts/schema.ts`. `npm run contracts` genera `contra
 | `POST /v1/chat/search`, `action: compare` | Enviar `items` y opcionalmente `location`, `preferences.max_stores` 1 o 2. Devuelve un `plan` con tiendas, líneas, totales, faltantes y ahorro estimado si hay referencia válida. |
 | `POST /v1/location/resolve` | Enviar `{latitude, longitude}`; devuelve `postal_code`, `area` y `requires_confirmation`. El usuario debe confirmar el CP sugerido. |
 | `GET /v1/voice/status` | Indica si ElevenLabs está configurado. |
-| `POST /v1/voice/session` | Entrega token temporal para ElevenLabs; por ahora restringido a loopback. |
+| `POST /v1/voice/session` | Entrega token temporal para ElevenLabs. En local admite loopback; en Render exige HTTP Basic sobre HTTPS y, si se envía `Origin`, el mismo origen del servicio. |
 
 Ejemplo mínimo de consulta de un producto:
 
@@ -97,7 +97,7 @@ Para una base local de desarrollo, sigue `database/README.md` y `supabase/config
 
 `ios/GroceryAI/Data/API/GroceryAPIClient.swift` contiene `APIConfiguration.baseURL` (actualmente `http://127.0.0.1:3000`) y el cliente tipado. El simulador en el mismo Mac puede usar esa URL. Un iPhone físico necesita un backend HTTPS accesible, configuración de red/ATS correspondiente y autenticación antes de exposición pública. El cliente iOS actual implementa `update_draft` y `compare`; el contrato backend también tiene `product_prices`, pero no presupongas que la UI nativa ya lo llama. La foto de cada línea de plan está en `image_url` opcional. La geolocalización iOS usa CoreLocation/CLGeocoder y envía CP, no coordenadas al backend.
 
-La voz web usa ElevenLabs con `gpt-4.1-mini` y `eleven_flash_v2_5` en el agente configurado; la configuración versionada está en `config/elevenlabs-agent.json`. El endpoint de sesión local no habilita por sí solo voz en un iPhone físico. El historial de ahorro y wishlist no tienen sincronización multiusuario por Supabase. Tampoco hay creación automática de un carrito externo: los enlaces llevan a las tiendas para que el usuario finalice allí.
+La voz web usa ElevenLabs con `gpt-4.1-mini` y `eleven_flash_v2_5` en el agente configurado; la configuración versionada está en `config/elevenlabs-agent.json`. En Render, `ELEVENLABS_API_KEY` y `ELEVENLABS_AGENT_ID` quedan en el servidor; iOS solicita un token temporal en `/v1/voice/session` y debe enviar la autenticación del despliegue. `barasu_search` es una herramienta del cliente, así que el cliente iOS debe registrar su manejador para ejecutar las consultas. El historial de ahorro y wishlist no tienen sincronización multiusuario por Supabase. Tampoco hay creación automática de un carrito externo: los enlaces llevan a las tiendas para que el usuario finalice allí.
 
 ## Verificación y diagnóstico
 

@@ -20,6 +20,11 @@ test("remote deployment protects application and paid routes while exposing heal
     const voice = await app.inject({method:"POST",url:"/v1/voice/session",remoteAddress:"10.0.0.2",headers:{authorization,host:"barasu-api.onrender.com",origin:"https://barasu-api.onrender.com"}});
     assert.equal(voice.statusCode, 200);
     assert.deepEqual(voice.json(), { conversation_token: "temporary" });
+    const nativeVoice = await app.inject({method:"POST",url:"/v1/voice/session",remoteAddress:"10.0.0.3",headers:{authorization,host:"barasu-api.onrender.com"}});
+    assert.equal(nativeVoice.statusCode, 200);
+    assert.deepEqual(nativeVoice.json(), { conversation_token: "temporary" });
+    const nativeDenied = await app.inject({method:"POST",url:"/v1/voice/session",remoteAddress:"10.0.0.3",headers:{host:"barasu-api.onrender.com"}});
+    assert.equal(nativeDenied.statusCode, 401);
     const foreignOrigin = await app.inject({method:"POST",url:"/v1/voice/session",remoteAddress:"10.0.0.2",headers:{authorization,host:"barasu-api.onrender.com",origin:"https://other.example"}});
     assert.equal(foreignOrigin.statusCode, 403);
   } finally {
