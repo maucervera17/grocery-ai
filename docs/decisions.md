@@ -9,4 +9,4 @@
 - No se reemplaza una respuesta parcial por una respuesta exitosa inventada.
 - La fuente de verdad del borrador e historial continúa en el cliente.
 - Queso Oaxaca usa el mismo catálogo/ranking; la demostración especial de frontend fue retirada.
-- No se modificó la base remota ni se subió código a GitHub en esta fase local.
+- Base remota aún sin migrar. Integración publicada en GitHub mediante PR #2, con checks de backend e iOS aprobados.

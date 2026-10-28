@@ -40,4 +40,4 @@ sin crear otra app. Configuración única: `APIConfiguration.baseURL`.
 El simulador puede usar 127.0.0.1; para dispositivo físico se requiere un servidor
 accesible por red y la configuración de red local de iOS correspondiente.
 El proyecto requiere Xcode con SDK iOS 26. En este Mac no está instalado Xcode;
-no se considera validada la compilación ni el flujo en simulador.
+la compilación se validó en GitHub Actions (run 40621570223), pero el flujo en simulador sigue pendiente.

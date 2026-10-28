@@ -25,17 +25,17 @@ probada de dependencias externas; no declara terminado el proyecto iOS.
 ## Implementado, con verificación externa pendiente
 
 - [ ] Aplicar migración a Supabase remoto de la cuenta indicada. Organización Baras creada;
-  proyecto pendiente del paso de contraseña que debe completar el usuario.
+  proyecto remoto vlfqqniorpfveuxhqnpt creado; tablas y conexión remotas pendientes.
 - [ ] Prueba de Firecrawl REST desde backend con credenciales de aplicación.
   El login MCP no equivale a esta conexión. Pestaña de login preparada.
 - [ ] Cliente HTTP iOS conectado en la copia local de feat/ios. Sintaxis y proyecto plist
-  revisados; no compilado. Xcode/SDK iOS no está instalado en este Mac.
+  revisados. Compilación iOS aprobada en GitHub Actions (run 40621570223); Xcode no está instalado en este Mac.
 - [ ] Flujo obligatorio en dispositivo/simulador, VoiceOver, Dynamic Type y temas.
 - [ ] Ubicación real When In Use en iOS: adaptador añadido con timeout y alternativa manual; pendiente prueba con SDK/dispositivo.
 - [x] Fixtures contractuales de respuesta lenta y datos vencidos.
 - [ ] Pruebas nativas del cliente HTTP en Xcode.
 - [ ] Video de respaldo real del flujo.
-- [ ] Publicación e integración de ramas en GitHub: cambios permanecen locales.
+- [x] Integración publicada en PR #2; checks de backend e iOS aprobados.
 
 ## Evidencia
 

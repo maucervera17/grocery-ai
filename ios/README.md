@@ -23,8 +23,9 @@ Cambios de integración:
 - Localización When In Use, reverse geocoding a CP mexicano, timeout 20 s y entrada manual.
   Solo se transmite CP; no se envían coordenadas.
 
-No hay Xcode/SDK iOS instalado en el entorno actual: **no se ha compilado ni probado
-en simulador**. Solo se validaron sintaxis Swift y formato del proyecto.
+La app integrada **compila en GitHub Actions**, run 40621570223, con destino genérico
+iOS Simulator y sin firma. No hay Xcode local y todavía no se probó la interacción
+en un simulador/dispositivo. También se validaron sintaxis Swift y formato del proyecto.
 El SDK macOS de CommandLineTools también falla al importar CoreFoundation en este
 entorno, por lo que no se declara validación de tipos Swift.
 
