@@ -45,6 +45,7 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
   for (const [route, file, type] of [
     ["/", "index.html", "text/html; charset=utf-8"],
     ["/style.css", "style.css", "text/css"],
+    ["/design-system.css", "design-system.css", "text/css"],
     ["/app.js", "app.js", "text/javascript"],
     ["/location.js", "location.js", "text/javascript"],
     ["/wishlist.js", "wishlist.js", "text/javascript"],
