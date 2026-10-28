@@ -7,6 +7,8 @@ struct AgentComposer: View {
     let isLoading: Bool
     let onSend: () -> Void
     let onAddContent: () -> Void
+    let voiceState: VoiceConversationState
+    let onToggleVoice: () -> Void
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -23,14 +25,24 @@ struct AgentComposer: View {
                     .foregroundStyle(colors.brandPrimary)
                     .glassEffect(.regular.interactive(), in: .circle)
 
-                TextField(prompt, text: $text, axis: .vertical)
-                    .lineLimit(1...4)
-                    .focused(isFocused)
-                    .submitLabel(.send)
-                    .onSubmit(onSend)
-                    .padding(.horizontal, AppSpacing.large)
-                    .frame(minHeight: AppControlSize.composer)
-                    .glassEffect(.regular.interactive(), in: .capsule)
+                HStack(spacing: AppSpacing.small) {
+                    if voiceState.isActive {
+                        VoiceStatusLabel(state: voiceState)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        TextField(voiceState.promptOverride ?? prompt, text: $text, axis: .vertical)
+                            .lineLimit(1...4)
+                            .focused(isFocused)
+                            .submitLabel(.send)
+                            .onSubmit(onSend)
+                    }
+
+                    VoiceComposerButton(state: voiceState, action: onToggleVoice)
+                }
+                .padding(.leading, AppSpacing.large)
+                .padding(.trailing, AppSpacing.extraSmall)
+                .frame(minHeight: AppControlSize.composer)
+                .glassEffect(.regular.interactive(), in: .capsule)
 
                 Button("Enviar lista", systemImage: "arrow.up", action: onSend)
                     .labelStyle(.iconOnly)
@@ -45,6 +57,9 @@ struct AgentComposer: View {
                         }
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
+                    .opacity(voiceState.isActive ? 0 : 1)
+                    .allowsHitTesting(!voiceState.isActive)
+                    .accessibilityHidden(voiceState.isActive)
             }
         }
         .padding(AppSpacing.medium)

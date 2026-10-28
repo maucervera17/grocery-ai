@@ -3,6 +3,7 @@ import SwiftUI
 struct AgentComposerOverlay: View {
     @Bindable var appState: AppState
     @Bindable var composerState: AgentComposerState
+    @Bindable var voiceController: VoiceConversationController
 
     @FocusState private var inputIsFocused: Bool
 
@@ -30,7 +31,9 @@ struct AgentComposerOverlay: View {
                 prompt: composerPrompt,
                 isLoading: appState.loadingState == .updatingDraft,
                 onSend: send,
-                onAddContent: showAddContent
+                onAddContent: showAddContent,
+                voiceState: voiceController.state,
+                onToggleVoice: toggleVoice
             )
         }
         .onChange(of: composerState.focusRequest) {
@@ -47,6 +50,11 @@ struct AgentComposerOverlay: View {
                 composerState.text = ""
             }
         }
+    }
+
+    private func toggleVoice() {
+        inputIsFocused = false
+        Task { await voiceController.toggleConversation() }
     }
 
     private func showAddContent() {

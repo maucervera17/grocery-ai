@@ -3,8 +3,18 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var appState = AppState()
-    @State private var composerState = AgentComposerState()
+    @Environment(\.scenePhase) private var scenePhase
+
+    @State private var appState: AppState
+    @State private var composerState: AgentComposerState
+    @State private var voiceController: VoiceConversationController
+
+    init() {
+        let appState = AppState()
+        _appState = State(initialValue: appState)
+        _composerState = State(initialValue: AgentComposerState())
+        _voiceController = State(initialValue: VoiceConversationController(appState: appState))
+    }
 
     var body: some View {
         @Bindable var appState = appState
@@ -12,7 +22,11 @@ struct RootView: View {
         TabView(selection: $appState.selectedTab) {
             Tab("Agente", systemImage: "bubble.left.and.bubble.right", value: AppTab.agent) {
                 NavigationStack {
-                    AgentView(appState: appState, composerState: composerState)
+                    AgentView(
+                        appState: appState,
+                        composerState: composerState,
+                        voiceController: voiceController
+                    )
                 }
             }
 
@@ -20,7 +34,7 @@ struct RootView: View {
                 NavigationStack {
                     HistoryView(
                         orders: appState.orders,
-                        frequentProducts: appState.frequentProducts,
+                        frequentProducts: appState.frequentProductOptions,
                         onRepeatOrder: appState.repeatOrder
                     )
                 }
@@ -31,6 +45,14 @@ struct RootView: View {
         .environment(\.appTheme, .grocery)
         .task {
             appState.configurePersistence(modelContext)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase != .active else { return }
+            Task { await voiceController.endConversation() }
+        }
+        .onChange(of: appState.selectedTab) { _, tab in
+            guard tab != .agent else { return }
+            Task { await voiceController.endConversation() }
         }
     }
 }

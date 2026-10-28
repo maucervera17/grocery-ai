@@ -18,7 +18,10 @@ struct OrderDetailView: View {
                     SurfaceCard {
                         VStack(spacing: AppSpacing.medium) {
                             ForEach(order.requestedItems) { item in
-                                ProductHistoryRow(product: item)
+                                ProductHistoryRow(
+                                    product: item,
+                                    imageURL: imageURL(for: item)
+                                )
 
                                 if item.id != order.requestedItems.last?.id {
                                     Divider()
@@ -61,6 +64,14 @@ struct OrderDetailView: View {
 
     private func repeatOrder() {
         onRepeat(order)
+    }
+
+    private func imageURL(for product: ProductRequest) -> URL? {
+        order.stores
+            .lazy
+            .flatMap(\.items)
+            .first(where: { $0.clientItemID == product.id })?
+            .imageURL
     }
 
     private var summaryCard: some View {

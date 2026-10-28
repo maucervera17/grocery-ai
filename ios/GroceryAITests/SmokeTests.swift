@@ -87,6 +87,18 @@ struct SmokeTests {
     }
 
     @Test @MainActor
+    func currentDraftReusesImagesFromProductHistory() {
+        let appState = AppState(
+            agentService: MockAgentService(),
+            comparisonService: MockComparisonService()
+        )
+        appState.orders = MockFixtures.previousOrders
+        appState.draft.items = [ProductRequest(name: "Leche", quantity: 1, unit: .liter)]
+
+        #expect(appState.draftProductImageURLs[appState.draft.items[0].id] != nil)
+    }
+
+    @Test @MainActor
     func retryingAFailedMessageDoesNotDuplicateTheUserMessage() async {
         let appState = AppState(
             agentService: AlwaysFailingAgentService(),
@@ -98,6 +110,30 @@ struct SmokeTests {
 
         #expect(appState.messages.filter { $0.role == .user }.count == 1)
         #expect(appState.messages.filter { $0.kind == .error }.count == 1)
+    }
+
+    @Test @MainActor
+    func voiceDraftUpdateUsesTheSameApplicationDraft() async {
+        let appState = AppState(
+            agentService: MockAgentService(),
+            comparisonService: MockComparisonService()
+        )
+
+        let result = await appState.updateDraftFromVoice("2 litros de leche")
+
+        #expect(result.status == AgentOperationStatus.complete.rawValue)
+        #expect(appState.draft.items.first?.name == "Leche")
+        #expect(appState.draft.items.first?.quantity == 2)
+        #expect(appState.loadingState == .idle)
+    }
+
+    @Test
+    func activeVoiceStatesKeepTheInlineComposerInVoiceMode() {
+        #expect(VoiceConversationState.connecting.isActive)
+        #expect(VoiceConversationState.listening.isActive)
+        #expect(VoiceConversationState.thinking.isActive)
+        #expect(VoiceConversationState.speaking.isActive)
+        #expect(!VoiceConversationState.failed(message: "Sin conexión").isActive)
     }
 }
 

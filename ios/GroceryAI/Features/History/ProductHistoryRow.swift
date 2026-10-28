@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProductHistoryRow: View {
     let product: ProductRequest
+    var imageURL: URL?
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
@@ -10,10 +11,11 @@ struct ProductHistoryRow: View {
         let colors = theme.colors(for: colorScheme)
 
         HStack(spacing: AppSpacing.medium) {
-            Image(systemName: "cart")
-                .frame(width: 28)
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
+            ProductThumbnail(
+                imageURL: imageURL,
+                category: product.categoryID ?? ProductCategory.inferred(from: product.name),
+                size: 48
+            )
 
             VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
                 Text(product.name)

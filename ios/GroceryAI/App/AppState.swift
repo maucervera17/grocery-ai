@@ -60,6 +60,25 @@ final class AppState {
         frequentProductOptions.map(\.product)
     }
 
+    var draftProductImageURLs: [UUID: URL] {
+        let storedImages = frequentProductOptions.reduce(into: [String: URL]()) { images, option in
+            guard let imageURL = option.imageURL else { return }
+            images[normalizedProductName(option.product.name)] = imageURL
+        }
+
+        var result = draft.items.reduce(into: [UUID: URL]()) { images, product in
+            images[product.id] = storedImages[normalizedProductName(product.name)]
+        }
+
+        for line in comparisonPlan?.stores.flatMap(\.items) ?? [] {
+            if let imageURL = line.imageURL {
+                result[line.clientItemID] = imageURL
+            }
+        }
+
+        return result
+    }
+
     func configurePersistence(_ context: ModelContext) {
         guard modelContext == nil else { return }
         modelContext = context
@@ -213,6 +232,47 @@ final class AppState {
         }
     }
 
+    func appendVoiceMessage(role: ChatRole, text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        messages.append(ChatMessage(role: role, text: trimmed))
+        persist()
+    }
+
+    func updateDraftFromVoice(_ message: String) async -> VoiceDraftToolResult {
+        guard loadingState == .idle else {
+            return VoiceDraftToolResult(
+                reply: "Hay otra operación en curso.",
+                status: "busy",
+                draftItems: draft.items
+            )
+        }
+
+        loadingState = .updatingDraft
+        do {
+            let response = try await agentService.updateDraft(
+                message: message,
+                currentItems: draft.items
+            )
+            comparisonPlan = nil
+            draft.replaceItems(with: response.draftItems)
+            loadingState = .idle
+            persist()
+            return VoiceDraftToolResult(
+                reply: response.reply,
+                status: response.status.rawValue,
+                draftItems: response.draftItems
+            )
+        } catch {
+            loadingState = .idle
+            return VoiceDraftToolResult(
+                reply: "No pude actualizar la lista. Se conservó el borrador anterior.",
+                status: "error",
+                draftItems: draft.items
+            )
+        }
+    }
+
     private func restore(from record: LocalAppStateRecord) {
         let decoder = JSONDecoder()
         if let storedDraft = try? decoder.decode(ShoppingDraft.self, from: record.draftData) {
@@ -244,5 +304,12 @@ final class AppState {
               messages.isEmpty else { return }
         orders = MockFixtures.previousOrders
         messages = MockFixtures.welcomeMessages
+    }
+
+    private func normalizedProductName(_ name: String) -> String {
+        name.folding(
+            options: [.diacriticInsensitive, .caseInsensitive],
+            locale: Locale(identifier: "es_MX")
+        )
     }
 }

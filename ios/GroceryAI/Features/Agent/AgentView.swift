@@ -3,6 +3,7 @@ import SwiftUI
 struct AgentView: View {
     @Bindable var appState: AppState
     @Bindable var composerState: AgentComposerState
+    @Bindable var voiceController: VoiceConversationController
 
     @State private var composerOverlayHeight: CGFloat = 0
     @State private var scrollPosition = ScrollPosition(edge: .bottom)
@@ -25,6 +26,7 @@ struct AgentView: View {
                     if !appState.draft.isEmpty {
                         DraftCard(
                             draft: appState.draft,
+                            imageURLs: appState.draftProductImageURLs,
                             onEdit: editProduct,
                             onDelete: appState.removeProducts,
                             onCompare: showLocation
@@ -58,7 +60,11 @@ struct AgentView: View {
                     .frame(height: composerOverlayHeight + AppControlSize.bottomContentFadeExtension)
                     .ignoresSafeArea(edges: .bottom)
 
-                AgentComposerOverlay(appState: appState, composerState: composerState)
+                AgentComposerOverlay(
+                    appState: appState,
+                    composerState: composerState,
+                    voiceController: voiceController
+                )
                     .onGeometryChange(for: CGFloat.self) { proxy in
                         proxy.size.height
                     } action: { height in

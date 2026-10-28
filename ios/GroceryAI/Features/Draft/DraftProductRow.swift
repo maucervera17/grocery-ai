@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DraftProductRow: View {
     let product: ProductRequest
+    let imageURL: URL?
     let onEdit: () -> Void
     let onDelete: () -> Void
 
@@ -13,6 +14,12 @@ struct DraftProductRow: View {
 
         Button(action: onEdit) {
             HStack(spacing: AppSpacing.medium) {
+                ProductThumbnail(
+                    imageURL: imageURL,
+                    category: product.categoryID ?? ProductCategory.inferred(from: product.name),
+                    size: 48
+                )
+
                 VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
                     Text(product.name)
                         .font(.body.weight(.medium))

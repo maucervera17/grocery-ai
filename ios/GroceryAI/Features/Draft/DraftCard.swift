@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DraftCard: View {
     let draft: ShoppingDraft
+    let imageURLs: [UUID: URL]
     let onEdit: (ProductRequest) -> Void
     let onDelete: (IndexSet) -> Void
     let onCompare: () -> Void
@@ -19,7 +20,7 @@ struct DraftCard: View {
                 }
 
                 ForEach(Array(draft.items.enumerated()), id: \.element.id) { index, product in
-                    DraftProductRow(product: product) {
+                    DraftProductRow(product: product, imageURL: imageURLs[product.id]) {
                         onEdit(product)
                     } onDelete: {
                         onDelete(IndexSet(integer: index))

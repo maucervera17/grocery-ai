@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HistoryView: View {
     let orders: [CompletedOrder]
-    let frequentProducts: [ProductRequest]
+    let frequentProducts: [FrequentProductOption]
     let onRepeatOrder: (CompletedOrder) -> Void
 
     @State private var selection: HistorySection = .orders
@@ -47,9 +47,11 @@ struct HistoryView: View {
         }
     }
 
-    private var filteredProducts: [ProductRequest] {
+    private var filteredProducts: [FrequentProductOption] {
         guard !searchText.isEmpty else { return frequentProducts }
-        return frequentProducts.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return frequentProducts.filter {
+            $0.product.name.localizedCaseInsensitiveContains(searchText)
+        }
     }
 }
 
@@ -57,7 +59,11 @@ struct HistoryView: View {
     NavigationStack {
         HistoryView(
             orders: MockFixtures.previousOrders,
-            frequentProducts: [MockFixtures.milk, MockFixtures.eggs, MockFixtures.rice],
+            frequentProducts: [
+                FrequentProductOption(product: MockFixtures.milk, imageURL: MockFixtures.milkLine.imageURL, frequency: 3),
+                FrequentProductOption(product: MockFixtures.eggs, imageURL: MockFixtures.eggsLine.imageURL, frequency: 2),
+                FrequentProductOption(product: MockFixtures.rice, imageURL: MockFixtures.riceLine.imageURL, frequency: 1)
+            ],
             onRepeatOrder: { _ in }
         )
     }

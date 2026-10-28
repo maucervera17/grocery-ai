@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ProductHistoryList: View {
-    let products: [ProductRequest]
+    let products: [FrequentProductOption]
     let isSearching: Bool
 
     var body: some View {
@@ -18,8 +18,11 @@ struct ProductHistoryList: View {
         } else {
             ScrollView {
                 LazyVStack(spacing: AppSpacing.medium) {
-                    ForEach(products) { product in
-                        ProductHistoryRow(product: product)
+                    ForEach(products) { option in
+                        ProductHistoryRow(
+                            product: option.product,
+                            imageURL: option.imageURL
+                        )
                     }
                 }
                 .padding(.horizontal, AppSpacing.large)
