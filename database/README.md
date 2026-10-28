@@ -30,8 +30,15 @@ el flujo API → base → plan de dos tiendas, sin fixtures en memoria.
 
 Primero inspeccionar el esquema del proyecto del equipo para detectar nombres
 existentes. Aplicar únicamente las migraciones pendientes; nunca resetear una
-base compartida. La migración aquí es la propuesta local hasta confirmar el
-proyecto remoto y coordinar su integración. No se ha modificado ninguna base remota.
+base compartida.
+
+El proyecto Baras `vlfqqniorpfveuxhqnpt` tiene ambas migraciones y el seed demo
+aplicados desde SQL Editor en una transacción. Se verificaron ocho ofertas y dos
+tiendas; `npm run smoke:db` y `npm run smoke` pasaron contra la base remota.
+La aplicación mediante SQL Editor no registra versiones en el historial de
+migraciones de la CLI: antes de un futuro `db push`, reconciliar ese historial
+con el esquema existente. No volver a ejecutar las migraciones iniciales.
+La clave de servidor está únicamente en `.env`, excluido de Git.
 
 Las funciones RPC `grocery_search_listings` y `grocery_upsert_listings` son el
 contrato con `backend/supabase-repository.ts`. La importación es atómica.
