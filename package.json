@@ -19,6 +19,7 @@
     "smoke:db": "node --env-file-if-exists=.env --import tsx scripts/database-smoke.ts",
     "smoke:scrapers": "node --env-file-if-exists=.env --import tsx scripts/scrape-smoke.ts",
     "build:voice": "esbuild web/voice-sdk.js --bundle --format=esm --platform=browser --outfile=dist/web/voice-sdk.js",
+    "build:vercel": "npm run build:voice && node scripts/build-vercel-web.mjs",
     "voice:setup": "node --env-file-if-exists=.env --import tsx scripts/setup-voice.ts"
   },
   "dependencies": {
