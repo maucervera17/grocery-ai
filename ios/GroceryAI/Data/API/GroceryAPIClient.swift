@@ -195,8 +195,9 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
             throw error
         }
         guard result.status != .error else {
+            let issueCodes = Set(result.errors.map(\.code)).sorted().joined(separator: ",")
             ComparisonDiagnostics.error(
-                "Search request rejected: action=\(body.action), status=\(result.status.rawValue), issues=\(result.errors.count)"
+                "Search request rejected: action=\(body.action), status=\(result.status.rawValue), issues=\(result.errors.count), codes=[\(issueCodes)]"
             )
             throw GroceryAPIError(message:result.reply)
         }
