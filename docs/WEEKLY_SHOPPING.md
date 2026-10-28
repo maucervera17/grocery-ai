@@ -2,6 +2,8 @@
 
 La web permite convertir una petición de varios productos en un borrador, elegir presentaciones reales en **Mi lista**, aprobar alternativas y optimizar la lista completa. Reutiliza `/v1/chat/search` para interpretar la lista y consultar cada producto; los cálculos de la lista son deterministas en `web/weekly-plan.js`.
 
+Al abrir una lista de varios artículos, la web consulta automáticamente precios publicados de cada producto, dos consultas a la vez. Muestra avance por artículo y permite elegir ofertas que ya llegaron. La consulta de la lista usa precios publicados aunque la búsqueda individual esté en modo de validación por CP: si una tienda no verifica entrega en esa zona, el usuario sigue pudiendo escoger la presentación como referencia, con una advertencia explícita de que debe confirmar existencias y precio final. Una categoría amplia como «carne» pide tipo o corte solo en esa línea; el resto de la lista sigue cargando. Al volver a la conversación se conserva la tarjeta visual del borrador.
+
 ## Decisiones y referencias
 
 - Una búsqueda amplia de carne, pollo o queso permite precisar corte, tipo y marca antes de consultar. El usuario elige la presentación y cantidad de paquetes.
@@ -38,3 +40,4 @@ La disponibilidad local sigue dependiendo de evidencia de cada tienda. Un CP res
 - El histórico mostró la lista preparada separada de 0 compras realizadas. No se inventaron precios habituales ni se registró una compra durante la prueba.
 - ElevenLabs real recibió una petición sintética de cuatro productos, invocó update_draft una vez y respondió con voz remitiendo a Mi lista.
 - 87 pruebas automatizadas pasan, junto con compilación TypeScript. Se incluyen precio por kg vs peso de charola y la distinción «sin hueso» frente a «con hueso y sin piel».
+- Regresión de nueve artículos con CP 06170: «parmesano, huevo, carne, pollo, cereal, lentejas, arroz, miel, café». Mi lista empezó a consultar automáticamente y terminó con ofertas reales en ocho líneas: parmesano 4, huevo 4, pollo 1, cereal 4, lentejas 2, arroz 4, miel 4 y café de Oaxaca 2. «Carne» pidió tipo o corte en su propia línea, con atajos para precisarlo. Se eligieron parmesano, huevo y cereal durante la búsqueda y se confirmó que la selección sobrevivió a una recarga; después se quitaron esas selecciones de prueba. El CP 06170 no fue confirmado por las tiendas, así que estas ofertas se etiquetan como precios publicados y no como inventario local verificado.

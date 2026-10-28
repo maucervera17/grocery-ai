@@ -10,6 +10,8 @@ const money = (n) =>
   new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(
     n / 100,
   );
+const unitLabel = (unit) => ({ piece: "pieza", dozen: "docenas", package: "presentación" })[unit] || unit;
+const quickQueries = { carne: ["Carne molida de res", "Bistec de res"], pollo: ["Pechuga de pollo sin hueso", "Pollo entero"] };
 const esc = (v) =>
   String(v ?? "").replace(
     /[&<>"']/g,
@@ -18,6 +20,20 @@ const esc = (v) =>
         c
       ],
   );
+const suggestionHtml = (row) => {
+  const options = quickQueries[row.name.toLowerCase()];
+  return options && !row.offers.length
+    ? `<div class="weekly-suggestions"><small>Prueba un tipo:</small>${options.map((q) => `<button type="button" data-suggest="${esc(row.id)}" data-suggest-query="${esc(q)}">${esc(q)}</button>`).join("")}</div>`
+    : "";
+};
+const offerStatus = (row, pending) =>
+  row.offers.length
+    ? `${row.offers.length} ${row.offers.length === 1 ? "opción" : "opciones"}`
+    : pending.has(row.id)
+      ? "Buscando opciones…"
+      : row.error
+        ? "Revisa este producto"
+        : "Sin opciones todavía";
 const load = (k, f) => {
   try {
     return JSON.parse(localStorage.getItem(k)) ?? f;
@@ -35,8 +51,11 @@ export function mountWeekly({ root, search, location, onRegister }) {
       context: null,
     }),
     activePlan = null,
-    working = false,
-    batch = false;
+    pending = new Set(),
+    batch = false,
+    batchDone = 0,
+    batchTotal = 0,
+    autoSearchedSignature = null;
   if (!Array.isArray(state.rows))
     state = {
       id: crypto.randomUUID(),
@@ -102,15 +121,22 @@ export function mountWeekly({ root, search, location, onRegister }) {
     invalidateLocation();
     render();
     root.scrollIntoView({ behavior: "smooth", block: "start" });
+    const signature = JSON.stringify([state.context, state.rows.map((r) => [r.signature, r.query])]);
+    if (!batch && state.rows.length && autoSearchedSignature !== signature) {
+      autoSearchedSignature = signature;
+      if (state.rows.some((r) => !r.offers.length)) void searchAll();
+    }
   }
   async function find(id) {
-    if (working) return;
+    if (pending.has(id)) return;
     const row = state.rows.find((r) => r.id === id);
     if (!row) return;
-    const query =
-      root.querySelector(`[data-query="${CSS.escape(id)}"]`)?.value.trim() ||
-      row.query;
-    if (!query) return;
+    const query = (root.querySelector(`[data-query="${CSS.escape(id)}"]`)?.value ?? row.query).trim();
+    if (!query) {
+      row.error = "Escribe el producto o presentación que quieres buscar.";
+      render();
+      return;
+    }
     if (query !== row.query) {
       row.offers = [];
       row.selected = null;
@@ -119,10 +145,13 @@ export function mountWeekly({ root, search, location, onRegister }) {
       activePlan = null;
     }
     row.query = query;
-    working = true;
+    row.error = "";
+    const requestContext = context();
+    pending.add(id);
     render();
     try {
       const result = await search(query);
+      if (row.query !== query || requestContext !== context() || !state.rows.includes(row)) return;
       row.error = result?.errors?.map((e) => e.message).join(" ") || "";
       if (result?.comparison?.data_mode === "live") {
         row.offers = result.comparison.offers;
@@ -133,21 +162,60 @@ export function mountWeekly({ root, search, location, onRegister }) {
         activePlan = null;
         row.error = row.offers.length
           ? row.error
-          : row.error ||
+          : [result.reply, row.error].filter(Boolean).join(" ") ||
             "No hay ofertas. Prueba una presentación o marca específica.";
-      } else
-        row.error =
-          result?.reply ||
-          "No se pudo consultar. Conservamos tu selección anterior.";
+      } else {
+        row.offers = [];
+        row.error = result?.reply || "No se encontraron opciones. Prueba con un tipo, marca o presentación más específica.";
+      }
+    } catch {
+      row.error = "La fuente tardó demasiado o no respondió. Puedes reintentar este producto.";
     } finally {
-      working = false;
+      pending.delete(id);
+      if (batch) batchDone++;
       persist();
       render();
+    }
+  }
+  async function searchAll() {
+    if (batch) return;
+    const queue = state.rows.filter((row) =>
+      !row.offers.length || row.offers.some((o) => Date.now() - Date.parse(o.listing.checkedAt) > 3600000),
+    );
+    if (!queue.length) return;
+    batch = true;
+    const batchSignature = JSON.stringify([state.context, state.rows.map((r) => [r.signature, r.query])]);
+    batchDone = 0;
+    batchTotal = queue.length;
+    render();
+    let next = 0;
+    const worker = async () => {
+      while (next < queue.length) await find(queue[next++].id);
+    };
+    try {
+      await Promise.all(Array.from({ length: Math.min(2, queue.length) }, worker));
+    } finally {
+      batch = false;
+      render();
+      const currentSignature = JSON.stringify([state.context, state.rows.map((r) => [r.signature, r.query])]);
+      if (currentSignature !== batchSignature && state.rows.some((r) => !r.offers.length)) {
+        autoSearchedSignature = currentSignature;
+        void searchAll();
+      }
     }
   }
   function select(row, url) {
     const l = row.offers.find((o) => o.listing.productUrl === url)?.listing;
     if (!l) return;
+    if (row.selected === url) {
+      row.selected = null;
+      row.approved = [];
+      row.usualPriceCents = null;
+      activePlan = null;
+      persist();
+      render();
+      return;
+    }
     row.selected = url;
     row.approved = [url];
     row.usualPriceCents = null;
@@ -171,19 +239,20 @@ export function mountWeekly({ root, search, location, onRegister }) {
   }
   function render() {
     root.hidden = false;
-    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.filter((r) => r.selected).length}/${state.rows.length} elegidos</span></div><button class="secondary full" id="week-search-all" ${working || batch || !state.rows.length ? "disabled" : ""}>${batch ? "Buscando tu lista…" : "Buscar opciones para toda mi lista"}</button><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button><p class="comparison-help">Elige presentaciones y alternativas que sí comprarías. Marca, corte y calidad los decides tú.</p>${
+    const legacyUnspecified = state.rows.length >= 4 && state.rows.every((r) => r.requested.quantity === 1 && r.requested.unit === "piece");
+    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.filter((r) => r.selected).length}/${state.rows.length} elegidos</span></div><p class="comparison-help">Opciones con precios publicados. Confirma entrega, existencia y precio final para ${esc(location()?.postal_code || "tu zona")} en la tienda.</p><button class="secondary full" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>${batch ? `Buscando opciones · ${batchDone}/${batchTotal}` : "Actualizar opciones de mi lista"}</button><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button><p class="comparison-help">${batch ? "Las opciones aparecerán aquí conforme responda cada tienda. Ya puedes elegir las disponibles." : "Elige presentaciones y alternativas que sí comprarías. Marca, corte y calidad los decides tú."}</p>${
       !state.rows.length
         ? "<p>Escribe una lista: «Quiero huevos, pollo, carne y queso».</p>"
         : state.rows
             .map(
               (r, index) =>
-                `<article class="weekly-row"><h3>${index + 1}. ${esc(r.name)}</h3><div class="weekly-query"><input data-query="${esc(r.id)}" aria-label="Buscar presentación de ${esc(r.name)}" value="${esc(r.query)}" placeholder="Ej. pechuga sin hueso, 1 kg"><button data-find="${esc(r.id)}" ${working ? "disabled" : ""}>${working ? "Consultando…" : r.offers.length ? "Buscar otra" : "Ver opciones"}</button></div>${/^(carne|pollo|queso)$/i.test(r.name) ? '<p class="comparison-help">Especifica el corte, tipo o marca para comparar productos que sí te sirven.</p>' : ""}${r.error ? `<details class="weekly-warning"><summary>Avisos de las fuentes</summary>${esc(r.error)}</details>` : ""}${
+                `<article class="weekly-row"><div class="weekly-item-head"><span class="weekly-item-emoji" aria-hidden="true">${/queso|parmesano/i.test(r.name) ? "🧀" : /huevo/i.test(r.name) ? "🥚" : /pollo/i.test(r.name) ? "🍗" : /carne/i.test(r.name) ? "🥩" : /cereal/i.test(r.name) ? "🥣" : /lenteja/i.test(r.name) ? "🫘" : /arroz/i.test(r.name) ? "🍚" : /miel/i.test(r.name) ? "🍯" : /caf[eé]/i.test(r.name) ? "☕" : "🛒"}</span><div><h3>${index + 1}. ${esc(r.name)}</h3><small>${legacyUnspecified || r.requested.unit === "package" ? "Presentación por elegir" : `${esc(r.requested.quantity)} ${esc(unitLabel(r.requested.unit))}`} · ${offerStatus(r, pending)}</small></div></div><div class="weekly-query"><input data-query="${esc(r.id)}" aria-label="Buscar presentación de ${esc(r.name)}" value="${esc(r.query)}" placeholder="Ej. pechuga sin hueso, 1 kg"><button data-find="${esc(r.id)}" ${pending.has(r.id) ? "disabled" : ""}>${pending.has(r.id) ? "Buscando…" : r.offers.length ? "Buscar otra" : "Ver opciones"}</button></div>${suggestionHtml(r)}${/^(carne|pollo|queso)$/i.test(r.name) ? '<p class="comparison-help">Especifica el corte, tipo o marca para comparar productos que sí te sirven.</p>' : ""}${r.error ? `<p class="weekly-warning" role="status">${esc(r.error)}</p>` : ""}${
                   r.offers.length
                     ? `<div class="weekly-options">${r.offers
                         .map((o) => {
                           const l = o.listing,
                             selected = r.selected === l.productUrl;
-                          return `<div class="weekly-offer ${selected ? "chosen" : ""}">${l.imageUrl ? `<img src="${esc(l.imageUrl)}" alt="${esc(l.productName)}" loading="lazy">` : ""}<div><strong>${esc(l.productName)}</strong><small>${esc(l.retailer)} · ${money(l.priceCents)}<br>${money(o.basis === "piece" || o.basis === "package" ? o.unit_price_cents_per_100 / 100 : o.unit_price_cents_per_100)} / ${o.basis === "piece" ? "pieza" : o.basis === "package" ? "paquete" : "100 " + esc(o.basis)}</small><button data-choose="${esc(r.id)}" data-url="${esc(l.productUrl)}" ${working ? "disabled" : ""}>${selected ? "✓ Elegido" : "Elegir"}</button>${r.selected && !selected ? `<label class="approve"><input type="checkbox" data-approve="${esc(r.id)}" data-url="${esc(l.productUrl)}" ${r.approved.includes(l.productUrl) ? "checked" : ""}> También acepto esta alternativa</label>` : ""}</div></div>`;
+                          return `<div class="weekly-offer ${selected ? "chosen" : ""}">${l.imageUrl ? `<img src="${esc(l.imageUrl)}" alt="${esc(l.productName)}" loading="lazy">` : '<span class="weekly-photo-fallback" aria-label="Sin foto disponible">🛒</span>'}<div><strong>${esc(l.productName)}</strong><small>${esc(l.retailer)} · ${money(l.priceCents)}<br>${money(o.basis === "piece" || o.basis === "package" ? o.unit_price_cents_per_100 / 100 : o.unit_price_cents_per_100)} / ${o.basis === "piece" ? "pieza" : o.basis === "package" ? "paquete" : "100 " + esc(o.basis)}</small><button data-choose="${esc(r.id)}" data-url="${esc(l.productUrl)}">${selected ? "✓ Elegido" : "Elegir esta opción"}</button>${r.selected && !selected ? `<label class="approve"><input type="checkbox" data-approve="${esc(r.id)}" data-url="${esc(l.productUrl)}" ${r.approved.includes(l.productUrl) ? "checked" : ""}> También acepto esta alternativa</label>` : ""}</div></div>`;
                         })
                         .join(
                           "",
@@ -192,24 +261,17 @@ export function mountWeekly({ root, search, location, onRegister }) {
                 }${r.selected ? `<div class="weekly-fields"><label>${soldByWeight(r.offers.find((o) => o.listing.productUrl === r.selected)?.listing) ? "Kilos (estimados)" : "Paquetes"}<input data-qty="${esc(r.id)}" type="number" min="0.001" step="0.001" max="99" value="${r.packages}"></label><label>Mi precio habitual / presentación o kg (MXN)<input data-usual="${esc(r.id)}" inputmode="decimal" placeholder="Sin referencia" value="${r.usualPriceCents === null ? "" : (r.usualPriceCents / 100).toFixed(2)}"></label></div><p class="comparison-help">La referencia corresponde al producto elegido. Aprobar alternativas expresa tu preferencia, no una certificación de calidad.</p>` : ""}</article>`,
             )
             .join("")
-    }<details class="weekly-preferences"><summary>Costo y conveniencia</summary><label>Máximo de tiendas<select id="week-stores"><option value="1" ${state.maxStores === 1 ? "selected" : ""}>Una tienda</option><option value="2" ${state.maxStores === 2 ? "selected" : ""}>Hasta dos tiendas</option></select></label><label>Valor de una hora de tu tiempo (MXN)<input id="week-hour" inputmode="decimal" value="${state.hourlyCents / 100}"></label><p class="comparison-help">Opcional: indica el tiempo total de visita y traslado desde tu ubicación, y el costo de traslado o envío. Son estimaciones tuyas, no rutas medidas. Para dos tiendas sumamos las visitas por separado.</p>${[...new Set(state.rows.flatMap((r) => r.offers.map((o) => o.listing.retailer)))].map((s) => `<fieldset><legend>${esc(s)}</legend><label>Minutos por visita<input data-minutes="${esc(s)}" type="number" min="0" max="1440" value="${state.travel[s]?.minutes ?? ""}" placeholder="Sin estimación"></label><label>Traslado o envío (MXN)<input data-trip="${esc(s)}" inputmode="decimal" value="${state.travel[s]?.costCents == null ? "" : state.travel[s].costCents / 100}" placeholder="Sin estimación"></label><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s + " cerca de " + (location()?.postal_code || "mí"))}" target="_blank" rel="noopener noreferrer">Buscar sucursal en mapas ↗</a></fieldset>`).join("")}</details><div id="week-error" role="status"></div><button class="primary full" id="week-optimize" ${working || !state.rows.length ? "disabled" : ""}>Optimizar mi lista</button><div id="week-results"></div></section>`;
-    root.querySelector("#week-search-all").onclick = async () => {
-      if (working || batch) return;
-      batch = true;
-      try {
-        for (const row of state.rows)
-          if (
-            !row.offers.length ||
-            row.offers.some(
-              (o) => Date.now() - Date.parse(o.listing.checkedAt) > 3600000,
-            )
-          )
-            await find(row.id);
-      } finally {
-        batch = false;
-        render();
-      }
-    };
+    }<details class="weekly-preferences"><summary>Costo y conveniencia</summary><label>Máximo de tiendas<select id="week-stores"><option value="1" ${state.maxStores === 1 ? "selected" : ""}>Una tienda</option><option value="2" ${state.maxStores === 2 ? "selected" : ""}>Hasta dos tiendas</option></select></label><label>Valor de una hora de tu tiempo (MXN)<input id="week-hour" inputmode="decimal" value="${state.hourlyCents / 100}"></label><p class="comparison-help">Opcional: indica el tiempo total de visita y traslado desde tu ubicación, y el costo de traslado o envío. Son estimaciones tuyas, no rutas medidas. Para dos tiendas sumamos las visitas por separado.</p>${[...new Set(state.rows.flatMap((r) => r.offers.map((o) => o.listing.retailer)))].map((s) => `<fieldset><legend>${esc(s)}</legend><label>Minutos por visita<input data-minutes="${esc(s)}" type="number" min="0" max="1440" value="${state.travel[s]?.minutes ?? ""}" placeholder="Sin estimación"></label><label>Traslado o envío (MXN)<input data-trip="${esc(s)}" inputmode="decimal" value="${state.travel[s]?.costCents == null ? "" : state.travel[s].costCents / 100}" placeholder="Sin estimación"></label><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s + " cerca de " + (location()?.postal_code || "mí"))}" target="_blank" rel="noopener noreferrer">Buscar sucursal en mapas ↗</a></fieldset>`).join("")}</details><div id="week-error" role="status"></div><button class="primary full" id="week-optimize" ${!state.rows.length ? "disabled" : ""}>Optimizar mi lista</button><div id="week-results"></div></section>`;
+    root.querySelectorAll(".weekly-offer img").forEach((img) => {
+      img.onerror = () => {
+        const fallback = document.createElement("span");
+        fallback.className = "weekly-photo-fallback";
+        fallback.setAttribute("aria-label", "Imagen no disponible");
+        fallback.textContent = "🛒";
+        img.replaceWith(fallback);
+      };
+    });
+    root.querySelector("#week-search-all").onclick = searchAll;
     root.querySelector("#week-new").onclick = () => {
       state.id = crypto.randomUUID();
       activePlan = null;
@@ -219,6 +281,29 @@ export function mountWeekly({ root, search, location, onRegister }) {
     root
       .querySelectorAll("[data-find]")
       .forEach((b) => (b.onclick = () => find(b.dataset.find)));
+    root.querySelectorAll("[data-query]").forEach((input) => {
+      input.oninput = () => {
+        const row = state.rows.find((r) => r.id === input.dataset.query);
+        if (!row || row.query === input.value) return;
+        row.query = input.value;
+        row.offers = [];
+        row.selected = null;
+        row.approved = [];
+        row.usualPriceCents = null;
+        row.error = "";
+        activePlan = null;
+        persist();
+      };
+    });
+    root.querySelectorAll("[data-suggest]").forEach((button) => {
+      button.onclick = () => {
+        const input = root.querySelector(`[data-query="${CSS.escape(button.dataset.suggest)}"]`);
+        if (!input) return;
+        input.value = button.dataset.suggestQuery;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        void find(button.dataset.suggest);
+      };
+    });
     root.querySelectorAll("[data-choose]").forEach(
       (b) =>
         (b.onclick = () =>
@@ -431,5 +516,5 @@ export function mountWeekly({ root, search, location, onRegister }) {
         },
       );
   }
-  return { setDraft, show, invalidateLocation };
+  return { setDraft, show, prefetch: searchAll, invalidateLocation };
 }

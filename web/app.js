@@ -6,7 +6,7 @@ import {mountVoice} from '/voice.js';
 import {parseMoney,quoteCart,confirmPurchase} from '/savings.js';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(n/100);
-const emoji=n=>/desodorante|antitranspirante/i.test(n)?'🧴':/detergente/i.test(n)?'🧼':/pasta|espagueti/i.test(n)?'🍝':/leche/i.test(n)?'🥛':/huevo/i.test(n)?'🥚':/arroz/i.test(n)?'🍚':/queso|parmesano/i.test(n)?'🧀':/manzana/i.test(n)?'🍎':/pan/i.test(n)?'🍞':'🛒';
+const emoji=n=>/desodorante|antitranspirante/i.test(n)?'🧴':/detergente/i.test(n)?'🧼':/pasta|espagueti/i.test(n)?'🍝':/leche/i.test(n)?'🥛':/huevo/i.test(n)?'🥚':/arroz/i.test(n)?'🍚':/queso|parmesano/i.test(n)?'🧀':/pollo/i.test(n)?'🍗':/carne/i.test(n)?'🥩':/cereal/i.test(n)?'🥣':/lenteja/i.test(n)?'🫘':/miel/i.test(n)?'🍯':/caf[eé]/i.test(n)?'☕':/manzana/i.test(n)?'🍎':/pan/i.test(n)?'🍞':'🛒';
 const unit=u=>({piece:'pzas',package:'paq.',dozen:'docenas'}[u]||u);
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}}
 const demoItems=()=>[{client_item_id:crypto.randomUUID(),name:'Leche',quantity:2,unit:'L',notes:null},{client_item_id:crypto.randomUUID(),name:'Huevos',quantity:12,unit:'piece',notes:null},{client_item_id:crypto.randomUUID(),name:'Arroz',quantity:1,unit:'kg',notes:null}];
@@ -21,26 +21,33 @@ let priceScope=read('baras-price-scope','published');
 let items=read('baras-draft-v2',[]),history=read('super-history',[]),postal=read('super-postal',''),busy=false,plan=null,liveMode=true,fulfillment=read('super-fulfillment','delivery');
 function queryLocation(){return fulfillment==='pickup'?{postal_code:'52994',fulfillment:'pickup',pickup_store:'chedraui-bellavista'}:postal?{postal_code:postal,fulfillment:'delivery'}:null;}
 if(!Array.isArray(items))items=[];if(!Array.isArray(history))history=[];
+if(items.length)requestedVisuals=true;
 function save(){try{localStorage.setItem('baras-draft-v2',JSON.stringify(items));localStorage.setItem('super-history',JSON.stringify(history.slice(0,30)));localStorage.setItem('super-postal',JSON.stringify(postal));localStorage.setItem('super-fulfillment',JSON.stringify(fulfillment));}catch{notice('No se pudo guardar en este navegador.')}}
 function notice(text){$('notice').innerHTML=text?`<div class="notice">${esc(text)}</div>`:''}
 function bubble(text,role){const div=document.createElement('div');div.className='bubble '+role;div.textContent=text;$('conversation').append(div)}
 function view(name){$('weekly-view').hidden=name!=='weekly';$('savings-view').hidden=name!=='savings';if(name==='weekly'){weekly.setDraft(items);weekly.show();}if(name==='savings')renderSavingsStats();$('agent-view').hidden=name!=='agent';$('history-view').hidden=name!=='history';$('composer').hidden=name!=='agent';document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));if(name==='history'){renderWishlist();renderHistory();renderSavingsStats()}}
-function render(){save();$('draft').innerHTML=requestedVisuals&&items.length?`<div class="draft-card"><div class="card-top"><h3>Tu lista para la semana <span style="color:var(--green)">✓</span></h3><span class="count">${items.length} productos</span></div><div class="products">${items.map(i=>`<div class="product"><span class="emoji">${emoji(i.name)}</span><strong>${esc(i.name)}</strong><small>${esc(i.quantity)} ${esc(unit(i.unit))}</small></div>`).join('')}</div><button class="primary full" id="compare">Elegir productos y optimizar <span style="float:right">→</span></button><button class="secondary outline full" id="edit">Editar productos</button></div>`:'';
+function render(){save();const legacyUnspecified=items.length>=4&&items.every(i=>i.quantity===1&&i.unit==='piece');$('draft').innerHTML=requestedVisuals&&items.length?`<div class="draft-card"><div class="card-top"><h3>Tu lista para la semana <span style="color:var(--green)">✓</span></h3><span class="count">${items.length} productos</span></div><div class="products">${items.map(i=>`<div class="product"><span class="emoji">${emoji(i.name)}</span><strong>${esc(i.name)}</strong><small>${legacyUnspecified||i.unit==='package'&&i.quantity===1?'Presentación por elegir':`${esc(i.quantity)} ${esc(unit(i.unit))}`}</small></div>`).join('')}</div><button class="primary full" id="compare">Ver opciones de mi lista <span style="float:right">→</span></button><button class="secondary outline full" id="edit">Editar productos</button></div>`:'';
  $('compare')?.addEventListener('click',()=>{weekly.setDraft(items);view('weekly')});$('edit')?.addEventListener('click',editor);if(busy)lock(true);}
 function lock(value){busy=value;document.querySelectorAll('button,input').forEach(e=>{if(!e.closest('#modal')&&!e.closest('#voice-panel')&&e.id!=='voice-open')e.disabled=value});}
 async function request(body){lock(true);notice('');const loading=document.createElement('div');loading.className='loading';loading.textContent=body.action==='product_prices'?'Buscando y comparando precios publicados':body.action==='compare'?'Comparando tu lista':'Organizando tu lista';$('conversation').append(loading);try{const r=await fetch('/v1/chat/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(95000)});const d=await r.json();if(!r.ok||(d.status==='error'&&!d.plan&&!d.comparison))throw Error(d.reply||'No se pudo completar. Intenta de nuevo.');return d;}catch(e){notice(e.name==='TimeoutError'?'El agente tardó más de lo esperado. Intenta de nuevo.':e.message);return null}finally{loading.remove();lock(false)}}
+async function requestWeekly(query){
+ const response=await fetch('/v1/chat/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'product_prices',message:query,items:[],location:queryLocation(),price_scope:'published'}),signal:AbortSignal.timeout(95000)});
+ const data=await response.json();
+ if(!response.ok&&!data.comparison)throw Error(data.reply||'La consulta no respondió.');
+ return data;
+}
 async function send(text){
  if(busy||!text.trim())return;
  view('agent');$('conversation').querySelector('.welcome')?.remove();bubble(text,'user');$('message').value='';
- plan=null;$('plan').innerHTML='';$('draft').innerHTML='';
+ plan=null;$('plan').innerHTML='';
  let priceQuestion=/precio|barat[oa]|cu[aá]nto cuesta|compar[aá]/i.test(text)&&!/s[uú]per|semanal|mi lista/i.test(text);
  if(priceQuestion)lastPriceQuestion=text;
  let d=await request({action:priceQuestion?'product_prices':'update_draft',message:text,items,location:queryLocation(),...(priceQuestion?{price_scope:priceScope}:{})});
  if(d&&priceQuestion&&!d.comparison&&d.status==='partial'&&/un producto para comparar/i.test(d.reply)){priceQuestion=false;d=await request({action:'update_draft',message:text,items,location:queryLocation()});}
  if(!d)return;
  bubble(d.reply,'assistant');
- if(priceQuestion){requestedVisuals=false;if(d.comparison){lastComparison=d.comparison;renderComparison(d.comparison);}}
- else {items=d.draft_items;requestedVisuals=true;weekly.setDraft(items);render();}
+ if(priceQuestion){if(d.comparison){lastComparison=d.comparison;renderComparison(d.comparison);}render();}
+ else {items=d.draft_items;requestedVisuals=true;weekly.setDraft(items);render();if(items.length>1)view('weekly');}
  if(d.errors.length)notice([...new Set(d.errors.map(e=>e.message))].join(' '));
 }
 function productPhoto(listing){return listing.imageUrl?`<img class="product-photo" src="${esc(listing.imageUrl)}" alt="${esc(listing.productName)}" loading="lazy" referrerpolicy="no-referrer">`:'<span class="product-photo photo-fallback" aria-label="Sin imagen disponible">🛒</span>';}
@@ -78,7 +85,7 @@ function renderBasket(){if(!cart.items.length){$('basket').innerHTML='';return;}
 function checkout(){open(`<h2>Compra realizada</h2><p>Escribe lo que realmente pagaste por los productos de esta cesta, sin otros artículos ni envío.</p><label class="field">Total pagado (MXN)<input id="paid-total" inputmode="decimal" placeholder="${(quoteCart(cart.items).total/100).toFixed(2)}"></label><p id="paid-preview"></p><button class="primary full" id="save-purchase">Confirmar y guardar compra</button>`);$('paid-total').oninput=()=>{const paid=parseMoney($('paid-total').value),q=quoteCart(cart.items);$('paid-preview').textContent=paid!==null&&q.reference!==null?'Diferencia registrada vs habitual: '+money(q.reference-paid):'Sin precio habitual completo, no registramos ahorro.'};$('save-purchase').onclick=()=>{const paid=parseMoney($('paid-total').value);if(paid===null){alert('Escribe el total que pagaste.');return;}try{purchases.unshift(confirmPurchase(cart,purchases,paid));cart={id:crypto.randomUUID(),items:[]};saveSavings();renderBasket();$('modal').close();view('history')}catch(e){alert(e.message)}};}
 function renderSavingsStats(){const known=purchases.filter(p=>p.differenceCents!==null);const delta=known.reduce((n,p)=>n+p.differenceCents,0);$('savings-stats').innerHTML=`<section class="result"><h3>Mi ahorro con Barasu</h3><div class="total">${known.length?money(delta):"—"}</div><p>Diferencia acumulada vs tu precio habitual</p><p>${purchases.length} compras registradas · ${known.length} con referencia completa</p><p class="comparison-help">Importes declarados por ti; no demuestra cuánto habrías gastado sin la app. Las diferencias negativas se conservan. Guardado en este navegador.</p>${removedPurchases.length?'<button class="secondary" id="restore-purchase">Restaurar último registro eliminado</button>':''}${purchases.map(p=>`<div class="store-line"><span>${esc(new Date(p.date).toLocaleDateString('es-MX'))}<small>${p.items.length} productos · pagaste ${money(p.paidCents)}</small></span><span><strong>${p.differenceCents===null?'Sin referencia':money(p.differenceCents)}</strong><button class="secondary" data-delete-purchase="${esc(p.id)}">Eliminar registro</button></span></div>`).join('')}</section>`;$('savings-stats').querySelectorAll('[data-delete-purchase]').forEach(b=>b.onclick=()=>{if(!confirm('¿Eliminar este registro de compra y su estadística?'))return;removedPurchases.push(purchases.find(p=>p.id===b.dataset.deletePurchase));purchases=purchases.filter(p=>p.id!==b.dataset.deletePurchase);saveSavings();renderSavingsStats()});$('restore-purchase')?.addEventListener('click',()=>{const p=removedPurchases.pop();if(p&&!purchases.some(x=>x.id===p.id))purchases.unshift(p);saveSavings();renderSavingsStats()});const estimates=read('barasu-weekly-history',[]).filter(e=>!purchases.some(p=>p.id===e.id));if(estimates.length)$('savings-stats').insertAdjacentHTML('beforeend',`<section class="result"><h3>Listas preparadas</h3><p class="comparison-help">Ahorro estimado, separado de tus compras realizadas. Precios observados en la fecha indicada.</p>${estimates.map(e=>`<div class="store-line"><span>${esc(new Date(e.date).toLocaleDateString('es-MX'))}<small>${e.products.map(esc).join(', ')}<br>${e.stores.map(esc).join(' + ')} · total ${money(e.total)}</small></span><strong>${e.savings===null?'Sin referencia':money(e.savings)}</strong></div>`).join('')}</section>`);}
 const weekly=mountWeekly({root:$('weekly-root'),location:queryLocation,
- search:async query=>request({action:'product_prices',message:query,items:[],location:queryLocation(),price_scope:priceScope}),
+ search:requestWeekly,
  onRegister:(snapshot,onSaved)=>{if(purchases.some(p=>p.id===snapshot.id)){notice('Esta lista ya tiene una compra registrada. Inicia una nueva semana para otro registro.');return;}
  open(`<h2>Registrar mi ahorro</h2><p>Estimado: ${money(snapshot.totalCents)}. Registra solo los productos de esta lista, sin envío ni artículos extra.</p><label class="field">Total que realmente pagaste (MXN)<input id="week-paid" inputmode="decimal" placeholder="${(snapshot.totalCents/100).toFixed(2)}"></label><p>${snapshot.referenceCents===null?'Falta una referencia habitual completa: guardaremos el gasto, sin calcular ahorro.':'Tu referencia habitual: '+money(snapshot.referenceCents)}</p><button class="primary full" id="week-confirm">Confirmar compra realizada</button><p id="week-confirm-error" role="status"></p>`);
  $('week-confirm').onclick=()=>{const paid=parseMoney($('week-paid').value);if(paid===null){$('week-confirm-error').textContent='Escribe el importe pagado.';return;}if(purchases.some(p=>p.id===snapshot.id))return;
@@ -98,11 +105,11 @@ mountVoice({
  runTool:async parameters=>{
   if(!parameters||typeof parameters.message!=='string'||!parameters.message.trim()||parameters.message.length>2000||!['product_prices','update_draft'].includes(parameters.action))return {error:'Parámetros inválidos.'};
   if(busy)return {error:'Espera la consulta actual antes de iniciar otra.'};
-  view('agent');plan=null;$('plan').innerHTML='';$('draft').innerHTML='';
+  view('agent');plan=null;$('plan').innerHTML='';
   const result=await request({action:parameters.action,message:parameters.message,items,location:queryLocation(),...(parameters.action==='product_prices'?{price_scope:priceScope}:{})});
   if(!result)return {error:'La consulta falló. No hay precios verificados.'};
-  if(parameters.action==='product_prices'){requestedVisuals=false;lastPriceQuestion=parameters.message;if(result.comparison)renderComparison(result.comparison);}
-  else{items=result.draft_items;requestedVisuals=true;weekly.setDraft(items);render();}
+  if(parameters.action==='product_prices'){lastPriceQuestion=parameters.message;if(result.comparison)renderComparison(result.comparison);render();}
+  else{items=result.draft_items;requestedVisuals=true;weekly.setDraft(items);render();if(items.length>1)void weekly.prefetch();}
   // The voice agent receives the same source-backed reply as the visible UI.
   return {reply:result.reply,status:result.status,errors:result.errors,comparison:result.comparison??null,draft_items:result.draft_items};
  }
