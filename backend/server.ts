@@ -11,6 +11,11 @@ const fixtures = z
   .array(ScrapedListing)
   .parse(JSON.parse(await readFile("./fixtures/listings.json", "utf8")));
 const key = process.env.FIRECRAWL_API_KEY;
+const host = process.env.HOST ?? "127.0.0.1";
+const accessPassword = process.env.BARASU_ACCESS_PASSWORD;
+if (mode === "live" && !["127.0.0.1", "localhost", "::1"].includes(host) &&
+    (!accessPassword || accessPassword.length < 24))
+  throw new Error("Public live mode requires BARASU_ACCESS_PASSWORD (24+ characters).");
 const agent =
   process.env.ANTHROPIC_API_KEY && process.env.CLAUDE_MODEL
     ? new AIDraftAgent(
@@ -34,16 +39,16 @@ const app = buildApp({
         )
       : undefined,
   scraper: key ? new FirecrawlScraper(key) : undefined,
-}, { apiKey:process.env.ELEVENLABS_API_KEY, agentId:process.env.ELEVENLABS_AGENT_ID });
+}, { apiKey:process.env.ELEVENLABS_API_KEY, agentId:process.env.ELEVENLABS_AGENT_ID }, accessPassword);
 const port = z.coerce
   .number()
   .int()
   .min(1)
   .max(65535)
   .parse(process.env.PORT ?? 3000);
-await app.listen({ host: process.env.HOST ?? "127.0.0.1", port });
+await app.listen({ host, port });
 console.info(
-  `Grocery AI: http://${process.env.HOST ?? "127.0.0.1"}:${port} (${mode})`,
+  `Grocery AI: http://${host}:${port} (${mode})`,
 );
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.on(signal, () => {

@@ -26,9 +26,9 @@ Los clientes **no se conectan directamente a Supabase**. El backend usa `service
 | API Barasu local | `http://127.0.0.1:3000` | Web y simulador iOS que corren **en el mismo Mac** que el backend. |
 | Salud | `http://127.0.0.1:3000/health` | Comprueba el proceso local; no comprueba acceso remoto a proveedores. |
 | Búsqueda y comparación | `http://127.0.0.1:3000/v1/chat/search` | Cliente local que llama a Fastify, nunca a Supabase directamente. |
-| API pública para otro Mac o iPhone físico | **No existe todavía** | Hace falta desplegar un backend HTTPS con autenticación y configurar su URL base en el cliente. `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
+| API pública para otro Mac o iPhone físico | Ver `docs/RENDER_DEPLOYMENT.md` | El despliegue usa HTTPS y acceso básico; `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
 
-La URL de Supabase no sustituye la URL de la API Barasu: las RPC requieren una clave privilegiada que jamás debe enviarse a iOS o al navegador. Si otro agente solo necesita compilar o probar la app en su propio Mac, debe iniciar el backend allí y usar `http://127.0.0.1:3000`; si necesita usar **este** backend desde otro equipo, aún no hay un endpoint remoto seguro para ello.
+La URL de Supabase no sustituye la URL de la API Barasu: las RPC requieren una clave privilegiada que jamás debe enviarse a iOS o al navegador. Si otro agente solo necesita compilar o probar la app en su propio Mac, debe iniciar el backend allí y usar `http://127.0.0.1:3000`. En Render la URL pública será la del nuevo servicio, protegida por contraseña de acceso temporal; esa contraseña tampoco se guarda en Git.
 
 ```sh
 npm ci                       # Node.js 22+
@@ -49,6 +49,7 @@ curl http://127.0.0.1:3000/health
 | `AI_GATEWAY_API_KEY` + `AGENT_MODEL` | Alternativa a Anthropic directo; si hay ambas configuraciones, `backend/server.ts` elige Anthropic. |
 | `ELEVENLABS_API_KEY` + `ELEVENLABS_AGENT_ID` | Voz. La API key se queda en el servidor; el cliente recibe un token temporal. |
 | `HOST`, `PORT` | Por defecto `127.0.0.1:3000`, accesible desde ese Mac. |
+| `BARASU_ACCESS_PASSWORD` | Contraseña temporal del despliegue; 24+ caracteres. En Render el backend live no arranca sin ella. El navegador usa HTTP Basic sobre HTTPS. |
 
 La referencia del proyecto remoto **no es una credencial**. Cada integrante debe obtener acceso al proyecto y su propia configuración segura. No distribuyas valores de `.env` por Git o chat.
 
