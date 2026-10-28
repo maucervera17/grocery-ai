@@ -18,15 +18,18 @@ export function registerVoice(app: FastifyInstance, options: VoiceOptions = {}) 
     const bucket = counter && now-counter.start < 60000 ? counter : {start:now,count:0};
     attempts.set(req.ip,bucket);
     if (++bucket.count > 5) return reply.header('Retry-After','60').code(429).send({error:'VOICE_RATE_LIMIT',message:'Espera un minuto antes de iniciar otra conversación.'});
+    let providerStatus: number | undefined;
     try {
       const response = await (options.fetcher ?? fetch)(`https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${encodeURIComponent(options.agentId!)}`, {
-        headers: {'xi-api-key':options.apiKey!}, signal:AbortSignal.timeout(10000),
+        headers: {'xi-api-key':options.apiKey!}, signal:AbortSignal.timeout(20000),
       });
+      providerStatus = response.status;
       if (!response.ok) throw new Error('provider');
       const body = await response.json() as {token?: unknown};
       if (typeof body.token !== 'string' || !body.token) throw new Error('token');
       return { conversation_token:body.token };
-    } catch {
+    } catch (error) {
+      req.log.warn({ providerStatus, errorType: error instanceof Error ? error.name : 'unknown' }, 'ElevenLabs session failed');
       return reply.code(502).send({ error:'VOICE_PROVIDER_UNAVAILABLE',message:'No se pudo iniciar la voz. Revisa la configuración o inténtalo de nuevo.' });
     }
   });
