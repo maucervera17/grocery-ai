@@ -8,6 +8,7 @@ struct VoiceSessionTokenClient: Sendable {
         var request = URLRequest(url: baseURL.appendingPathComponent("v1/voice/session"))
         request.httpMethod = "POST"
         request.timeoutInterval = 30
+        try APIAccess.authorize(&request)
 
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
@@ -20,6 +21,10 @@ struct VoiceSessionTokenClient: Sendable {
                 throw VoiceSessionError.invalidResponse
             }
             return payload.conversationToken
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw VoiceSessionError.server("Acceso incorrecto. Actualiza la contraseña en Ajustes.")
         }
 
         let error = try? JSONDecoder().decode(ErrorResponse.self, from: data)

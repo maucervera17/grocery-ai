@@ -1,14 +1,57 @@
 import Foundation
+import Security
 
-// Change this single value for a physical device or deployed backend.
 enum APIConfiguration {
-    static let baseURL = URL(string: "http://127.0.0.1:3000")!
+    static let baseURL = URL(string: "https://barasu-api.onrender.com")!
 
     #if DEBUG
     static let seedsDemoContent = true
     #else
     static let seedsDemoContent = false
     #endif
+}
+
+enum APIAccess {
+    private static let account = "barasu-api-password"
+    private static let service = "com.groceryai.app"
+
+    static func password() -> String? {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecReturnData as String: true,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    static func savePassword(_ value: String) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account
+        ]
+        SecItemDelete(query as CFDictionary)
+        guard !value.isEmpty else { return }
+        var attributes = query
+        attributes[kSecValueData as String] = Data(value.utf8)
+        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        guard SecItemAdd(attributes as CFDictionary, nil) == errSecSuccess else {
+            throw GroceryAPIError(message: "No se pudo guardar el acceso en el llavero.")
+        }
+    }
+
+    static func authorize(_ request: inout URLRequest) throws {
+        guard let password = password(), !password.isEmpty else {
+            throw GroceryAPIError(message: "Configura el acceso al servidor en Ajustes para usar Barasu.")
+        }
+        let credentials = Data("barasu:\(password)".utf8).base64EncodedString()
+        request.setValue("Basic \(credentials)", forHTTPHeaderField: "Authorization")
+    }
 }
 
 struct GroceryAPIError: LocalizedError {
@@ -107,9 +150,11 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
         request.httpMethod = "POST"; request.timeoutInterval = 100
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
+        try APIAccess.authorize(&request)
         request.httpBody = try JSONEncoder().encode(body)
         let (data, response) = try await session.data(for:request)
         guard let http = response as? HTTPURLResponse else { throw GroceryAPIError(message:"Respuesta HTTP inválida.") }
+        if http.statusCode == 401 { throw GroceryAPIError(message:"Acceso incorrecto. Actualiza la contraseña en Ajustes.") }
         let result = try JSONDecoder().decode(WireResponse.self, from:data)
         guard (200..<300).contains(http.statusCode), result.status != .error else { throw GroceryAPIError(message:result.reply) }
         let ids = result.draft_items.map(\.id)

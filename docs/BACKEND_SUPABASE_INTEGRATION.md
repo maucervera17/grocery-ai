@@ -14,7 +14,7 @@ Web / iOS ──HTTP JSON──> Fastify (backend/app.ts, backend/server.ts)
                             └─> Nominatim: coordenadas a CP, con confirmación
 ```
 
-Los clientes **no se conectan directamente a Supabase**. El backend usa `service_role` únicamente en el servidor. No hay autenticación de usuario en este prototipo; no expongas el backend público sin añadirla. El backend no guarda borradores ni historial personal. La web guarda borrador, wishlist, lista semanal y ahorro en `localStorage`; iOS guarda su estado local con SwiftData. La base guarda catálogo, última observación de precio e historial de precios, no compras efectuadas.
+Los clientes **no se conectan directamente a Supabase**. El backend usa `service_role` únicamente en el servidor. El despliegue público tiene HTTP Basic temporal para la demo, pero aún no hay autenticación individual de usuario. El backend no guarda borradores ni historial personal. La web guarda borrador, wishlist, lista semanal y ahorro en `localStorage`; iOS guarda su estado local con SwiftData. La base guarda catálogo, última observación de precio e historial de precios, no compras efectuadas.
 
 ## Arranque desde un clon
 
@@ -26,9 +26,9 @@ Los clientes **no se conectan directamente a Supabase**. El backend usa `service
 | API Barasu local | `http://127.0.0.1:3000` | Web y simulador iOS que corren **en el mismo Mac** que el backend. |
 | Salud | `http://127.0.0.1:3000/health` | Comprueba el proceso local; no comprueba acceso remoto a proveedores. |
 | Búsqueda y comparación | `http://127.0.0.1:3000/v1/chat/search` | Cliente local que llama a Fastify, nunca a Supabase directamente. |
-| API pública para otro Mac o iPhone físico | Ver `docs/RENDER_DEPLOYMENT.md` | El despliegue usa HTTPS y acceso básico; `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
+| API pública para otro Mac o iPhone físico | `https://barasu-api.onrender.com` | El despliegue usa HTTPS y acceso básico; `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
 
-La URL de Supabase no sustituye la URL de la API Barasu: las RPC requieren una clave privilegiada que jamás debe enviarse a iOS o al navegador. Si otro agente solo necesita compilar o probar la app en su propio Mac, debe iniciar el backend allí y usar `http://127.0.0.1:3000`. En Render la URL pública será la del nuevo servicio, protegida por contraseña de acceso temporal; esa contraseña tampoco se guarda en Git.
+La URL de Supabase no sustituye la URL de la API Barasu: las RPC requieren una clave privilegiada que jamás debe enviarse a iOS o al navegador. Si otro agente solo necesita compilar o probar la app en su propio Mac, puede iniciar el backend allí y usar `http://127.0.0.1:3000`. En Render la URL pública es `https://barasu-api.onrender.com`, protegida por una contraseña temporal que no se guarda en Git.
 
 ```sh
 npm ci                       # Node.js 22+
@@ -95,7 +95,7 @@ Para una base local de desarrollo, sigue `database/README.md` y `supabase/config
 
 ## Integración iOS y límites actuales
 
-`ios/GroceryAI/Data/API/GroceryAPIClient.swift` contiene `APIConfiguration.baseURL` (actualmente `http://127.0.0.1:3000`) y el cliente tipado. El simulador en el mismo Mac puede usar esa URL. Un iPhone físico necesita un backend HTTPS accesible, configuración de red/ATS correspondiente y autenticación antes de exposición pública. El cliente iOS actual implementa `update_draft` y `compare`; el contrato backend también tiene `product_prices`, pero no presupongas que la UI nativa ya lo llama. La foto de cada línea de plan está en `image_url` opcional. La geolocalización iOS usa CoreLocation/CLGeocoder y envía CP, no coordenadas al backend.
+`ios/GroceryAI/Data/API/GroceryAPIClient.swift` contiene `APIConfiguration.baseURL` con la URL HTTPS de Render y el cliente tipado. iOS pide al usuario la contraseña de demo en Agente → Ajustes → Backend, la guarda en el llavero del dispositivo y la usa para las peticiones al backend. El cliente iOS actual implementa `update_draft` y `compare`; el contrato backend también tiene `product_prices`, pero no presupongas que la UI nativa ya lo llama. La foto de cada línea de plan está en `image_url` opcional. La geolocalización iOS usa CoreLocation/CLGeocoder y envía CP, no coordenadas al backend.
 
 La voz web usa ElevenLabs con `gpt-4.1-mini` y `eleven_flash_v2_5` en el agente configurado; la configuración versionada está en `config/elevenlabs-agent.json`. En Render, `ELEVENLABS_API_KEY` y `ELEVENLABS_AGENT_ID` quedan en el servidor; iOS solicita un token temporal en `/v1/voice/session` y debe enviar la autenticación del despliegue. `barasu_search` es una herramienta del cliente, así que el cliente iOS debe registrar su manejador para ejecutar las consultas. El historial de ahorro y wishlist no tienen sincronización multiusuario por Supabase. Tampoco hay creación automática de un carrito externo: los enlaces llevan a las tiendas para que el usuario finalice allí.
 
@@ -114,6 +114,6 @@ npm run smoke:db
 - Si hay HTTP 200 con `status: partial`, lee `errors[]`, `unmatched_items` y el alcance `published/local`; no ocultes el fallo de una tienda.
 - Si falta una foto, `imageUrl`/`image_url` es opcional; muestra respaldo neutro y verifica que la migración 004 exista en ese entorno.
 - Si cambia un CP, descarta resultados previos del cliente. No reutilices una observación `published` como disponibilidad local.
-- Si la voz falla, consulta `/v1/voice/status`; la sesión solo acepta loopback por diseño y requiere ambas variables de ElevenLabs.
+- Si la voz falla, consulta `/v1/voice/status`; la sesión remota requiere HTTP Basic, límite por IP y ambas variables de ElevenLabs.
 
 Archivos de referencia: `backend/server.ts`, `backend/app.ts`, `backend/service.ts`, `backend/product-prices.ts`, `backend/supabase-repository.ts`, `scrapers/firecrawl.ts`, `contracts/schema.ts`, `database/migrations/`, `ios/GroceryAI/Data/API/GroceryAPIClient.swift`.
