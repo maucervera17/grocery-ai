@@ -154,20 +154,15 @@ export function parseProduct(
     ),
   ];
   const perKg = /\bpor\s+(?:kg|kilo(?:gramo)?)\b/i.test(sizeText);
-  if (perKg)
-    sizes.splice(0, sizes.length, [
-      "por kg",
-      "1",
-      "kg",
-    ] as unknown as RegExpMatchArray);
-  if (!sizes.length) throw new Error("Unknown package size");
+  if (!sizes.length && !perKg) throw new Error("Unknown package size");
   if (
+    !perKg &&
     !multi &&
     /\b(pack|paquete|caja|empaque)\b/i.test(title) &&
     sizes.length > 1
   )
     throw new Error("Ambiguous multipack");
-  const size = sizes[sizes.length - 1],
+  const size = perKg ? ["por kg", "1", "kg"] : sizes[sizes.length - 1],
     rawUnit = (perKg ? "kg" : (multi?.[3] ?? size[2])).toLowerCase();
   const unit =
     rawUnit === "l"
