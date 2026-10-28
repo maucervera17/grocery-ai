@@ -1,4 +1,6 @@
-# Grocery AI — backend, agente y Firecrawl
+# Barasu — comparación, guardados y voz
+
+Estado actual y pruebas de wishlist, GPS y ElevenLabs: [guía de integración](docs/VOICE_LOCATION_WISHLIST.md). Las secciones iniciales siguientes conservan documentación histórica del MVP; para ejecutar usa [setup](docs/setup.md).
 
 Backend local TypeScript/Node.js 22+ con Fastify, Zod y Vercel AI SDK. Implementa el acuerdo actualizado: un endpoint, borrador sin estado y comparación de una lista con hasta dos tiendas. Fuentes elegidas: **Chedraui y Bodega Aurrera**.
 

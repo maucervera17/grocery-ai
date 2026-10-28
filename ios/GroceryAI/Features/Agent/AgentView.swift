@@ -298,7 +298,12 @@ private final class BarasuVoiceModel: ObservableObject {
                             let result: String
                             if call.toolName == "barasu_search", let message = parameters?["message"] as? String, let action = parameters?["action"] as? String {
                                 result = await appState.voiceSearch(action:action,message:message)
-                            } else { result = "Herramienta no disponible. No se realizaron cambios." }
+                            } else if call.toolName == "barasu_save", let url = parameters?["product_url"] as? String,
+                                      let comparison = appState.productComparison, comparison.data_mode == "live",
+                                      let offer = comparison.offers.first(where: { $0.id == url }) {
+                                appState.saveDiscovery(offer,comparison:comparison)
+                                result = "Guardado en Barasu: " + offer.listing.productName
+                            } else { result = "Herramienta o producto no disponible. No se realizaron cambios." }
                             guard !Task.isCancelled, self?.generation == id else { return }
                             try? await connected.sendToolResult(for:call.toolCallId,result:result)
                         }

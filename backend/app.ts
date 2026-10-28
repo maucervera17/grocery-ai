@@ -1,3 +1,4 @@
+import {registerLocation} from "./location.js";
 import { registerVoice, type VoiceOptions } from "./voice.js";
 import { readFile } from "node:fs/promises";
 import Fastify from "fastify";
@@ -11,6 +12,7 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}) {
     }),
     search = createSearch(options);
   registerVoice(app, voiceOptions);
+  registerLocation(app);
   const errorBody = (code: string, message: string) => ({
     reply: message,
     status: "error",
@@ -22,6 +24,7 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}) {
     ["/", "index.html", "text/html; charset=utf-8"],
     ["/style.css", "style.css", "text/css"],
     ["/app.js", "app.js", "text/javascript"],
+    ["/location.js", "location.js", "text/javascript"],
     ["/wishlist.js", "wishlist.js", "text/javascript"],
     ["/voice.js", "voice.js", "text/javascript"],
     ["/savings.js", "savings.js", "text/javascript"],

@@ -140,7 +140,8 @@ final class AppState {
             if action == "product_prices" {
                 let (reply,result) = try await GroceryAPIClient().productPrices(message:message,items:draft.items,postalCode:postalCode,local:localPrices)
                 productComparison = result
-                return reply
+                struct VoiceResult: Encodable { let reply: String; let comparison: ProductPriceComparison? }
+                return String(decoding:try JSONEncoder().encode(VoiceResult(reply:reply,comparison:result)),as:UTF8.self)
             } else if action == "update_draft" {
                 let result = try await agentService.updateDraft(message:message,currentItems:draft.items)
                 draft.replaceItems(with:result.draftItems);persist()

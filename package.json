@@ -18,7 +18,8 @@
     "format": "prettier --write backend scrapers contracts tests scripts",
     "smoke:db": "node --env-file-if-exists=.env --import tsx scripts/database-smoke.ts",
     "smoke:scrapers": "node --env-file-if-exists=.env --import tsx scripts/scrape-smoke.ts",
-    "build:voice": "esbuild web/voice-sdk.js --bundle --format=esm --platform=browser --outfile=dist/web/voice-sdk.js"
+    "build:voice": "esbuild web/voice-sdk.js --bundle --format=esm --platform=browser --outfile=dist/web/voice-sdk.js",
+    "voice:setup": "node --env-file-if-exists=.env --import tsx scripts/setup-voice.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.90",

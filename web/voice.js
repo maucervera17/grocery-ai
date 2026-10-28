@@ -1,5 +1,5 @@
 // SDK is loaded only after the user opens voice mode.
-export function mountVoice({runTool,onMessage}) {
+export function mountVoice({runTool,saveTool,onMessage,loadSDK=()=>import('/voice-sdk.js')}) {
   const panel=document.getElementById('voice-panel'),status=document.getElementById('voice-status');
   const start=document.getElementById('voice-start'),stop=document.getElementById('voice-stop'),mute=document.getElementById('voice-mute');
   let conversation=null,epoch=0,muted=false,starting=false,toolBusy=false;
@@ -15,7 +15,7 @@ export function mountVoice({runTool,onMessage}) {
       if(id!==epoch)return;
       const response=await fetch('/v1/voice/session',{method:'POST'}),data=await response.json();
       if(!response.ok)throw Error(data.message||'No se pudo iniciar la voz.');
-      const {Conversation}=await import('/voice-sdk.js');
+      const {Conversation}=await loadSDK();
       if(id!==epoch)return;
       const connected=await Conversation.startSession({
         conversationToken:data.conversation_token,connectionType:'webrtc',
@@ -23,7 +23,7 @@ export function mountVoice({runTool,onMessage}) {
         onModeChange:({mode})=>{if(id===epoch)say(mode==='speaking'?'Barasu está hablando':'Te escucho…');},
         onDisconnect:()=>{if(id===epoch)void end();},
         onError:()=>{if(id===epoch){void end();say('La conversación se interrumpió. Puedes volver a iniciar.');}},
-        clientTools:{barasu_search:async parameters=>{
+        clientTools:{barasu_save:async parameters=>{if(id!==epoch)return 'La sesión terminó.';return JSON.stringify(await saveTool(parameters));},barasu_search:async parameters=>{
           if(id!==epoch)return JSON.stringify({error:'La sesión terminó.'});
           if(toolBusy)return JSON.stringify({error:'Hay una consulta en curso. Espera su respuesta.'});
           toolBusy=true;say('Consultando productos…');
