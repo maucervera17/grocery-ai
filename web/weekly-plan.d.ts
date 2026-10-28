@@ -12,3 +12,5 @@ export function recordWeeklyPurchase(
 ): any;
 
 export function soldByWeight(listing: any): boolean;
+
+export function qualifiersMatch(name: string, query?: string): boolean;

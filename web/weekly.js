@@ -3,6 +3,7 @@ import {
   weeklyExport,
   measure,
   soldByWeight,
+  qualifiersMatch,
 } from "/weekly-plan.js";
 import { parseMoney } from "/savings.js";
 const money = (n) =>
@@ -81,6 +82,18 @@ export function mountWeekly({ root, search, location, onRegister }) {
             usualPriceCents: null,
           };
     });
+    for (const row of state.rows) {
+      row.offers = row.offers.filter((o) =>
+        qualifiersMatch(o.listing.productName, row.query),
+      );
+      if (
+        row.selected &&
+        !row.offers.some((o) => o.listing.productUrl === row.selected)
+      ) {
+        row.selected = null;
+        row.approved = [];
+      }
+    }
     activePlan = null;
     persist();
     render();

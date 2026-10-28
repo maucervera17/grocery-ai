@@ -1,3 +1,15 @@
+export function qualifiersMatch(name, query = "") {
+  const norm = (s) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  return [
+    ...norm(query).matchAll(
+      /\b(sin|con)\s+(hueso|piel|azucar|lactosa|gluten|sal)\b/g,
+    ),
+  ].every((q) => new RegExp(`\\b${q[1]}\\s+${q[2]}\\b`).test(norm(name)));
+}
 export const soldByWeight = (listing) =>
   listing?.unit === "kg" &&
   /\bpor\s+(?:kg|kilo(?:gramo)?)\b/i.test(listing.productName);
@@ -41,7 +53,11 @@ export function optimizeWeekly(
     )
       return [];
     return (row.offers ?? [])
-      .filter((o) => row.approved?.includes(o.listing.productUrl))
+      .filter(
+        (o) =>
+          row.approved?.includes(o.listing.productUrl) &&
+          qualifiersMatch(o.listing.productName, row.query ?? row.name),
+      )
       .flatMap((o) => {
         const l = o.listing,
           p = measure(l.quantity, l.unit),

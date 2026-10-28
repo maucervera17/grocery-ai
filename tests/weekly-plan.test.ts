@@ -124,3 +124,4 @@ test("explicit per-kg meat can be planned at half a kilo without rounding to a f
   assert.equal(result.cheapest.reference, 10000);
   assert.equal(result.cheapest.lines[0].packages, 0.5);
 });
+test('previously saved contradictory cuts cannot enter a new optimization',()=>{const r=row('pechuga de pollo sin hueso',[offer('A',10000,'pechuga de pollo con hueso y sin piel',1,'kg')]);assert.equal(optimizeWeekly([r],{now}).cheapest,null);});

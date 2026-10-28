@@ -37,4 +37,4 @@ La disponibilidad local sigue dependiendo de evidencia de cada tienda. Un CP res
 - Selección de prueba con ofertas reales: San Juan 12 piezas $30, pechuga sin hueso $170/kg (1 kg estimado), Marketside 80/20 500 g $61 y Great Value Oaxaca 400 g $64. Resultado: $325 en Bodega Aurrera entre las alternativas aprobadas. La carne 70/30 más barata no sustituyó la 80/20 elegida. Son precios publicados, no disponibilidad local confirmada.
 - El histórico mostró la lista preparada separada de 0 compras realizadas. No se inventaron precios habituales ni se registró una compra durante la prueba.
 - ElevenLabs real recibió una petición sintética de cuatro productos, invocó update_draft una vez y respondió con voz remitiendo a Mi lista.
-- 86 pruebas automatizadas pasan, junto con compilación TypeScript. Se incluyen precio por kg vs peso de charola y la distinción «sin hueso» frente a «con hueso y sin piel».
+- 87 pruebas automatizadas pasan, junto con compilación TypeScript. Se incluyen precio por kg vs peso de charola y la distinción «sin hueso» frente a «con hueso y sin piel».
