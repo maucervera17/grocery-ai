@@ -322,15 +322,16 @@ export function mountWeekly({ root, search, location, onRegister }) {
   }
   function render() {
     root.hidden = false;
+    const editorOpen = root.querySelector(".weekly-edit")?.open ?? false;
     const legacyUnspecified = state.rows.length >= 4 && state.rows.every((r) => r.requested.quantity === 1 && r.requested.unit === "piece");
     const activeIndex = Math.max(0, state.rows.findIndex((row) => row.id === activeRowId));
     const carouselStart = state.rows.length
       ? `<div class="weekly-carousel-nav" aria-label="Navegar productos"><span class="weekly-carousel-count" aria-live="polite">Producto ${activeIndex + 1} de ${state.rows.length}</span><div><button type="button" id="week-prev" aria-label="Producto anterior">‹</button><button type="button" id="week-next" aria-label="Producto siguiente">›</button></div></div><div class="weekly-carousel-tabs" role="tablist" aria-label="Productos de la lista">${state.rows.map((row, index) => `<button type="button" role="tab" id="week-tab-${esc(row.id)}" aria-controls="week-panel-${esc(row.id)}" data-week-slide="${index}">${esc(row.name)} <span aria-hidden="true">${row.selected ? "✓" : pending.has(row.id) ? "…" : row.offers.length ? "•" : "○"}</span></button>`).join("")}</div><div class="weekly-slides">`
       : "";
-    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.length} productos</span></div><p class="weekly-source-note">Comparamos la lista completa con precios publicados ${location()?.postal_code ? `para CP ${esc(location().postal_code)}` : "sin zona confirmada"}. Existencias y precio final se confirman en la tienda.</p><div class="weekly-toolbar"><button class="primary" id="week-auto-select" ${!state.rows.length ? "disabled" : ""}>Comparar mi súper</button><button class="secondary" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>${batch ? `Buscando ${batchDone}/${batchTotal}` : "↻ Actualizar"}</button></div><div id="week-results"></div><details class="weekly-guidance"><summary>Cómo funciona esta lista</summary><p>Barasu compara ofertas publicadas y conserva tus elecciones manuales. Puedes revisar marca, corte y presentación de cada producto abajo. Las existencias locales siguen sin confirmar.</p><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button></details>${
+    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.length} productos</span></div><div class="weekly-toolbar"><button class="primary" id="week-auto-select" ${!state.rows.length ? "disabled" : ""}>Comparar tiendas</button><button class="secondary" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>↻ Actualizar</button></div><div id="week-results"></div><details class="weekly-guidance"><summary>Más opciones</summary><p>Precios publicados ${location()?.postal_code ? `para CP ${esc(location().postal_code)}` : "sin zona confirmada"}. Confirma existencias y precio final en la tienda.</p><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button></details>${
       !state.rows.length
         ? "<p>Escribe una lista: «Quiero huevos, pollo, carne y queso».</p>"
-        : `${carouselStart}${state.rows
+        : `<details class="weekly-edit"><summary>Revisar productos <span>${state.rows.length} artículos →</span></summary>${carouselStart}${state.rows
             .map(
               (r, index) =>
                 `<article class="weekly-row" id="week-panel-${esc(r.id)}" role="tabpanel" aria-labelledby="week-tab-${esc(r.id)}" data-week-panel><div class="weekly-item-head"><span class="weekly-item-emoji" aria-hidden="true">${/queso|parmesano/i.test(r.name) ? "🧀" : /huevo/i.test(r.name) ? "🥚" : /pollo/i.test(r.name) ? "🍗" : /carne/i.test(r.name) ? "🥩" : /cereal/i.test(r.name) ? "🥣" : /lenteja/i.test(r.name) ? "🫘" : /arroz/i.test(r.name) ? "🍚" : /miel/i.test(r.name) ? "🍯" : /caf[eé]/i.test(r.name) ? "☕" : "🛒"}</span><div><h3>${index + 1}. ${esc(r.name)}</h3><small>${legacyUnspecified || r.requested.unit === "package" ? "Presentación por elegir" : `${esc(r.requested.quantity)} ${esc(unitLabel(r.requested.unit))}`} · ${offerStatus(r, pending)}</small></div></div><div class="weekly-query"><input data-query="${esc(r.id)}" aria-label="Buscar presentación de ${esc(r.name)}" value="${esc(r.query)}" placeholder="Ej. pechuga sin hueso, 1 kg"><button data-find="${esc(r.id)}" ${pending.has(r.id) ? "disabled" : ""}>${pending.has(r.id) ? "Buscando…" : r.offers.length ? "Buscar otra" : "Ver opciones"}</button></div>${suggestionHtml(r)}${/^(carne|pollo|queso)$/i.test(r.name) ? '<p class="comparison-help">Especifica el corte, tipo o marca para comparar productos que sí te sirven.</p>' : ""}${r.error ? `<p class="weekly-warning" role="status">${esc(r.error)}</p>` : ""}${
@@ -347,9 +348,10 @@ export function mountWeekly({ root, search, location, onRegister }) {
                     : ""
                 }${r.selected ? `<div class="weekly-fields"><label>${soldByWeight(r.offers.find((o) => o.listing.productUrl === r.selected)?.listing) ? "Kilos (estimados)" : "Paquetes"}<input data-qty="${esc(r.id)}" type="number" min="0.001" step="0.001" max="99" value="${r.packages}"></label><label>Mi precio habitual / presentación o kg (MXN)<input data-usual="${esc(r.id)}" inputmode="decimal" placeholder="Sin referencia" value="${r.usualPriceCents === null ? "" : (r.usualPriceCents / 100).toFixed(2)}"></label></div><p class="comparison-help">La referencia corresponde al producto elegido. Aprobar alternativas expresa tu preferencia, no una certificación de calidad.</p>` : ""}</article>`,
             )
-            .join("")}</div>`
+            .join("")}</div></details>`
     }<details class="weekly-preferences"><summary>Costo y conveniencia</summary><label>Tiendas para la selección del editor<select id="week-stores"><option value="1" ${state.maxStores === 1 ? "selected" : ""}>Una tienda</option><option value="2" ${state.maxStores === 2 ? "selected" : ""}>Hasta dos tiendas</option></select></label><label>Valor de una hora de tu tiempo (MXN)<input id="week-hour" inputmode="decimal" value="${state.hourlyCents / 100}"></label><p class="comparison-help">Opcional: indica el tiempo total de visita y traslado desde tu ubicación, y el costo de traslado o envío. Son estimaciones tuyas, no rutas medidas. Para dos tiendas sumamos las visitas por separado.</p>${[...new Set(state.rows.flatMap((r) => r.offers.map((o) => o.listing.retailer)))].map((s) => `<fieldset><legend>${esc(s)}</legend><label>Minutos por visita<input data-minutes="${esc(s)}" type="number" min="0" max="1440" value="${state.travel[s]?.minutes ?? ""}" placeholder="Sin estimación"></label><label>Traslado o envío (MXN)<input data-trip="${esc(s)}" inputmode="decimal" value="${state.travel[s]?.costCents == null ? "" : state.travel[s].costCents / 100}" placeholder="Sin estimación"></label><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s + " cerca de " + (location()?.postal_code || "mí"))}" target="_blank" rel="noopener noreferrer">Buscar sucursal en mapas ↗</a></fieldset>`).join("")}</details><div id="week-error" role="status"></div></section>`;
-    if (autoRequested) root.querySelector("#week-error").textContent = selectionReply(recommendWeekly(state.rows, { maxStores: state.maxStores }));
+    if (state.rows.length) root.querySelector(".weekly-edit").open = editorOpen;
+    if (batch) root.querySelector("#week-results").innerHTML = `<p class="week-loading" role="status">Buscando precios · ${batchDone}/${batchTotal} productos</p>`;
     if (state.rows.length) {
       showSlide(activeIndex);
       root.querySelector("#week-prev").onclick = () => showSlide(state.rows.findIndex((row) => row.id === activeRowId) - 1, true);
@@ -386,8 +388,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     });
     root.querySelector("#week-search-all").onclick = searchAll;
     root.querySelector("#week-auto-select").onclick = () => {
-      const reply = autoSelect();
-      root.querySelector("#week-error").textContent = reply;
+      autoSelect();
     };
     root.querySelector("#week-new").onclick = () => {
       state.id = crypto.randomUUID();
@@ -564,15 +565,20 @@ export function mountWeekly({ root, search, location, onRegister }) {
         ? `La combinación de ${winner.stores.join(" y ")} tiene el menor total publicado de la lista. Traslado y envío no incluidos.`
         : `${winner.stores[0]} cubre toda la lista${equivalent ? " al mejor total publicado" : ""} en una sola visita. Traslado y envío no incluidos.`
       : "Aún faltan productos para completar la compra. Compara solo la cobertura encontrada.";
-    target.innerHTML = `<section class="week-basket"><div class="week-basket-head"><span class="eyebrow">COMPARACIÓN DE TU LISTA</span><h3>¿Dónde conviene hacer todo el súper?</h3><p>${esc(reason)}</p></div><div class="week-plan-grid">${plans.map((p, i) => `<article class="week-plan-card ${recommended === i && p.lines.length ? "recommended" : ""}"><div class="week-plan-top"><span>${p.stores.length === 2 ? "Dos tiendas" : "Una tienda"}</span>${recommended === i && p.lines.length ? '<b>Recomendación</b>' : ""}</div><h4>${p.stores.length ? p.stores.map(esc).join(" + ") : esc(p.kind)}</h4><strong>${p.lines.length ? money(p.total) : "—"}</strong><p>${p.lines.length} de ${state.rows.length} productos con precio publicado${p.complete ? " · lista completa" : " · lista incompleta"}</p>${p.missing.length ? `<small>Faltan: ${p.missing.map(esc).join(", ")}</small>` : ""}${p.lines.some((line) => { const row = state.rows.find((item) => item.id === line.rowId); return row?.selected && row.selected !== line.listing.productUrl; }) ? `<small>Incluye cambios frente a tus productos elegidos. Revisa los detalles.</small>` : ""}<button type="button" class="${recommended === i ? "primary" : "secondary"} full" data-plan="${i}" ${!p.lines.length ? "disabled" : ""}>${p.complete ? "Ver lista para comprar" : "Ver productos encontrados"} →</button></article>`).join("")}</div>${!equivalent ? '<p class="comparison-help">Hay presentaciones sin tamaño definido: revisa el precio por unidad antes de comparar totales entre marcas.</p>' : ""}${mixed.stores.length < 2 && singles.length > 1 ? '<p class="comparison-help">Combinar tiendas no mejora la cobertura ni el total encontrado.</p>' : ""}<p class="comparison-help">Las opciones pueden usar marcas o presentaciones distintas. Son precios publicados, no carritos creados. Confirma disponibilidad, importe y entrega en cada comercio.</p><div id="week-handoff"></div></section>`;
+    const cards = plans.map((plan, index) => {
+      const changes = plan.lines.filter((line) => {
+        const row = state.rows.find((item) => item.id === line.rowId);
+        return row?.selected && row.selected !== line.listing.productUrl;
+      }).length;
+      return `<button type="button" class="week-option ${recommended === index && plan.complete ? "recommended" : ""}" data-plan="${index}" ${!plan.lines.length ? "disabled" : ""} aria-label="${esc(plan.stores.join(" y ") || plan.kind)}, ${plan.lines.length} de ${state.rows.length} productos, ${money(plan.total)}. Ver productos"><span class="week-option-name"><small>${plan.stores.length === 2 ? "DOS TIENDAS" : "UNA TIENDA"}${recommended === index && plan.complete ? " · RECOMENDADO" : ""}</small><strong>${plan.stores.length ? plan.stores.map(esc).join(" + ") : esc(plan.kind)}</strong><span>${plan.lines.length}/${state.rows.length} productos${changes ? ` · ${changes} ${changes === 1 ? "cambio" : "cambios"} por revisar` : ""}</span>${plan.missing.length ? `<em>Faltan: ${plan.missing.map(esc).join(", ")}</em>` : ""}</span><span class="week-option-price">${!plan.complete && plan.lines.length ? "<small>Total parcial</small>" : ""}<strong>${plan.lines.length ? money(plan.total) : "—"}</strong><span>Ver productos →</span></span></button>`;
+    }).join("");
+    target.innerHTML = `<section class="week-basket"><div class="week-basket-head"><span class="eyebrow">TU LISTA COMPARADA</span><h3>¿Dónde compras mejor?</h3><p>${esc(reason)}</p></div><div class="week-plan-grid">${cards}</div><p class="week-fineprint">Precios publicados · disponibilidad por confirmar</p><details class="week-notes"><summary>Sobre esta comparación</summary><p>Precios publicados; verifica disponibilidad, precio final y entrega en el comercio. El total no incluye traslado ni envío. Las opciones pueden cambiar marca o presentación.${!equivalent ? " Algunos tamaños no están definidos: compara el precio por unidad." : ""}</p>${mixed.stores.length < 2 && singles.length > 1 ? "<p>Combinar tiendas no mejoró la cobertura ni el precio encontrado.</p>" : ""}</details><div id="week-handoff"></div></section>`;
     target.querySelectorAll("[data-plan]").forEach((button) => {
       button.onclick = () => {
         handoff(plans[Number(button.dataset.plan)]);
         target.querySelector("#week-handoff").scrollIntoView({ behavior: "smooth", block: "start" });
       };
     });
-    const chosen = winner;
-    if (chosen.lines.length) handoff(chosen);
     if (scroll) target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   function handoff(p) {
@@ -599,20 +605,20 @@ export function mountWeekly({ root, search, location, onRegister }) {
       ),
     );
     const target = root.querySelector("#week-handoff");
-    target.innerHTML = `<div class="week-handoff-head"><h3>${p.complete ? "Tu compra, organizada por tienda" : "Productos encontrados"}</h3><p>${p.complete ? "Abre los productos de cada comercio y agrégalos a su carrito." : "Esta opción no cubre toda tu lista. No la presentamos como una compra completa."}</p></div>${p.stores
+    target.innerHTML = `<div class="week-handoff-head"><h3>${p.complete ? "Productos para comprar" : "Productos encontrados"}</h3><p>${p.complete ? "Abre cada ficha y agrégala al carrito del comercio." : "Faltan productos para completar esta lista."}</p></div>${p.stores
       .map(
         (s) =>
           `<article class="weekly-row week-store-list"><h4>${esc(s)} <span>${money(p.lines.filter((l) => l.listing.retailer === s).reduce((sum, l) => sum + l.total, 0))}</span></h4>${p.lines
             .filter((l) => l.listing.retailer === s)
             .map(
               (l) =>
-                `<div class="week-buy-line">${l.listing.imageUrl ? `<img src="${esc(l.listing.imageUrl)}" alt="" loading="lazy">` : '<span class="weekly-photo-fallback">🛒</span>'}<div><strong>${esc(l.listing.productName)}</strong><small>${l.packages} ${soldByWeight(l.listing) ? "kg estimados" : "paquete(s)"} · ${money(l.total)}</small>${state.rows.find((row) => row.id === l.rowId)?.selected && state.rows.find((row) => row.id === l.rowId).selected !== l.listing.productUrl ? '<small>Alternativa a tu elección · revisa marca y presentación</small>' : ""}<a href="${esc(l.listing.productUrl)}" target="_blank" rel="noopener noreferrer">Abrir producto en ${esc(s)} ↗</a></div></div>`,
+                `<div class="week-buy-line">${l.listing.imageUrl ? `<img src="${esc(l.listing.imageUrl)}" alt="" loading="lazy">` : '<span class="weekly-photo-fallback">🛒</span>'}<div><strong>${esc(l.listing.productName)}</strong><small>${l.packages} ${soldByWeight(l.listing) ? "kg estimados" : "paquete(s)"} · ${money(l.total)}</small>${state.rows.find((row) => row.id === l.rowId)?.selected && state.rows.find((row) => row.id === l.rowId).selected !== l.listing.productUrl ? '<small>Alternativa a tu elección · revisa marca y presentación</small>' : ""}<a href="${esc(l.listing.productUrl)}" target="_blank" rel="noopener noreferrer">Abrir producto ↗</a></div></div>`,
             )
             .join("")}</article>`,
       )
       .join(
         "",
-      )}<p class="comparison-help">Barasu abre cada ficha para que agregues los productos al carrito del comercio. No transfiere un carrito completo ni realiza el pago. Confirma precios, existencias y envío allí; el precio por kilo puede cambiar con el pesaje.</p><button class="secondary full" id="week-export">Descargar lista con enlaces</button>${p.complete ? '<button class="primary full" id="week-record">Ya compré: registrar ahorro</button>' : ""}<div id="week-saved" role="status"></div>`;
+      )}<p class="week-handoff-note">Barasu no llena el carrito. Confirma precio y existencias en la tienda.</p><button class="secondary full" id="week-export">Descargar lista con enlaces</button>${p.complete ? '<button class="primary full" id="week-record">Ya compré: registrar ahorro</button>' : ""}<div id="week-saved" role="status"></div>`;
     target.querySelector("#week-export").onclick = () => {
       const blob = new Blob([weeklyExport(p)], {
           type: "text/plain;charset=utf-8",
