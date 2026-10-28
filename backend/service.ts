@@ -35,7 +35,7 @@ export function failure(
 }
 export function createSearch(options: Options) {
   return async (input: SearchInput): Promise<Response> => {
-    const signal = AbortSignal.timeout(options.timeoutMs ?? 25000),
+    const signal = AbortSignal.timeout(options.timeoutMs ?? 90000),
       errors: Failure[] = [];
     if (input.action === "product_prices")
       return productPrices(input, options, signal);

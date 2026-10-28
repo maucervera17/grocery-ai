@@ -142,3 +142,92 @@ test("clarification preserves the draft and does not scrape", async () => {
   assert.deepEqual(result.draft_items, [milk]);
   assert.equal(result.comparison, undefined);
 });
+
+test("each local postal query excludes another postal code and unverified offers", async () => {
+  for (const cp of ["06170", "09410", "03104"]) {
+    const row = listing("A", 6400, 400, "g");
+    const valid = {
+      ...row,
+      locationEvidence: {
+        postalCode: cp,
+        fulfillment: "delivery" as const,
+        availability: "in_stock" as const,
+        text: "Synthetic confirmed destination",
+      },
+    };
+    let queried = "";
+    const result = await createSearch({
+      mode: "live",
+      fixtures: [],
+      agent,
+      repository: {
+        search: async () => [
+          row,
+          {
+            ...valid,
+            locationEvidence: {
+              ...valid.locationEvidence,
+              postalCode: "52997",
+            },
+          },
+        ],
+        upsert: async () => {},
+      },
+      scraper: {
+        scrape: async (q) => {
+          queried = q.postalCode!;
+          return { listings: [valid, row], errors: [] };
+        },
+      },
+    })({
+      ...question,
+      price_scope: "local" as const,
+      location: { postal_code: cp },
+    });
+    assert.equal(queried, cp);
+    assert.equal(result.comparison!.scope, "local");
+    assert.equal(result.comparison!.offers.length, 1);
+    assert.equal(
+      result.comparison!.offers[0].listing.locationEvidence!.postalCode,
+      cp,
+    );
+    assert.match(result.reply, new RegExp(cp));
+  }
+});
+test("local failure cannot silently return published prices", async () => {
+  const result = await createSearch({
+    mode: "live",
+    fixtures: [],
+    agent,
+    scraper: {
+      scrape: async () => ({
+        listings: [listing("A", 6400, 400, "g")],
+        errors: [],
+      }),
+    },
+  })({ ...question, price_scope: "local" as const });
+  assert.equal(result.comparison!.offers.length, 0);
+  assert.equal(result.comparison!.winner_url, null);
+});
+
+test("mixed presentations have separate unit winners, never a grams-versus-milliliters winner", async () => {
+  const ml = (source: string, price: number) => ({
+    ...listing(source, price, 150, "g"),
+    unit: "ml" as const,
+  });
+  const result = await createSearch({
+    mode: "live",
+    fixtures: [],
+    agent,
+    scraper: {
+      scrape: async () => ({
+        listings: [ml("A", 8400), ml("B", 8500), listing("C", 7200, 45, "g")],
+        errors: [],
+      }),
+    },
+  })(question);
+  assert.equal(result.comparison!.winner_url, null);
+  assert.equal(result.comparison!.unit_winners!.length, 1);
+  assert.equal(result.comparison!.unit_winners![0].basis, "ml");
+  assert.match(result.reply, /A tiene el menor/);
+});

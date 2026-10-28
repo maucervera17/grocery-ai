@@ -6,7 +6,7 @@ export function buildApp(options: Options) {
   const app = Fastify({
       bodyLimit: 32768,
       logger: false,
-      requestTimeout: 30000,
+      requestTimeout: 100000,
     }),
     search = createSearch(options);
   const errorBody = (code: string, message: string) => ({

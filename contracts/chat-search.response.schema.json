@@ -292,7 +292,7 @@
         },
         "scope": {
           "type": "string",
-          "const": "published"
+          "enum": ["published", "local"]
         },
         "data_mode": {
           "type": "string",
@@ -433,6 +433,24 @@
               "type": "null"
             }
           ]
+        },
+        "unit_winners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "basis": {
+                "type": "string",
+                "enum": ["g", "ml", "piece", "package"]
+              },
+              "winner_url": {
+                "type": "string",
+                "pattern": "^https?:\\/\\/"
+              }
+            },
+            "required": ["basis", "winner_url"],
+            "additionalProperties": false
+          }
         }
       },
       "required": [

@@ -24,7 +24,7 @@ export function productUrl(value: string, source: Retailer): string | null {
     if (
       source.id === "chedraui"
         ? !url.pathname.endsWith("/p")
-        : !/^\/ip\/[^/]+\/\d+$/.test(url.pathname)
+        : !/^\/ip\/(?:[^/]+\/)+\d+$/.test(url.pathname)
     )
       return null;
     url.search = "";
@@ -39,6 +39,25 @@ function cents(value: string): number {
   if (!/^\d+(\.\d{1,2})?$/.test(clean)) throw new Error("Invalid price");
   const [whole, decimal = ""] = clean.split(".");
   return Number(whole) * 100 + Number(decimal.padEnd(2, "0"));
+}
+export function unavailablePrimary(primary: string): boolean {
+  const selected = primary
+    .match(/Tamaño:\s*([^\n]+)/)?.[1]
+    ?.trim()
+    .toLowerCase();
+  const stockText = primary
+    .split("\n")
+    .filter((line) => {
+      if (/devoluci[oó]n(?:es)? no disponible/i.test(line)) return false;
+      const variant = line.match(
+        /^(.+),\s*\$[\d,.]+,\s*(?:Agotado|No disponible)\s*$/i,
+      );
+      if (selected && variant && variant[1].trim().toLowerCase() !== selected)
+        return false;
+      return true;
+    })
+    .join("\n");
+  return /agotado|no disponible|sin existencia/i.test(stockText);
 }
 export function productImage(page: Page): string | undefined {
   const meta = page.metadata ?? {};
@@ -77,7 +96,7 @@ export function parseProduct(
   const safe = productUrl(url, source);
   if (!safe) throw new Error("Invalid product URL");
   const metadata = page.metadata ?? {},
-    markdown = page.markdown ?? "";
+    markdown = (page.markdown ?? "").replace(/\\([`*_])/g, "$1");
   if (
     Number(metadata.statusCode ?? 200) >= 400 ||
     /robot or human|captcha|access denied/i.test(markdown.slice(0, 1000))
@@ -97,8 +116,7 @@ export function parseProduct(
     .split(
       /\n# Promociones|\n## Información|\nProductos relacionados|\n## Artículos similares/,
     )[0];
-  if (/agotado|no disponible|sin existencia/i.test(primary))
-    throw new Error("Unavailable product");
+  if (unavailablePrimary(primary)) throw new Error("Unavailable product");
   let price: string | undefined,
     regular: string | undefined,
     storeName: string | undefined;
@@ -106,7 +124,9 @@ export function parseProduct(
     if (metadata["product:price:currency"] !== "MXN")
       throw new Error("Unknown currency");
     price = String(metadata["product:price:amount"] ?? "");
-    const visible = primary.match(/\n\$([\d,]+(?:\.\d{2})?)\s*\n/);
+    const visible = primary.match(
+      /\n\$([\d,]+(?:\.\d{2})?)(?:\s+\$[\d,]+(?:\.\d{2})?)?\s*\n/,
+    );
     if (!visible || cents(visible[1]) !== cents(price))
       throw new Error("Price evidence mismatch");
   } else {

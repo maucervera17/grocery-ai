@@ -31,3 +31,49 @@ test("invalid or unrelated images are omitted without breaking product parsing",
     undefined,
   );
 });
+
+test("a nonreturnable Axe product is not mistaken for out of stock", () => {
+  const page = JSON.parse(readFileSync("fixtures/axe.scrape.json", "utf8"));
+  const row = parseProduct(RETAILERS[1], page.metadata.url, page);
+  assert.equal(row.priceCents, 8400);
+  assert.equal(row.quantity, 150);
+  assert.equal(row.unit, "ml");
+  assert.ok(row.imageUrl);
+  assert.throws(
+    () =>
+      parseProduct(RETAILERS[1], page.metadata.url, {
+        ...page,
+        markdown: page.markdown.replace("Agregar al carrito", "Agotado"),
+      }),
+    /Unavailable/,
+  );
+});
+
+test("unavailable alternate variant does not hide selected Ariel price", () => {
+  const page = JSON.parse(
+    readFileSync("fixtures/ariel-variants.scrape.json", "utf8"),
+  );
+  const row = parseProduct(RETAILERS[2], page.metadata.url, page);
+  assert.equal(row.quantity, 4);
+  assert.equal(row.unit, "kg");
+  assert.equal(row.priceCents, 17500);
+  assert.throws(
+    () =>
+      parseProduct(RETAILERS[2], page.metadata.url, {
+        ...page,
+        markdown: page.markdown.replace(
+          "Tamaño:1 Bolsa de 4 Kg",
+          "Tamaño:1 Bolsa de 800 g",
+        ),
+      }),
+    /Unavailable/,
+  );
+});
+test("Chedraui discounted primary price can share its line with the previous price", () => {
+  const page = JSON.parse(
+    readFileSync("fixtures/pasta-discount.scrape.json", "utf8"),
+  );
+  const row = parseProduct(RETAILERS[0], page.metadata.url, page);
+  assert.equal(row.priceCents, 1590);
+  assert.equal(row.quantity, 400);
+});

@@ -39,6 +39,7 @@ export const SearchRequest = z.discriminatedUnion("action", [
   z
     .object({
       action: z.literal("product_prices"),
+      price_scope: z.enum(["published", "local"]).optional(),
       message: z.string().trim().min(1).max(2000),
       items: DraftItems,
       location,
@@ -164,7 +165,7 @@ export const SearchError = z
 export const ProductComparison = z
   .object({
     query: z.string(),
-    scope: z.literal("published"),
+    scope: z.enum(["published", "local"]),
     data_mode: z.enum(["demo", "live"]),
     requested_postal_code: z.string().nullable(),
     offers: z.array(
@@ -177,6 +178,16 @@ export const ProductComparison = z
         .strict(),
     ),
     winner_url: WebUrl.nullable(),
+    unit_winners: z
+      .array(
+        z
+          .object({
+            basis: z.enum(["g", "ml", "piece", "package"]),
+            winner_url: WebUrl,
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 export const SearchResponse = z

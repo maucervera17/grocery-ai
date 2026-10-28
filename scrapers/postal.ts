@@ -1,5 +1,5 @@
 import type { RawListing } from "../contracts/schema.js";
-import type { Page, Retailer } from "./retailers.js";
+import { unavailablePrimary, type Page, type Retailer } from "./retailers.js";
 
 export class PostalVerificationError extends Error {
   constructor(
@@ -66,7 +66,7 @@ export function verifyPostal(
     .split(
       /\n## Información|\n## Artículos similares|\nProductos relacionados/,
     )[0];
-  if (/agotado|sin existencia|no disponible/i.test(primary))
+  if (unavailablePrimary(primary))
     throw new PostalVerificationError(
       "OUT_OF_STOCK",
       `${source.retailer} no muestra existencias del producto en la consulta.`,

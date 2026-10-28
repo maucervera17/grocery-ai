@@ -8,6 +8,10 @@
           "type": "string",
           "const": "product_prices"
         },
+        "price_scope": {
+          "type": "string",
+          "enum": ["published", "local"]
+        },
         "message": {
           "type": "string",
           "minLength": 1,

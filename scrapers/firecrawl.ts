@@ -1,6 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import type { RawListing, ScrapeQuery } from "../contracts/schema.js";
-import { matches } from "../backend/normalize.js";
+import { matches, tokens } from "../backend/normalize.js";
 import { bounded } from "../backend/deadline.js";
 import {
   postalActions,
@@ -34,6 +34,7 @@ class SourceFailure extends Error {
     super(code);
   }
 }
+const nextSlot = new Map<string, number>();
 export class FirecrawlScraper implements Scraper {
   constructor(
     private key: string,
@@ -45,6 +46,13 @@ export class FirecrawlScraper implements Scraper {
     signal: AbortSignal,
   ): Promise<unknown> {
     for (let attempt = 0; attempt < 2; attempt++) {
+      signal.throwIfAborted();
+      if (this.request === fetch) {
+        const start = Math.max(Date.now(), nextSlot.get(path) ?? 0);
+        nextSlot.set(path, start + 6500);
+        if (start > Date.now())
+          await delay(start - Date.now(), undefined, { signal });
+      }
       const response = await bounded(
         () =>
           this.request("https://api.firecrawl.dev/v2/" + path, {
@@ -58,7 +66,7 @@ export class FirecrawlScraper implements Scraper {
           }),
         signal,
       );
-      const transient = response.status === 429 || response.status >= 500;
+      const transient = response.status >= 500;
       const hasPostalActions =
         typeof payload === "object" && payload !== null && "actions" in payload;
       if (transient && attempt === 0 && !hasPostalActions) {
@@ -67,12 +75,16 @@ export class FirecrawlScraper implements Scraper {
       }
       if (!response.ok)
         throw new SourceFailure(
-          response.status === 402
-            ? "FIRECRAWL_CREDITS"
-            : response.status === 401
-              ? "FIRECRAWL_AUTH"
-              : "SOURCE_FAILED",
-          transient,
+          response.status === 429
+            ? "FIRECRAWL_RATE_LIMIT"
+            : response.status === 408
+              ? "SOURCE_TIMEOUT"
+              : response.status === 402
+                ? "FIRECRAWL_CREDITS"
+                : response.status === 401
+                  ? "FIRECRAWL_AUTH"
+                  : "SOURCE_FAILED",
+          transient || response.status === 429 || response.status === 408,
         );
       const body = (await bounded(() => response.json(), signal)) as {
         success?: boolean;
@@ -107,7 +119,11 @@ export class FirecrawlScraper implements Scraper {
         code: signal.aborted
           ? "SOURCE_TIMEOUT"
           : error instanceof SourceFailure &&
-              ["FIRECRAWL_AUTH", "FIRECRAWL_CREDITS"].includes(error.code)
+              [
+                "FIRECRAWL_AUTH",
+                "FIRECRAWL_CREDITS",
+                "FIRECRAWL_RATE_LIMIT",
+              ].includes(error.code)
             ? error.code
             : query.postalCode && !(error instanceof PostalVerificationError)
               ? "LOCATION_VERIFICATION_FAILED"
@@ -116,11 +132,14 @@ export class FirecrawlScraper implements Scraper {
                 ? error.code
                 : "SOURCE_INVALID",
         message:
-          error instanceof PostalVerificationError
-            ? error.message
-            : query.postalCode
-              ? `${source.retailer} no permitió verificar ${query.fulfillment === "pickup" ? "recogida en Bellavista" : "entrega"} para CP ${query.postalCode}. Confirma la zona directamente en la tienda.`
-              : `No se pudo verificar una consulta de ${source.retailer}.`,
+          error instanceof SourceFailure &&
+          error.code === "FIRECRAWL_RATE_LIMIT"
+            ? "Firecrawl alcanzó el límite temporal de consultas. Intenta de nuevo en un minuto."
+            : error instanceof PostalVerificationError
+              ? error.message
+              : query.postalCode
+                ? `${source.retailer} no permitió verificar ${query.fulfillment === "pickup" ? "recogida en Bellavista" : "entrega"} para CP ${query.postalCode}. Confirma la zona directamente en la tienda.`
+                : `No se pudo verificar una consulta de ${source.retailer}.`,
         retryable:
           signal.aborted || (error instanceof SourceFailure && error.retryable),
       });
@@ -144,7 +163,7 @@ export class FirecrawlScraper implements Scraper {
       const search = (await this.call(
         "search",
         {
-          query: query.query,
+          query: `site:${source.host} ${query.query}`,
           includeDomains: [source.host],
           limit: 5,
           sources: [{ type: "web" }],
@@ -152,12 +171,27 @@ export class FirecrawlScraper implements Scraper {
           timeout: 10000,
         },
         signal,
-      )) as { web?: { url: string }[] };
+      )) as { web?: { url: string; title?: string }[] };
       if (!Array.isArray(search.web))
         throw new SourceFailure("SOURCE_INVALID", false);
       const urls = [
         ...new Set(
           search.web
+            .filter(
+              (r) =>
+                !r.title ||
+                !/falsos?|simulaci[oó]n|utensilios?|contenedor|dispensador|taz[oó]n|cortador|tijeras|sazonador|tenedor/i.test(
+                  r.title,
+                ) ||
+                /falso|utensilio|contenedor|dispensador|tazon|cortador|tijera|sazonador|tenedor/i.test(
+                  query.query,
+                ),
+            )
+            .sort(
+              (a, b) =>
+                Number(tokens(b.title ?? "")[0] === tokens(query.query)[0]) -
+                Number(tokens(a.title ?? "")[0] === tokens(query.query)[0]),
+            )
             .map((r) => productUrl(r.url, source))
             .filter((s): s is string => !!s),
         ),
@@ -172,7 +206,7 @@ export class FirecrawlScraper implements Scraper {
               formats: ["markdown"],
               maxAge: 0,
               proxy: "basic",
-              timeout: actions ? 20000 : 10000,
+              timeout: actions ? 30000 : 20000,
               onlyMainContent: !actions,
               ...(actions ? { actions } : {}),
             },

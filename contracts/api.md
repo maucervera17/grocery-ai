@@ -70,3 +70,11 @@ El resultado es `partial` porque el precio publicado no confirma existencias en 
 ### Fotos de producto
 
 `ScrapedListing.imageUrl` es opcional y procede de metadatos de la ficha principal (`og:image`), con HTTPS y hosts CDN de las tiendas permitidos. No se toman imágenes de recomendaciones ni logotipos. La web las muestra después de la solicitud, con texto alternativo y respaldo si no cargan. Se renueva una caché que carece de imágenes. La migración 004 conserva la URL en las lecturas posteriores: aplicada en local; pendiente de aplicar en Supabase remoto (la consulta en vivo ya devuelve las fotos).
+
+## Consulta local explícita y robustez del catálogo
+
+`product_prices.price_scope` acepta `published` (predeterminado, precios de referencia) o `local` (requiere location). En local, tanto caché como resultados nuevos deben llevar evidencia coincidente de CP, modalidad, sucursal si aplica y observación menor a cinco minutos. Un fallo no cambia automáticamente a published. La web ofrece esa alternativa mediante una acción explícita, limpia resultados al cambiar ubicación y activa local al cambiar CP.
+
+`comparison.unit_winners` identifica ganadores por dimensión cuando hay al menos dos fuentes comparables. No se declara ganador entre gramos y mililitros, ni entre tiendas si solo respondió una. Los sinónimos de categoría, plurales comunes y el error de marca Axxe/Axe se normalizan. Precio principal, variación seleccionada y existencias de otras variantes se interpretan por separado.
+
+Las llamadas reales a Firecrawl se espacian 6.5 s por endpoint; los límites 429 se informan explícitamente sin reintento inmediato. El servidor permite hasta 90 s por consulta y el cliente espera hasta 95 s. Las pruebas usan un transporte simulado sin esperas. El informe de consultas reales está en `docs/CATALOG_TEST_REPORT.md`.

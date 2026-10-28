@@ -12,11 +12,26 @@ export function tokens(value: string): string[] {
     .replace(/[^a-z0-9 ]/g, " ")
     .split(/\s+/)
     .filter((w) => w && !["de", "con", "el", "la", "los", "las"].includes(w))
-    .map((w) => (w === "huevos" ? "huevo" : w));
+    .map(
+      (w) =>
+        ({
+          huevos: "huevo",
+          desodorantes: "desodorante",
+          antitranspirantes: "antitranspirante",
+          detergentes: "detergente",
+          leches: "leche",
+          pastas: "pasta",
+          axxe: "axe",
+          spaghetti: "espagueti",
+          espaguetis: "espagueti",
+        })[w] ?? w,
+    );
 }
 export function matches(name: string, query: string): boolean {
   const hay = tokens(name),
-    need = tokens(query);
+    need = tokens(query).filter(
+      (w) => !(w === "pasta" && tokens(query).includes("espagueti")),
+    );
   return need.length > 0 && need.every((w) => hay.includes(w));
 }
 export function measure(
