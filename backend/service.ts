@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { productPrices } from "./product-prices.js";
 import {
   ScrapedListing,
   type SearchInput,
@@ -36,6 +37,8 @@ export function createSearch(options: Options) {
   return async (input: SearchInput): Promise<Response> => {
     const signal = AbortSignal.timeout(options.timeoutMs ?? 25000),
       errors: Failure[] = [];
+    if (input.action === "product_prices")
+      return productPrices(input, options, signal);
     if (input.action === "update_draft") {
       const agent =
         options.agent ??

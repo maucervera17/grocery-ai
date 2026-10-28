@@ -58,3 +58,11 @@ Con CP, el modo live solo planifica ofertas con evidencia de destino aplicado en
 La migración `202610280003_postal_evidence.sql` añade `location_evidence` a las ofertas y a los RPC de lectura/escritura. Los registros anteriores sin evidencia siguen siendo utilizables para consultas generales sin CP, pero no para validar un destino.
 
 Limitaciones verificadas: Walmart solicitó verificación humana y después mostró un error técnico al guardar 52997. Firecrawl tampoco confirmó ese destino. Chedraui Bellavista pudo seleccionarse en Chrome, pero su selección desde Firecrawl aún falla; esa observación del navegador no alimenta los precios automáticos. Para entrega Chedraui requiere dirección: `LOCATION_REQUIRES_ADDRESS`. No se ha implementado un flujo de dirección de entrega. Estos bloqueos impiden considerar terminada la validación real por CP. La web permite elegir ambas modalidades; iOS todavía usa entrega por defecto.
+
+## product_prices — consulta directa de un producto
+
+`{action:"product_prices", message, items, location?}` interpreta una pregunta como «Hola, quiero revisar el queso oaxaca en que tienda tiene el mejor precio?». Interpreta el producto en una lista vacía y conserva `draft_items` sin modificar: una consulta de precio no es una compra de una pieza ni una comparación del borrador anterior.
+
+La respuesta añade `comparison` con `query`, `scope:"published"`, `data_mode`, `requested_postal_code`, `offers` (listing, costo por 100 unidades y basis) y `winner_url`. Obtiene precios publicados en las tres fuentes, compara contenido equivalente (g/kg, ml/L), conserva presentación, fuente, fecha y enlace. Solo declara un ganador cuando las dimensiones son compatibles. El ganador es entre las opciones obtenidas, no un mínimo exhaustivo del catálogo. Marcas distintas se identifican como alternativas.
+
+El resultado es `partial` porque el precio publicado no confirma existencias en la ubicación solicitada. La disponibilidad por CP sigue siendo responsabilidad del flujo `compare`, que exige evidencia. La web distingue explícitamente los precios publicados de la validación local; no utiliza precios demo como alternativa a fallos reales. Solo muestra tarjetas después de una solicitud, y las preguntas de precio consultan directamente sin exigir un clic adicional.

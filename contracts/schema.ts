@@ -38,6 +38,14 @@ const location = z
 export const SearchRequest = z.discriminatedUnion("action", [
   z
     .object({
+      action: z.literal("product_prices"),
+      message: z.string().trim().min(1).max(2000),
+      items: DraftItems,
+      location,
+    })
+    .strict(),
+  z
+    .object({
       action: z.literal("update_draft"),
       message: z.string().trim().min(1).max(2000),
       items: DraftItems,
@@ -148,12 +156,31 @@ export const SearchError = z
     retryable: z.boolean(),
   })
   .strict();
+export const ProductComparison = z
+  .object({
+    query: z.string(),
+    scope: z.literal("published"),
+    data_mode: z.enum(["demo", "live"]),
+    requested_postal_code: z.string().nullable(),
+    offers: z.array(
+      z
+        .object({
+          listing: ScrapedListing,
+          unit_price_cents_per_100: Money,
+          basis: z.enum(["g", "ml", "piece", "package"]),
+        })
+        .strict(),
+    ),
+    winner_url: WebUrl.nullable(),
+  })
+  .strict();
 export const SearchResponse = z
   .object({
     reply: z.string(),
     status: z.enum(["complete", "partial", "error"]),
     draft_items: DraftItems,
     plan: Plan.nullable(),
+    comparison: ProductComparison.optional(),
     errors: z.array(SearchError),
   })
   .strict();
