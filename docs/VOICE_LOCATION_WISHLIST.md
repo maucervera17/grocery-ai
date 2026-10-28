@@ -29,4 +29,4 @@ El endpoint de voz admite loopback solamente mientras no exista autenticación d
 - Pruebas automatizadas cubren permisos, cancelación, respuestas tardías, sesión, herramientas, aislamiento de zonas, errores de proveedor y secretos. `npm test` y `npm run build`.
 - Compilación iOS con SDK ElevenLabs validada en CI; no se ha validado una conversación en un iPhone físico.
 
-La prueba sintética de voz no sustituye la validación del micrófono físico. La precisión de un CP sugerido depende del sistema de ubicación y del geocodificador: el usuario puede corregirlo.
+La prueba adicional autorizada del micrófono de Chrome recibió la consulta hablada de queso Oaxaca, ejecutó la búsqueda y respondió con voz y cuatro ofertas visuales; se cerró la sesión al terminar. La precisión de un CP sugerido depende del sistema de ubicación y del geocodificador: el usuario puede corregirlo.

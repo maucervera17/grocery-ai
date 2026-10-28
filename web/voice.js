@@ -3,9 +3,10 @@ export function mountVoice({runTool,saveTool,onMessage,loadSDK=()=>import('/voic
   const panel=document.getElementById('voice-panel'),status=document.getElementById('voice-status');
   const start=document.getElementById('voice-start'),stop=document.getElementById('voice-stop'),mute=document.getElementById('voice-mute');
   let conversation=null,epoch=0,muted=false,starting=false,toolBusy=false;
-  const say=text=>{status.textContent=text};
+  const say=text=>{status.textContent=text;if(panel.dataset)panel.dataset.state=text.includes('hablando')?'speaking':text.includes('escucho')?'listening':text.includes('silenciado')?'muted':text.includes('Conectando')||text.includes('Consultando')?'loading':'idle'};
   async function end(){epoch++;starting=false;const old=conversation;conversation=null;start.disabled=false;stop.disabled=true;mute.disabled=true;muted=false;mute.textContent='Silenciar';say('Voz finalizada');if(old)await old.endSession().catch(()=>{});}
-  document.getElementById('voice-open').onclick=async()=>{panel.hidden=!panel.hidden;if(panel.hidden){await end();return;}say('Comprobando conexión…');try{const r=await fetch('/v1/voice/status');const d=await r.json();say(d.configured?'Listo para conversar':'ElevenLabs pendiente de configuración en el servidor.');start.disabled=!d.configured;}catch{say('No hay conexión con el servidor.');start.disabled=true;}};
+  document.getElementById('voice-open').onclick=async()=>{panel.hidden=!panel.hidden;document.getElementById('voice-open').setAttribute?.('aria-expanded',String(!panel.hidden));if(panel.hidden){await end();return;}say('Comprobando conexión…');try{const r=await fetch('/v1/voice/status');const d=await r.json();say(d.configured?'Listo para conversar':'ElevenLabs pendiente de configuración en el servidor.');start.disabled=!d.configured;}catch{say('No hay conexión con el servidor.');start.disabled=true;}};
+  const close=document.getElementById('voice-close');if(close)close.onclick=async()=>{panel.hidden=true;document.getElementById('voice-open').setAttribute?.('aria-expanded','false');await end()};
   start.onclick=async()=>{
     if(starting||conversation)return;
     const id=++epoch;starting=true;start.disabled=true;stop.disabled=false;say('Conectando…');
