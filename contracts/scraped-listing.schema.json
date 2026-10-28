@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retailer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "storeName": {
+      "type": "string"
+    },
+    "productName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "brand": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 100000,
+      "multipleOf": 0.001
+    },
+    "unit": {
+      "type": "string",
+      "enum": ["g", "kg", "ml", "L", "piece", "package", "dozen"]
+    },
+    "priceCents": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000000
+    },
+    "regularPriceCents": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100000000
+    },
+    "currency": {
+      "type": "string",
+      "const": "MXN"
+    },
+    "productUrl": {
+      "type": "string",
+      "pattern": "^https?:\\/\\/"
+    },
+    "checkedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+    }
+  },
+  "required": [
+    "source",
+    "retailer",
+    "productName",
+    "priceCents",
+    "currency",
+    "productUrl",
+    "checkedAt"
+  ],
+  "additionalProperties": false
+}

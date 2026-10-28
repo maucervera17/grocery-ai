@@ -1,0 +1,13 @@
+{
+  "reply": "DEMO: precios de ejemplo. Agrega productos al borrador.",
+  "status": "complete",
+  "draft_items": [],
+  "plan": {
+    "total_price_cents": 0,
+    "estimated_savings_cents": null,
+    "currency": "MXN",
+    "stores": [],
+    "unmatched_items": []
+  },
+  "errors": []
+}

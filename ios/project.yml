@@ -1,0 +1,35 @@
+name: GroceryAI
+options:
+  bundleIdPrefix: com.groceryai
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: ""
+targets:
+  GroceryAI:
+    type: application
+    platform: iOS
+    sources:
+      - path: GroceryAI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.groceryai.app
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Grocery AI
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Grocery AI usa tu ubicación para encontrar precios cercanos.
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    scheme:
+      testTargets:
+        - GroceryAITests
+  GroceryAITests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: GroceryAITests
+    dependencies:
+      - target: GroceryAI
+

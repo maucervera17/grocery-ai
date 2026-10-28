@@ -1,0 +1,126 @@
+{
+  "reply": "DEMO: precios de ejemplo. Comparación de 3 productos en 2 tienda(s), entre las ofertas disponibles. Sustitutos marcados como similares. No incluye transporte ni entrega.",
+  "status": "partial",
+  "draft_items": [
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "name": "leche",
+      "quantity": 2,
+      "unit": "L",
+      "notes": null
+    },
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000002",
+      "name": "huevos",
+      "quantity": 12,
+      "unit": "piece",
+      "notes": null
+    },
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000003",
+      "name": "arroz",
+      "quantity": 1,
+      "unit": "kg",
+      "notes": null
+    }
+  ],
+  "plan": {
+    "total_price_cents": 13400,
+    "estimated_savings_cents": 600,
+    "currency": "MXN",
+    "stores": [
+      {
+        "retailer": "Chedraui (demo)",
+        "store_name": null,
+        "subtotal_cents": 9200,
+        "items": [
+          {
+            "client_item_id": "00000000-0000-4000-8000-000000000001",
+            "listing_id": "f5a86e80d98aa86c12c4dad2",
+            "product_name": "Leche entera",
+            "brand": null,
+            "requested_quantity": 2,
+            "requested_unit": "L",
+            "package_quantity": 1,
+            "package_unit": "L",
+            "package_count": 2,
+            "price_cents": 3000,
+            "regular_price_cents": null,
+            "line_total_cents": 6000,
+            "unit_price_cents_per_100": 300,
+            "product_url": "https://example.com/demo/chedraui/leche",
+            "checked_at": "2026-10-27T20:00:00Z",
+            "data_status": "demo",
+            "match_type": "similar"
+          },
+          {
+            "client_item_id": "00000000-0000-4000-8000-000000000003",
+            "listing_id": "609fc7ee8adb06b43860944c",
+            "product_name": "Arroz blanco",
+            "brand": null,
+            "requested_quantity": 1,
+            "requested_unit": "kg",
+            "package_quantity": 1,
+            "package_unit": "kg",
+            "package_count": 1,
+            "price_cents": 3200,
+            "regular_price_cents": null,
+            "line_total_cents": 3200,
+            "unit_price_cents_per_100": 320,
+            "product_url": "https://example.com/demo/chedraui/arroz",
+            "checked_at": "2026-10-27T20:00:00Z",
+            "data_status": "demo",
+            "match_type": "similar"
+          }
+        ]
+      },
+      {
+        "retailer": "Bodega Aurrera (demo)",
+        "store_name": null,
+        "subtotal_cents": 4200,
+        "items": [
+          {
+            "client_item_id": "00000000-0000-4000-8000-000000000002",
+            "listing_id": "a8fae58b51dfc0b10427a3df",
+            "product_name": "Huevos blancos",
+            "brand": null,
+            "requested_quantity": 12,
+            "requested_unit": "piece",
+            "package_quantity": 12,
+            "package_unit": "piece",
+            "package_count": 1,
+            "price_cents": 4200,
+            "regular_price_cents": null,
+            "line_total_cents": 4200,
+            "unit_price_cents_per_100": null,
+            "product_url": "https://example.com/demo/bodega-aurrera/huevos",
+            "checked_at": "2026-10-27T20:00:00Z",
+            "data_status": "demo",
+            "match_type": "similar"
+          }
+        ]
+      }
+    ],
+    "unmatched_items": []
+  },
+  "errors": [
+    {
+      "code": "CACHE_FAILED",
+      "message": "La base demo no respondió; se usan los fixtures de respaldo.",
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "retryable": true
+    },
+    {
+      "code": "CACHE_FAILED",
+      "message": "La base demo no respondió; se usan los fixtures de respaldo.",
+      "client_item_id": "00000000-0000-4000-8000-000000000002",
+      "retryable": true
+    },
+    {
+      "code": "CACHE_FAILED",
+      "message": "La base demo no respondió; se usan los fixtures de respaldo.",
+      "client_item_id": "00000000-0000-4000-8000-000000000003",
+      "retryable": true
+    }
+  ]
+}
