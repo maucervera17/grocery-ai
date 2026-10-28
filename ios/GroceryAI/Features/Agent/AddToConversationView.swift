@@ -4,57 +4,45 @@ struct AddToConversationView: View {
     let appState: AppState
 
     @Environment(\.dismiss) private var dismiss
+    @State private var section: AddContentSection
+
+    init(initialSection: AddContentSection = .products, appState: AppState) {
+        self.appState = appState
+        _section = State(initialValue: initialSection)
+    }
 
     var body: some View {
         NavigationStack {
-            List {
-                NavigationLink(value: AddContentDestination.frequentProducts) {
-                    AddToConversationRow(
-                        title: "Productos frecuentes",
-                        subtitle: "Elige tus habituales",
-                        systemImage: "star.fill",
-                        tint: .green
-                    )
-                }
-
-                NavigationLink(value: AddContentDestination.previousOrders) {
-                    AddToConversationRow(
-                        title: "Compras anteriores",
-                        subtitle: "Reutiliza una lista",
-                        systemImage: "clock.arrow.circlepath",
-                        tint: .blue
-                    )
-                }
-
-                NavigationLink(value: AddContentDestination.manualList) {
-                    AddToConversationRow(
-                        title: "Escribir una lista",
-                        subtitle: "Pega varios productos",
-                        systemImage: "list.bullet",
-                        tint: .purple
-                    )
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Agregar productos")
-            .toolbarTitleDisplayMode(.inlineLarge)
-            .navigationDestination(for: AddContentDestination.self) { destination in
-                switch destination {
-                case .frequentProducts:
-                    ProductPickerView(products: appState.frequentProducts, onAdd: appState.addProduct)
-                case .previousOrders:
-                    PreviousOrderPickerView(orders: appState.orders, onSelect: appState.repeatOrder)
-                case .manualList:
-                    ManualListView { list in
-                        Task { await appState.send(list) }
+            VStack(spacing: 0) {
+                Picker("Contenido", selection: $section) {
+                    ForEach(AddContentSection.allCases) { section in
+                        Text(section.title).tag(section)
                     }
                 }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, AppSpacing.large)
+                .padding(.vertical, AppSpacing.medium)
+
+                switch section {
+                case .products:
+                    ProductPickerView(products: appState.frequentProducts, onAdd: addProducts)
+                case .orders:
+                    PreviousOrderPickerView(orders: appState.orders, onAdd: addProducts)
+                }
             }
+            .navigationTitle("Agregar productos")
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cerrar", systemImage: "xmark", action: dismiss.callAsFunction)
+                        .labelStyle(.iconOnly)
                 }
             }
         }
+    }
+
+    private func addProducts(_ products: [ProductRequest]) {
+        appState.addProducts(products)
+        dismiss()
     }
 }

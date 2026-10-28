@@ -1,15 +1,15 @@
 import Foundation
 
 enum AgentSheet: Identifiable, Hashable {
-    case addContent
+    case addContent(AddContentSection)
     case editProduct(ProductRequest)
     case location
     case settings
 
     var id: String {
         switch self {
-        case .addContent:
-            "add-content"
+        case .addContent(let section):
+            "add-content-\(section.rawValue)"
         case .editProduct(let product):
             "edit-product-\(product.id)"
         case .location:

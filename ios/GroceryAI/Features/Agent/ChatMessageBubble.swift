@@ -46,6 +46,7 @@ struct ChatMessageBubble: View {
             if message.role == .agent { Spacer(minLength: 48) }
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(message.role == .agent ? "Asistente: \(message.text)" : "Tú: \(message.text)")
     }
 }

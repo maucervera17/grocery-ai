@@ -17,6 +17,7 @@ final class AppState {
     private let comparisonService: any ComparisonServicing
     private var modelContext: ModelContext?
     private var record: LocalAppStateRecord?
+    private var failedInput: String?
 
     init(
         agentService: any AgentServicing = GroceryAPIClient(),
@@ -61,11 +62,21 @@ final class AppState {
         }
     }
 
-    func send(_ text: String) async {
+    @discardableResult
+    func send(_ text: String) async -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, loadingState == .idle else { return }
+        guard !trimmed.isEmpty, loadingState != .updatingDraft, loadingState != .comparing else {
+            return false
+        }
 
-        messages.append(ChatMessage(role: .user, text: trimmed))
+        let isRetry = failedInput == trimmed
+        if isRetry {
+            if messages.last?.kind == .error {
+                messages.removeLast()
+            }
+        } else {
+            messages.append(ChatMessage(role: .user, text: trimmed))
+        }
         loadingState = .updatingDraft
         do {
             let response = try await agentService.updateDraft(
@@ -76,11 +87,16 @@ final class AppState {
             draft.replaceItems(with: response.draftItems)
             messages.append(ChatMessage(role: .agent, text: response.reply, kind: .draftUpdate))
             loadingState = .idle
+            failedInput = nil
             persist()
+            return true
         } catch {
-            let message = "No pude interpretar esa lista. Prueba con: 2 litros de leche, 12 huevos."
+            let message = "No pude actualizar la lista. Revisa tu conexión o intenta de nuevo."
             messages.append(ChatMessage(role: .agent, text: message, kind: .error))
             loadingState = .failed(message: message)
+            failedInput = trimmed
+            persist()
+            return false
         }
     }
 
@@ -99,21 +115,34 @@ final class AppState {
         persist()
     }
 
-    func addProduct(_ product: ProductRequest) {
-        if let index = draft.items.firstIndex(where: {
-            $0.name.localizedCaseInsensitiveCompare(product.name) == .orderedSame && $0.unit == product.unit
-        }) {
-            draft.items[index].quantity += product.quantity
-        } else {
-            draft.items.append(ProductRequest(
-                name: product.name,
-                quantity: product.quantity,
-                unit: product.unit,
-                notes: product.notes
-            ))
+    func addProducts(_ products: [ProductRequest]) {
+        guard !products.isEmpty else { return }
+
+        for product in products {
+            if let index = draft.items.firstIndex(where: {
+                $0.name.localizedCaseInsensitiveCompare(product.name) == .orderedSame && $0.unit == product.unit
+            }) {
+                draft.items[index].quantity = product.quantity
+                draft.items[index].notes = product.notes
+            } else {
+                draft.items.append(ProductRequest(
+                    name: product.name,
+                    quantity: product.quantity,
+                    unit: product.unit,
+                    notes: product.notes
+                ))
+            }
         }
+
         comparisonPlan = nil
         draft.updatedAt = .now
+        let count = products.count
+        messages.append(ChatMessage(
+            role: .agent,
+            text: count == 1 ? "Agregué 1 producto al borrador." : "Agregué \(count) productos al borrador.",
+            kind: .draftUpdate
+        ))
+        loadingState = .idle
         persist()
     }
 

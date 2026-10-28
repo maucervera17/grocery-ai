@@ -2,77 +2,69 @@ import SwiftUI
 
 struct AgentView: View {
     @Bindable var appState: AppState
+    @Bindable var composerState: AgentComposerState
 
-    @State private var input = ""
-    @State private var presentedSheet: AgentSheet?
-    @FocusState private var inputIsFocused: Bool
+    @State private var composerOverlayHeight: CGFloat = 0
+    @State private var scrollPosition = ScrollPosition(edge: .bottom)
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: AppSpacing.large) {
-                        AgentStatusView(loadingState: appState.loadingState)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: AppSpacing.large) {
+                AgentStatusView(loadingState: appState.loadingState)
 
-                        if appState.messages.isEmpty && appState.draft.isEmpty {
-                            AgentEmptyStateView()
-                                .frame(maxWidth: .infinity)
-                                .containerRelativeFrame(.vertical, count: 5, span: 3, spacing: 0)
-                        } else {
-                            ForEach(appState.messages) { message in
-                                ChatMessageBubble(message: message)
-                                    .id(message.id)
-                            }
-
-                            if !appState.draft.isEmpty {
-                                DraftCard(
-                                    draft: appState.draft,
-                                    onEdit: editProduct,
-                                    onDelete: appState.removeProducts,
-                                    onCompare: showLocation
-                                )
-                                .id("draft")
-                            }
-                        }
+                if appState.messages.isEmpty && appState.draft.isEmpty {
+                    AgentEmptyStateView()
+                        .frame(maxWidth: .infinity)
+                        .containerRelativeFrame(.vertical, count: 5, span: 3, spacing: 0)
+                } else {
+                    ForEach(appState.messages) { message in
+                        ChatMessageBubble(message: message)
+                            .id(message.id)
                     }
-                    .padding(AppSpacing.large)
-                }
-                .scrollDismissesKeyboard(.interactively)
-                .onChange(of: appState.messages.count) {
-                    withAnimation(.snappy) {
-                        if appState.draft.isEmpty {
-                            proxy.scrollTo(appState.messages.last?.id, anchor: .bottom)
-                        } else {
-                            proxy.scrollTo("draft", anchor: .bottom)
-                        }
+
+                    if !appState.draft.isEmpty {
+                        DraftCard(
+                            draft: appState.draft,
+                            onEdit: editProduct,
+                            onDelete: appState.removeProducts,
+                            onCompare: showLocation
+                        )
+                        .id("draft")
                     }
                 }
             }
-
-            if case .failed(let message) = appState.loadingState {
-                Button("Descartar error: \(message)", systemImage: "exclamationmark.circle", action: appState.clearError)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .padding(.horizontal, AppSpacing.large)
-                    .padding(.vertical, AppSpacing.small)
+            .padding(AppSpacing.large)
+        }
+        .contentMargins(.bottom, composerOverlayHeight, for: .scrollContent)
+        .defaultScrollAnchor(.bottom)
+        .defaultScrollAnchor(.top, for: .alignment)
+        .scrollPosition($scrollPosition)
+        .scrollDismissesKeyboard(.interactively)
+        .onChange(of: appState.messages.count) {
+            withAnimation(.snappy) {
+                scrollPosition.scrollTo(edge: .bottom)
             }
-
-            if !appState.orders.isEmpty || !appState.frequentProducts.isEmpty {
-                AgentQuickActionsView(
-                    canRepeatLastOrder: !appState.orders.isEmpty,
-                    onRepeatLastOrder: repeatLastOrder,
-                    onAddFrequentProducts: showAddContent
-                )
-                .padding(.vertical, AppSpacing.extraSmall)
+        }
+        .onChange(of: composerOverlayHeight) { previousHeight, height in
+            guard previousHeight == 0, height > 0 else { return }
+            Task { @MainActor in
+                await Task.yield()
+                scrollPosition.scrollTo(edge: .bottom)
             }
+        }
+        .overlay(alignment: .bottom) {
+            ZStack(alignment: .bottom) {
+                BottomContentFade()
+                    .frame(height: composerOverlayHeight + AppControlSize.bottomContentFadeExtension)
+                    .ignoresSafeArea(edges: .bottom)
 
-            AgentComposer(
-                text: $input,
-                isFocused: $inputIsFocused,
-                isLoading: appState.loadingState == .updatingDraft,
-                onSend: send,
-                onAddContent: showAddContent
-            )
+                AgentComposerOverlay(appState: appState, composerState: composerState)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        proxy.size.height
+                    } action: { height in
+                        composerOverlayHeight = height
+                    }
+            }
         }
         .navigationTitle("Tu súper")
         .toolbarTitleDisplayMode(.inlineLarge)
@@ -81,7 +73,7 @@ struct AgentView: View {
                 Button("Configuración", systemImage: "gearshape", action: showSettings)
             }
         }
-        .sheet(item: $presentedSheet) { destination in
+        .sheet(item: $composerState.presentedSheet) { destination in
             AgentSheetView(destination: destination, appState: appState)
         }
         .fullScreenCover(item: $appState.comparisonPlan) { plan in
@@ -99,31 +91,15 @@ struct AgentView: View {
         }
     }
 
-    private func send() {
-        let message = input
-        input = ""
-        inputIsFocused = false
-        Task { await appState.send(message) }
-    }
-
     private func editProduct(_ product: ProductRequest) {
-        presentedSheet = .editProduct(product)
-    }
-
-    private func showAddContent() {
-        presentedSheet = .addContent
+        composerState.presentedSheet = .editProduct(product)
     }
 
     private func showLocation() {
-        presentedSheet = .location
+        composerState.presentedSheet = .location
     }
 
     private func showSettings() {
-        presentedSheet = .settings
-    }
-
-    private func repeatLastOrder() {
-        guard let order = appState.orders.first else { return }
-        appState.repeatOrder(order)
+        composerState.presentedSheet = .settings
     }
 }

@@ -2,31 +2,26 @@ import SwiftUI
 
 struct PreviousOrderPickerView: View {
     let orders: [CompletedOrder]
-    let onSelect: (CompletedOrder) -> Void
-
-    @Environment(\.dismiss) private var dismiss
+    let onAdd: ([ProductRequest]) -> Void
 
     var body: some View {
         Group {
             if orders.isEmpty {
-                EmptyStateView(
-                    title: "Sin compras anteriores",
+                ContentUnavailableView(
+                    "Sin compras anteriores",
                     systemImage: "clock.arrow.circlepath",
-                    message: "Tus comparaciones guardadas aparecerán aquí."
+                    description: Text("Tus comparaciones guardadas aparecerán aquí.")
                 )
             } else {
                 List(orders) { order in
-                    Button {
-                        onSelect(order)
-                        dismiss()
-                    } label: {
+                    NavigationLink(value: order) {
                         OrderHistoryRow(order: order)
                     }
-                    .buttonStyle(.plain)
                 }
             }
         }
-        .navigationTitle("Compras anteriores")
-        .toolbarTitleDisplayMode(.inline)
+        .navigationDestination(for: CompletedOrder.self) { order in
+            PreviousOrderSelectionView(order: order, onAdd: onAdd)
+        }
     }
 }

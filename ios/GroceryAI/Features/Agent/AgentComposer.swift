@@ -3,6 +3,7 @@ import SwiftUI
 struct AgentComposer: View {
     @Binding var text: String
     var isFocused: FocusState<Bool>.Binding
+    let prompt: String
     let isLoading: Bool
     let onSend: () -> Void
     let onAddContent: () -> Void
@@ -22,7 +23,7 @@ struct AgentComposer: View {
                     .foregroundStyle(colors.brandPrimary)
                     .glassEffect(.regular.interactive(), in: .circle)
 
-                TextField("Pídele algo al agente", text: $text, axis: .vertical)
+                TextField(prompt, text: $text, axis: .vertical)
                     .lineLimit(1...4)
                     .focused(isFocused)
                     .submitLabel(.send)
@@ -47,6 +48,5 @@ struct AgentComposer: View {
             }
         }
         .padding(AppSpacing.medium)
-        .background(.ultraThinMaterial)
     }
 }

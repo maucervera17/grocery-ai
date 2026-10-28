@@ -30,6 +30,9 @@ targets:
     platform: iOS
     sources:
       - path: GroceryAITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: GroceryAI
 

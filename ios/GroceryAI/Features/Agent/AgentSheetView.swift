@@ -6,9 +6,9 @@ struct AgentSheetView: View {
 
     var body: some View {
         switch destination {
-        case .addContent:
-            AddToConversationView(appState: appState)
-                .presentationDetents([.medium, .large])
+        case .addContent(let section):
+            AddToConversationView(initialSection: section, appState: appState)
+                .presentationDetents([.fraction(0.82)])
                 .presentationDragIndicator(.visible)
         case .editProduct(let product):
             ProductEditorView(product: product, onSave: appState.updateProduct)

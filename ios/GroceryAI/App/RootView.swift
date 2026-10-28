@@ -4,6 +4,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var appState = AppState()
+    @State private var composerState = AgentComposerState()
 
     var body: some View {
         @Bindable var appState = appState
@@ -11,7 +12,7 @@ struct RootView: View {
         TabView(selection: $appState.selectedTab) {
             Tab("Agente", systemImage: "bubble.left.and.bubble.right", value: AppTab.agent) {
                 NavigationStack {
-                    AgentView(appState: appState)
+                    AgentView(appState: appState, composerState: composerState)
                 }
             }
 
