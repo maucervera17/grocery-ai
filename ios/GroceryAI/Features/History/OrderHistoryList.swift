@@ -5,6 +5,8 @@ struct OrderHistoryList: View {
     let isSearching: Bool
     let onRepeatOrder: (CompletedOrder) -> Void
 
+    @State private var selectedOrder: CompletedOrder?
+
     var body: some View {
         if orders.isEmpty {
             if isSearching {
@@ -20,12 +22,13 @@ struct OrderHistoryList: View {
             List(orders) { order in
                 SurfaceCard(padding: AppSpacing.medium) {
                     HStack(spacing: AppSpacing.medium) {
-                        NavigationLink {
-                            OrderDetailView(order: order, onRepeat: onRepeatOrder)
+                        Button {
+                            selectedOrder = order
                         } label: {
                             OrderHistoryRow(order: order)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityHint("Abre el detalle de la compra")
 
                         Button("Repetir") {
                             onRepeatOrder(order)
@@ -45,6 +48,9 @@ struct OrderHistoryList: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .navigationDestination(item: $selectedOrder) { order in
+                OrderDetailView(order: order, onRepeat: onRepeatOrder)
+            }
         }
     }
 }

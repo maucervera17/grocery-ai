@@ -27,7 +27,7 @@ struct DraftProductRow: View {
             }
             .padding(AppSpacing.medium)
             .frame(maxWidth: .infinity, minHeight: AppControlSize.minimumTapTarget, alignment: .leading)
-            .background(colors.backgroundSecondary, in: .rect(cornerRadius: AppRadius.medium))
+            .background(colors.cellBackground, in: .rect(cornerRadius: AppRadius.medium))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)

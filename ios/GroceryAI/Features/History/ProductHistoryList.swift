@@ -16,11 +16,15 @@ struct ProductHistoryList: View {
                 )
             }
         } else {
-            List(products) { product in
-                ProductHistoryRow(product: product)
-                    .padding(.vertical, AppSpacing.small)
+            ScrollView {
+                LazyVStack(spacing: AppSpacing.medium) {
+                    ForEach(products) { product in
+                        ProductHistoryRow(product: product)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.large)
+                .padding(.vertical, AppSpacing.medium)
             }
-            .listStyle(.plain)
         }
     }
 }
