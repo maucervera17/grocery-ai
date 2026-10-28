@@ -27,23 +27,37 @@ final class AppState {
         self.comparisonService = comparisonService
     }
 
-    var frequentProducts: [ProductRequest] {
-        var productsByName: [String: (product: ProductRequest, count: Int)] = [:]
-        for product in orders.flatMap(\.requestedItems) {
-            let key = product.name.folding(
-                options: [.diacriticInsensitive, .caseInsensitive],
-                locale: Locale(identifier: "es_MX")
-            )
-            let previous = productsByName[key]
-            productsByName[key] = (product, (previous?.count ?? 0) + 1)
+    var frequentProductOptions: [FrequentProductOption] {
+        var productsByName: [String: FrequentProductOption] = [:]
+
+        for order in orders {
+            let lines = order.stores.flatMap(\.items)
+            for product in order.requestedItems {
+                let key = product.name.folding(
+                    options: [.diacriticInsensitive, .caseInsensitive],
+                    locale: Locale(identifier: "es_MX")
+                )
+                let previous = productsByName[key]
+                let imageURL = previous?.imageURL
+                    ?? lines.first(where: { $0.clientItemID == product.id })?.imageURL
+                productsByName[key] = FrequentProductOption(
+                    product: previous?.product ?? product,
+                    imageURL: imageURL,
+                    frequency: (previous?.frequency ?? 0) + 1
+                )
+            }
         }
+
         return productsByName.values
             .sorted { lhs, rhs in
-                lhs.count == rhs.count
+                lhs.frequency == rhs.frequency
                     ? lhs.product.name < rhs.product.name
-                    : lhs.count > rhs.count
+                    : lhs.frequency > rhs.frequency
             }
-            .map(\.product)
+    }
+
+    var frequentProducts: [ProductRequest] {
+        frequentProductOptions.map(\.product)
     }
 
     func configurePersistence(_ context: ModelContext) {
@@ -54,10 +68,13 @@ final class AppState {
         if let stored = try? context.fetch(descriptor).first {
             record = stored
             restore(from: stored)
+            seedDemoContentIfNeeded()
+            persist()
         } else {
             let newRecord = LocalAppStateRecord()
             context.insert(newRecord)
             record = newRecord
+            seedDemoContentIfNeeded()
             persist()
         }
     }
@@ -218,5 +235,14 @@ final class AppState {
         record.messagesData = (try? encoder.encode(messages)) ?? Data()
         record.postalCode = postalCode
         try? modelContext.save()
+    }
+
+    private func seedDemoContentIfNeeded() {
+        guard APIConfiguration.seedsDemoContent,
+              draft.isEmpty,
+              orders.isEmpty,
+              messages.isEmpty else { return }
+        orders = MockFixtures.previousOrders
+        messages = MockFixtures.welcomeMessages
     }
 }

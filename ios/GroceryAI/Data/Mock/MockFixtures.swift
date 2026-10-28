@@ -7,28 +7,32 @@ enum MockFixtures {
         id: UUID(uuidString: "10000000-0000-0000-0000-000000000001")!,
         name: "Leche",
         quantity: 2,
-        unit: .liter
+        unit: .liter,
+        categoryID: .dairy
     )
 
     static let eggs = ProductRequest(
         id: UUID(uuidString: "10000000-0000-0000-0000-000000000002")!,
         name: "Huevos",
         quantity: 12,
-        unit: .piece
+        unit: .piece,
+        categoryID: .eggs
     )
 
     static let rice = ProductRequest(
         id: UUID(uuidString: "10000000-0000-0000-0000-000000000003")!,
         name: "Arroz",
         quantity: 1,
-        unit: .kilogram
+        unit: .kilogram,
+        categoryID: .pantry
     )
 
     static let chicken = ProductRequest(
         id: UUID(uuidString: "10000000-0000-0000-0000-000000000004")!,
         name: "Pechuga de pollo",
         quantity: 1,
-        unit: .kilogram
+        unit: .kilogram,
+        categoryID: .meat
     )
 
     static let toiletPaper = ProductRequest(
@@ -36,7 +40,8 @@ enum MockFixtures {
         name: "Papel de baño",
         quantity: 1,
         unit: .package,
-        notes: "12 rollos"
+        notes: "12 rollos",
+        categoryID: .household
     )
 
     static let draft = ShoppingDraft(
@@ -52,6 +57,7 @@ enum MockFixtures {
         listingID: "super-centro-leche-1l",
         productName: "Leche entera 1 L",
         brand: "Marca ejemplo",
+        categoryID: .dairy,
         requestedQuantity: 2,
         requestedUnit: .liter,
         packageQuantity: 1,
@@ -62,7 +68,7 @@ enum MockFixtures {
         lineTotalCents: 7990,
         unitPriceCentsPer100: 399,
         productURL: URL(string: "https://example.com/leche-demo")!,
-        imageURL: URL(string: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=240&q=80")!,
+        imageURL: URL(string: "https://chedrauimx.vtexassets.com/arquivos/ids/79601313/7501295600126_00.jpg?v=639287210270370000")!,
         checkedAt: referenceDate,
         dataStatus: .demo,
         matchType: .exact
@@ -74,6 +80,7 @@ enum MockFixtures {
         listingID: "super-centro-arroz-1kg",
         productName: "Arroz extra 1 kg",
         brand: "Marca ejemplo",
+        categoryID: .pantry,
         requestedQuantity: 1,
         requestedUnit: .kilogram,
         packageQuantity: 1,
@@ -84,7 +91,7 @@ enum MockFixtures {
         lineTotalCents: 4890,
         unitPriceCentsPer100: 489,
         productURL: URL(string: "https://example.com/arroz-demo")!,
-        imageURL: URL(string: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=240&q=80")!,
+        imageURL: URL(string: "https://chedrauimx.vtexassets.com/arquivos/ids/79565827/7502219833491_00.jpg?v=639286593324930000")!,
         checkedAt: referenceDate,
         dataStatus: .demo,
         matchType: .exact
@@ -96,6 +103,7 @@ enum MockFixtures {
         listingID: "mercado-norte-huevos-12",
         productName: "Huevo blanco 12 piezas",
         brand: "Marca ejemplo",
+        categoryID: .eggs,
         requestedQuantity: 12,
         requestedUnit: .piece,
         packageQuantity: 12,
@@ -105,7 +113,7 @@ enum MockFixtures {
         regularPriceCents: 8320,
         lineTotalCents: 7190,
         productURL: URL(string: "https://example.com/huevos-demo")!,
-        imageURL: URL(string: "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=240&q=80")!,
+        imageURL: nil,
         checkedAt: referenceDate,
         dataStatus: .demo,
         matchType: .similar
@@ -115,13 +123,15 @@ enum MockFixtures {
         let stores = [
             StorePlan(
                 id: UUID(uuidString: "40000000-0000-0000-0000-000000000001")!,
-                retailer: "Súper Centro",
+                retailerID: .chedraui,
+                retailer: "Chedraui",
                 subtotalCents: 12_880,
                 items: [milkLine, riceLine]
             ),
             StorePlan(
                 id: UUID(uuidString: "40000000-0000-0000-0000-000000000002")!,
-                retailer: "Mercado Norte",
+                retailerID: .bodegaAurrera,
+                retailer: "Bodega Aurrera",
                 subtotalCents: 7_190,
                 items: [eggsLine]
             )
@@ -139,18 +149,6 @@ enum MockFixtures {
         requestedItems: draft.items,
         plan: comparisonPlan
     )
-
-    static let previousOrders: [CompletedOrder] = [
-        completedOrder,
-        CompletedOrder(
-            id: UUID(uuidString: "50000000-0000-0000-0000-000000000002")!,
-            completedAt: referenceDate.addingTimeInterval(-1_209_600),
-            requestedItems: [chicken, toiletPaper],
-            stores: comparisonPlan.stores,
-            totalPriceCents: 15_480,
-            estimatedSavingsCents: 1_180
-        )
-    ]
 
     static let welcomeMessages: [ChatMessage] = [
         ChatMessage(

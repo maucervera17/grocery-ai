@@ -17,6 +17,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
     var listingID: String
     var productName: String
     var brand: String?
+    var categoryID: ProductCategory?
     var requestedQuantity: Double
     var requestedUnit: ProductUnit
     var packageQuantity: Double
@@ -38,6 +39,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
         listingID: String,
         productName: String,
         brand: String? = nil,
+        categoryID: ProductCategory? = nil,
         requestedQuantity: Double,
         requestedUnit: ProductUnit,
         packageQuantity: Double,
@@ -58,6 +60,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
         self.listingID = listingID
         self.productName = productName
         self.brand = brand
+        self.categoryID = categoryID
         self.requestedQuantity = requestedQuantity
         self.requestedUnit = requestedUnit
         self.packageQuantity = packageQuantity
@@ -77,6 +80,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
 
 struct StorePlan: Identifiable, Codable, Hashable, Sendable {
     var id: UUID
+    var retailerID: RetailerID?
     var retailer: String
     var storeName: String?
     var subtotalCents: Int
@@ -84,12 +88,14 @@ struct StorePlan: Identifiable, Codable, Hashable, Sendable {
 
     init(
         id: UUID = UUID(),
+        retailerID: RetailerID? = nil,
         retailer: String,
         storeName: String? = nil,
         subtotalCents: Int,
         items: [StorePlanItem]
     ) {
         self.id = id
+        self.retailerID = retailerID ?? RetailerID(backendValue: nil, displayName: retailer)
         self.retailer = retailer
         self.storeName = storeName
         self.subtotalCents = subtotalCents

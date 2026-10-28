@@ -12,9 +12,14 @@ struct StoreResultCard: View {
 
         SurfaceCard {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .center, spacing: AppSpacing.medium) {
+                    RetailerLogo(
+                        retailerID: store.retailerID ?? RetailerID(backendValue: nil, displayName: store.retailer),
+                        retailerName: store.retailer
+                    )
+
                     VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                        Text(displayRetailer)
+                        Text(store.retailer)
                             .font(.headline)
 
                         if let storeName = store.storeName, !storeName.isEmpty {
@@ -43,11 +48,4 @@ struct StoreResultCard: View {
         }
     }
 
-    private var displayRetailer: String {
-        store.retailer.replacingOccurrences(
-            of: " (demo)",
-            with: "",
-            options: .caseInsensitive
-        )
-    }
 }

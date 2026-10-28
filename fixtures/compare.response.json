@@ -7,21 +7,24 @@
       "name": "leche",
       "quantity": 2,
       "unit": "L",
-      "notes": null
+      "notes": null,
+      "category_id": "dairy"
     },
     {
       "client_item_id": "00000000-0000-4000-8000-000000000002",
       "name": "huevos",
       "quantity": 12,
       "unit": "piece",
-      "notes": null
+      "notes": null,
+      "category_id": "eggs"
     },
     {
       "client_item_id": "00000000-0000-4000-8000-000000000003",
       "name": "arroz",
       "quantity": 1,
       "unit": "kg",
-      "notes": null
+      "notes": null,
+      "category_id": "pantry"
     }
   ],
   "plan": {
@@ -30,7 +33,9 @@
     "currency": "MXN",
     "stores": [
       {
-        "retailer": "Chedraui (demo)",
+        "retailer_id": "chedraui",
+        "retailer_name": "Chedraui",
+        "retailer": "Chedraui",
         "store_name": null,
         "subtotal_cents": 9200,
         "items": [
@@ -39,6 +44,7 @@
             "listing_id": "f5a86e80d98aa86c12c4dad2",
             "product_name": "Leche entera",
             "brand": null,
+            "category_id": "dairy",
             "requested_quantity": 2,
             "requested_unit": "L",
             "package_quantity": 1,
@@ -49,6 +55,7 @@
             "line_total_cents": 6000,
             "unit_price_cents_per_100": 300,
             "product_url": "https://example.com/demo/chedraui/leche",
+            "image_url": "https://chedrauimx.vtexassets.com/arquivos/ids/79601313/7501295600126_00.jpg?v=639287210270370000",
             "checked_at": "2026-10-27T20:00:00Z",
             "data_status": "demo",
             "match_type": "similar"
@@ -58,6 +65,7 @@
             "listing_id": "609fc7ee8adb06b43860944c",
             "product_name": "Arroz blanco",
             "brand": null,
+            "category_id": "pantry",
             "requested_quantity": 1,
             "requested_unit": "kg",
             "package_quantity": 1,
@@ -68,6 +76,7 @@
             "line_total_cents": 3200,
             "unit_price_cents_per_100": 320,
             "product_url": "https://example.com/demo/chedraui/arroz",
+            "image_url": "https://chedrauimx.vtexassets.com/arquivos/ids/79565827/7502219833491_00.jpg?v=639286593324930000",
             "checked_at": "2026-10-27T20:00:00Z",
             "data_status": "demo",
             "match_type": "similar"
@@ -75,7 +84,9 @@
         ]
       },
       {
-        "retailer": "Bodega Aurrera (demo)",
+        "retailer_id": "bodega_aurrera",
+        "retailer_name": "Bodega Aurrera",
+        "retailer": "Bodega Aurrera",
         "store_name": null,
         "subtotal_cents": 4200,
         "items": [
@@ -84,6 +95,7 @@
             "listing_id": "a8fae58b51dfc0b10427a3df",
             "product_name": "Huevos blancos",
             "brand": null,
+            "category_id": "eggs",
             "requested_quantity": 12,
             "requested_unit": "piece",
             "package_quantity": 12,

@@ -40,6 +40,14 @@ struct SmokeTests {
     }
 
     @Test
+    func legacyProductsInferUsefulFallbackCategories() {
+        #expect(ProductCategory.inferred(from: "Manzanas") == .produce)
+        #expect(ProductCategory.inferred(from: "Leche entera") == .dairy)
+        #expect(ProductCategory.inferred(from: "12 huevos") == .eggs)
+        #expect(ProductCategory.inferred(from: "Producto desconocido") == .other)
+    }
+
+    @Test
     func comparisonRejectsInvalidPostalCode() async {
         await #expect(throws: ComparisonServiceError.invalidPostalCode) {
             try await MockComparisonService().compare(
@@ -61,6 +69,21 @@ struct SmokeTests {
 
         #expect(appState.draft.items.count == 1)
         #expect(appState.draft.items[0].quantity == 3)
+    }
+
+    @Test @MainActor
+    func frequentProductsIncludeStoredImagesAndFrequency() {
+        let appState = AppState(
+            agentService: MockAgentService(),
+            comparisonService: MockComparisonService()
+        )
+        appState.orders = MockFixtures.previousOrders
+
+        let milk = appState.frequentProductOptions.first { $0.product.name == "Leche" }
+
+        #expect(milk?.frequency == 2)
+        #expect(milk?.imageURL != nil)
+        #expect(appState.frequentProductOptions.count >= 10)
     }
 
     @Test @MainActor

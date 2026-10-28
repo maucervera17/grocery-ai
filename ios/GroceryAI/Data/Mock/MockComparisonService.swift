@@ -26,10 +26,11 @@ struct MockComparisonService: ComparisonServicing {
             allocations[offer.retailer, default: []].append(offer.line)
         }
 
-        let preferredRetailerOrder = ["Súper Centro", "Mercado Norte"]
+        let preferredRetailerOrder = ["Chedraui", "Bodega Aurrera"]
         let stores = preferredRetailerOrder.compactMap { retailer -> StorePlan? in
             guard let lines = allocations[retailer], !lines.isEmpty else { return nil }
             return StorePlan(
+                retailerID: RetailerID(backendValue: nil, displayName: retailer),
                 retailer: retailer,
                 subtotalCents: lines.reduce(0) { $0 + $1.lineTotalCents },
                 items: lines
@@ -82,6 +83,7 @@ struct MockComparisonService: ComparisonServicing {
                 listingID: template.listingID,
                 productName: template.productName,
                 brand: "Marca ejemplo",
+                categoryID: request.categoryID,
                 requestedQuantity: request.quantity,
                 requestedUnit: request.unit,
                 packageQuantity: template.packageQuantity,
@@ -154,11 +156,11 @@ private struct MockOfferTemplate: Sendable {
     var imageURL: URL? {
         switch listingID {
         case "super-centro-leche-1l":
-            URL(string: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=240&q=80")
+            URL(string: "https://chedrauimx.vtexassets.com/arquivos/ids/79601313/7501295600126_00.jpg?v=639287210270370000")
         case "super-centro-arroz-1kg":
-            URL(string: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=240&q=80")
-        case "mercado-norte-huevos-12":
-            URL(string: "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=240&q=80")
+            URL(string: "https://chedrauimx.vtexassets.com/arquivos/ids/79565827/7502219833491_00.jpg?v=639286593324930000")
+        case "super-centro-pasta-500g":
+            URL(string: "https://chedrauimx.vtexassets.com/arquivos/ids/79564020/7501079011810_00.jpg?v=639286589338800000")
         default:
             nil
         }
@@ -166,14 +168,16 @@ private struct MockOfferTemplate: Sendable {
 }
 
 private let offerTemplates: [MockOfferTemplate] = [
-    MockOfferTemplate(aliases: ["leche"], retailer: "Súper Centro", listingID: "super-centro-leche-1l", productName: "Leche entera 1 L", packageQuantity: 1, packageUnit: .liter, priceCents: 3_995, regularPriceCents: 4_495, matchType: .exact),
-    MockOfferTemplate(aliases: ["huevo"], retailer: "Mercado Norte", listingID: "mercado-norte-huevos-12", productName: "Huevo blanco 12 piezas", packageQuantity: 12, packageUnit: .piece, priceCents: 7_190, regularPriceCents: 8_320, matchType: .similar),
-    MockOfferTemplate(aliases: ["arroz"], retailer: "Súper Centro", listingID: "super-centro-arroz-1kg", productName: "Arroz extra 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 4_890, regularPriceCents: 5_290, matchType: .exact),
-    MockOfferTemplate(aliases: ["pollo", "pechuga"], retailer: "Mercado Norte", listingID: "mercado-norte-pollo-1kg", productName: "Pechuga de pollo 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 14_990, regularPriceCents: 16_490, matchType: .exact),
-    MockOfferTemplate(aliases: ["manzana"], retailer: "Súper Centro", listingID: "super-centro-manzana-1kg", productName: "Manzana Gala 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 5_490, regularPriceCents: nil, matchType: .similar),
-    MockOfferTemplate(aliases: ["papel de baño", "papel higienico"], retailer: "Mercado Norte", listingID: "mercado-norte-papel-12", productName: "Papel de baño 12 rollos", packageQuantity: 1, packageUnit: .package, priceCents: 12_990, regularPriceCents: 14_990, matchType: .exact),
-    MockOfferTemplate(aliases: ["aceite"], retailer: "Súper Centro", listingID: "super-centro-aceite-1l", productName: "Aceite vegetal 1 L", packageQuantity: 1, packageUnit: .liter, priceCents: 5_690, regularPriceCents: 6_190, matchType: .similar),
-    MockOfferTemplate(aliases: ["tortilla"], retailer: "Mercado Norte", listingID: "mercado-norte-tortilla-1kg", productName: "Tortilla de maíz 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 2_450, regularPriceCents: nil, matchType: .exact),
-    MockOfferTemplate(aliases: ["cafe"], retailer: "Súper Centro", listingID: "super-centro-cafe-500g", productName: "Café molido 500 g", packageQuantity: 500, packageUnit: .gram, priceCents: 11_990, regularPriceCents: 13_490, matchType: .similar),
-    MockOfferTemplate(aliases: ["yogur", "yogurt"], retailer: "Mercado Norte", listingID: "mercado-norte-yogur-4", productName: "Yogur natural 4 piezas", packageQuantity: 4, packageUnit: .piece, priceCents: 6_250, regularPriceCents: nil, matchType: .similar)
+    MockOfferTemplate(aliases: ["leche"], retailer: "Chedraui", listingID: "super-centro-leche-1l", productName: "Leche entera 1 L", packageQuantity: 1, packageUnit: .liter, priceCents: 3_995, regularPriceCents: 4_495, matchType: .exact),
+    MockOfferTemplate(aliases: ["huevo"], retailer: "Bodega Aurrera", listingID: "mercado-norte-huevos-12", productName: "Huevo blanco 12 piezas", packageQuantity: 12, packageUnit: .piece, priceCents: 7_190, regularPriceCents: 8_320, matchType: .similar),
+    MockOfferTemplate(aliases: ["arroz"], retailer: "Chedraui", listingID: "super-centro-arroz-1kg", productName: "Arroz extra 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 4_890, regularPriceCents: 5_290, matchType: .exact),
+    MockOfferTemplate(aliases: ["pollo", "pechuga"], retailer: "Bodega Aurrera", listingID: "mercado-norte-pollo-1kg", productName: "Pechuga de pollo 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 14_990, regularPriceCents: 16_490, matchType: .exact),
+    MockOfferTemplate(aliases: ["manzana"], retailer: "Chedraui", listingID: "super-centro-manzana-1kg", productName: "Manzana Gala 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 5_490, regularPriceCents: nil, matchType: .similar),
+    MockOfferTemplate(aliases: ["papel de baño", "papel higienico"], retailer: "Bodega Aurrera", listingID: "mercado-norte-papel-12", productName: "Papel de baño 12 rollos", packageQuantity: 1, packageUnit: .package, priceCents: 12_990, regularPriceCents: 14_990, matchType: .exact),
+    MockOfferTemplate(aliases: ["aceite"], retailer: "Chedraui", listingID: "super-centro-aceite-1l", productName: "Aceite vegetal 1 L", packageQuantity: 1, packageUnit: .liter, priceCents: 5_690, regularPriceCents: 6_190, matchType: .similar),
+    MockOfferTemplate(aliases: ["tortilla"], retailer: "Bodega Aurrera", listingID: "mercado-norte-tortilla-1kg", productName: "Tortilla de maíz 1 kg", packageQuantity: 1, packageUnit: .kilogram, priceCents: 2_450, regularPriceCents: nil, matchType: .exact),
+    MockOfferTemplate(aliases: ["cafe"], retailer: "Chedraui", listingID: "super-centro-cafe-500g", productName: "Café molido 500 g", packageQuantity: 500, packageUnit: .gram, priceCents: 11_990, regularPriceCents: 13_490, matchType: .similar),
+    MockOfferTemplate(aliases: ["yogur", "yogurt"], retailer: "Bodega Aurrera", listingID: "mercado-norte-yogur-4", productName: "Yogur natural 4 piezas", packageQuantity: 4, packageUnit: .piece, priceCents: 6_250, regularPriceCents: nil, matchType: .similar),
+    MockOfferTemplate(aliases: ["pasta"], retailer: "Chedraui", listingID: "super-centro-pasta-500g", productName: "Pasta 500 g", packageQuantity: 500, packageUnit: .gram, priceCents: 2_450, regularPriceCents: nil, matchType: .exact),
+    MockOfferTemplate(aliases: ["queso oaxaca"], retailer: "Bodega Aurrera", listingID: "mercado-norte-queso-400g", productName: "Queso Oaxaca 400 g", packageQuantity: 400, packageUnit: .gram, priceCents: 7_900, regularPriceCents: 8_900, matchType: .exact)
 ]

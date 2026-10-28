@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 import type { Item, Offer, Line, ShoppingPlan } from "../contracts/schema.js";
 import { matches, measure } from "./normalize.js";
+import { productCategory } from "./product-category.js";
+import { retailerIdentity } from "./retailer-identity.js";
 type Candidate = {
   store: string;
+  retailer_id: ShoppingPlan["stores"][number]["retailer_id"];
   retailer: string;
   store_name: string | null;
   line: Line;
@@ -22,10 +25,12 @@ export function candidate(item: Item, offer: Offer): Candidate | null {
   const count = Math.ceil(wanted.amount / pack.amount),
     total = count * r.priceCents;
   if (!Number.isSafeInteger(total)) return null;
-  const store = JSON.stringify([r.retailer, r.storeName ?? null]);
+  const identity = retailerIdentity(r.source, r.retailer);
+  const store = JSON.stringify([identity.id, r.storeName ?? null]);
   return {
     store,
-    retailer: r.retailer,
+    retailer_id: identity.id,
+    retailer: identity.name,
     store_name: r.storeName ?? null,
     line: {
       client_item_id: item.client_item_id,
@@ -35,6 +40,7 @@ export function candidate(item: Item, offer: Offer): Candidate | null {
         .slice(0, 24),
       product_name: r.productName,
       brand: r.brand ?? null,
+      category_id: item.category_id ?? productCategory(item.name),
       requested_quantity: item.quantity,
       requested_unit: item.unit,
       package_quantity: r.quantity,
@@ -110,6 +116,8 @@ export function planBasket(
   const grouped = new Map<string, ShoppingPlan["stores"][number]>();
   for (const c of best?.chosen ?? []) {
     const group = grouped.get(c.store) ?? {
+      retailer_id: c.retailer_id,
+      retailer_name: c.retailer,
       retailer: c.retailer,
       store_name: c.store_name,
       subtotal_cents: 0,

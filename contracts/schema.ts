@@ -6,6 +6,25 @@ export const Money = z
   .max(Number.MAX_SAFE_INTEGER);
 export const Quantity = z.number().positive().max(100000).multipleOf(0.001);
 export const Unit = z.enum(["g", "kg", "ml", "L", "piece", "package", "dozen"]);
+export const ProductCategory = z.enum([
+  "produce",
+  "dairy",
+  "eggs",
+  "meat",
+  "bakery",
+  "pantry",
+  "beverages",
+  "frozen",
+  "household",
+  "personal_care",
+  "other",
+]);
+export const RetailerId = z.enum([
+  "chedraui",
+  "bodega_aurrera",
+  "walmart",
+  "unknown",
+]);
 export const WebUrl = z
   .string()
   .url()
@@ -17,6 +36,7 @@ export const DraftItem = z
     quantity: Quantity,
     unit: Unit,
     notes: z.string().max(500).nullable(),
+    category_id: ProductCategory.optional(),
   })
   .strict();
 export const DraftItems = z
@@ -103,6 +123,7 @@ export const PlanLine = z
     listing_id: z.string(),
     product_name: z.string(),
     brand: z.string().nullable(),
+    category_id: ProductCategory,
     requested_quantity: Quantity,
     requested_unit: Unit,
     package_quantity: Quantity,
@@ -149,6 +170,9 @@ export const Plan = z
     stores: z.array(
       z
         .object({
+          retailer_id: RetailerId,
+          retailer_name: z.string().min(1),
+          // Transitional field for the web client. Remove after it migrates.
           retailer: z.string(),
           store_name: z.string().nullable(),
           subtotal_cents: Money,

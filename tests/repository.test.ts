@@ -83,8 +83,37 @@ test("demo database is used for pricing; Oaxaca is ranked by the shared planner"
   assert.equal(reads, 1);
   assert.equal(out.status, "complete");
   assert.equal(out.plan!.total_price_cents, 7900);
-  assert.equal(out.plan!.stores[0].retailer, "Bodega Aurrera (demo)");
+  assert.equal(out.plan!.stores[0].retailer_id, "bodega_aurrera");
+  assert.equal(out.plan!.stores[0].retailer_name, "Bodega Aurrera");
+  assert.equal(out.plan!.stores[0].retailer, "Bodega Aurrera");
   assert.equal(out.plan!.stores[0].items[0].data_status, "demo");
+});
+test("demo fixtures supplement an older database seed", async () => {
+  const apples: Item = {
+    client_item_id: "apples",
+    name: "manzanas",
+    quantity: 1,
+    unit: "kg",
+    notes: null,
+  };
+  const oldSeed = rows.filter((row) =>
+    ["Leche entera", "Huevos blancos", "Arroz blanco", "Queso Oaxaca"].includes(
+      row.productName,
+    ),
+  );
+  const out = await createSearch({
+    mode: "demo",
+    fixtures: rows,
+    repository: {
+      search: async () => oldSeed,
+      upsert: async () => {},
+    },
+  })({ action: "compare", items: [apples] });
+
+  assert.equal(out.status, "complete");
+  assert.equal(out.plan!.stores.flatMap((store) => store.items).length, 1);
+  assert.equal(out.plan!.stores[0].items[0].category_id, "produce");
+  assert.equal(out.plan!.stores[0].items[0].image_url, undefined);
 });
 test("demo DB failure uses explicit demo fallback, never verified provenance", async () => {
   const out = await createSearch({
@@ -155,17 +184,29 @@ test("one failing retailer still returns the healthy source", async () => {
   assert.ok(out.errors.some((e) => e.code === "SOURCE_TIMEOUT"));
 });
 
-test('HTTP never serves credentials or server files, even through encoded traversal', async () => {
-  const { buildApp } = await import('../backend/app.js');
-  const app = buildApp({ mode:'demo', fixtures:rows });
+test("HTTP never serves credentials or server files, even through encoded traversal", async () => {
+  const { buildApp } = await import("../backend/app.js");
+  const app = buildApp({ mode: "demo", fixtures: rows });
   try {
-    for (const url of ['/.env','/backend/server.ts','/..%2f.env','/web/../.env']) {
-      const result = await app.inject({method:'GET',url});
-      assert.equal(result.statusCode,404);
-      assert.ok(!result.body.includes('ANTHROPIC_API_KEY'));
+    for (const url of [
+      "/.env",
+      "/backend/server.ts",
+      "/..%2f.env",
+      "/web/../.env",
+    ]) {
+      const result = await app.inject({ method: "GET", url });
+      assert.equal(result.statusCode, 404);
+      assert.ok(!result.body.includes("ANTHROPIC_API_KEY"));
     }
-    const result=await app.inject({method:'POST',url:'/v1/chat/search',headers:{'content-type':'text/plain'},payload:'not JSON'});
-    assert.equal(result.statusCode,400);
+    const result = await app.inject({
+      method: "POST",
+      url: "/v1/chat/search",
+      headers: { "content-type": "text/plain" },
+      payload: "not JSON",
+    });
+    assert.equal(result.statusCode, 400);
     SearchResponse.parse(result.json());
-  } finally {await app.close()}
+  } finally {
+    await app.close();
+  }
 });

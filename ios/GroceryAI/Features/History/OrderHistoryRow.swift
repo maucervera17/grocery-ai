@@ -3,19 +3,9 @@ import SwiftUI
 struct OrderHistoryRow: View {
     let order: CompletedOrder
 
-    @Environment(\.appTheme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        let colors = theme.colors(for: colorScheme)
-
         HStack(spacing: AppSpacing.medium) {
-            Image(systemName: "bag.fill")
-                .font(.title2)
-                .foregroundStyle(colors.brandPrimary)
-                .frame(width: 48, height: 48)
-                .background(colors.brandSecondary, in: .rect(cornerRadius: AppRadius.medium))
-                .accessibilityHidden(true)
+            OrderArtwork(order: order)
 
             VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
                 Text(order.completedAt.formatted(.dateTime.day().month(.abbreviated)))

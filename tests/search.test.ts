@@ -111,7 +111,14 @@ test("draft operations preserve IDs, notes and unrelated items without mutation"
   const updated = applyChanges(basket, ops).items;
   assert.equal(updated[0].client_item_id, "milk");
   assert.equal(updated[0].quantity, 3);
-  assert.deepEqual(updated.slice(1), basket.slice(1));
+  assert.deepEqual(
+    updated.slice(1).map(({ category_id: _, ...item }) => item),
+    basket.slice(1),
+  );
+  assert.deepEqual(
+    updated.map((item) => item.category_id),
+    ["dairy", "eggs", "pantry"],
+  );
   assert.deepEqual(basket, original);
   const remove = await agent.interpret(
     "Quita huevos",
@@ -119,6 +126,36 @@ test("draft operations preserve IDs, notes and unrelated items without mutation"
     AbortSignal.timeout(1000),
   );
   assert.equal(applyChanges(updated, remove).items.length, 2);
+});
+test("demo supports a representative household basket beyond the original three products", async () => {
+  const agent = new DemoDraftAgent();
+  const changes = await agent.interpret(
+    "Agrega 1 kg de pechuga de pollo, 1 kg de manzanas, 1 paquete de papel de baño, 1 litro de aceite, 1 kg de tortillas, 500 g de café, 4 piezas de yogur y 500 g de pasta",
+    [],
+    AbortSignal.timeout(1000),
+  );
+  const items = applyChanges([], changes).items;
+  assert.equal(items.length, 8);
+
+  const result = await createSearch({ mode: "demo", fixtures })({
+    action: "compare",
+    items,
+    preferences: { max_stores: 2 },
+  });
+  assert.equal(result.status, "complete");
+  assert.equal(
+    result.plan!.stores.flatMap((store) => store.items).length,
+    items.length,
+  );
+  const planItems = result.plan!.stores.flatMap((store) => store.items);
+  assert.ok(planItems.every((item) => item.category_id !== "other"));
+  assert.ok(planItems.some((item) => item.image_url?.startsWith("https://")));
+  assert.ok(
+    result.plan!.stores.every(
+      (store) =>
+        store.retailer_id !== "unknown" && !store.retailer.includes("demo"),
+    ),
+  );
 });
 test("unknown agent IDs and invalid quantities are rejected transactionally", () => {
   assert.throws(() =>
@@ -206,8 +243,10 @@ test("selected plan lines preserve optional product images", () => {
   })!.line;
   assert.equal(line.image_url, imageUrl);
   assert.equal(
-    candidate(basket[0], { listing: fixtures[0], status: "verified" })!.line
-      .image_url,
+    candidate(basket[0], {
+      listing: { ...fixtures[0], imageUrl: undefined },
+      status: "verified",
+    })!.line.image_url,
     undefined,
   );
 });
@@ -247,7 +286,7 @@ test("partial plan maximizes coverage, and never claims savings for incomplete b
     ...basket,
     {
       client_item_id: "x",
-      name: "manzanas",
+      name: "plátanos",
       quantity: 1,
       unit: "kg" as const,
       notes: null,

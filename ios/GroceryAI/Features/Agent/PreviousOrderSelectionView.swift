@@ -9,8 +9,12 @@ struct PreviousOrderSelectionView: View {
     init(order: CompletedOrder, onAdd: @escaping ([ProductRequest]) -> Void) {
         self.order = order
         self.onAdd = onAdd
-        _items = State(initialValue: order.requestedItems.map {
-            SelectableProduct(product: $0, isSelected: true)
+        _items = State(initialValue: order.requestedItems.map { product in
+            SelectableProduct(
+                product: product,
+                imageURL: order.stores.flatMap(\.items).first(where: { $0.clientItemID == product.id })?.imageURL,
+                isSelected: true
+            )
         })
     }
 

@@ -12,7 +12,10 @@ struct StorePlanItemRow: View {
 
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
             HStack(alignment: .top, spacing: AppSpacing.medium) {
-                ProductThumbnail(imageURL: item.imageURL)
+                ProductThumbnail(
+                    imageURL: item.imageURL,
+                    category: item.categoryID ?? .inferred(from: item.productName)
+                )
 
                 VStack(alignment: .leading, spacing: AppSpacing.small) {
                     HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
