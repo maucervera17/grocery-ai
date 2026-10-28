@@ -78,6 +78,11 @@ export const ScrapedListing = z
     regularPriceCents: Money.max(100000000).optional(),
     currency: z.literal("MXN"),
     productUrl: WebUrl,
+    imageUrl: z
+      .string()
+      .url()
+      .regex(/^https:\/\//)
+      .optional(),
     checkedAt: z.string().datetime(),
     locationEvidence: z
       .object({

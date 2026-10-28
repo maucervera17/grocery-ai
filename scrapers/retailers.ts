@@ -40,6 +40,34 @@ function cents(value: string): number {
   const [whole, decimal = ""] = clean.split(".");
   return Number(whole) * 100 + Number(decimal.padEnd(2, "0"));
 }
+export function productImage(page: Page): string | undefined {
+  const meta = page.metadata ?? {};
+  const values = [meta.ogImage, meta["og:image"], meta["twitter:image"]].flat();
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    try {
+      const url = new URL(value);
+      const allowed = [
+        "i5-mx.walmartimages.com",
+        "i5.walmartimages.com",
+        "chedrauimx.vtexassets.com",
+        "chedrauimx.vteximg.com.br",
+      ];
+      if (
+        url.protocol === "https:" &&
+        !url.username &&
+        !url.password &&
+        !url.port &&
+        allowed.includes(url.hostname) &&
+        /\/(asr|arquivos\/ids)\//.test(url.pathname)
+      )
+        return url.href;
+    } catch {
+      /* Missing or invalid metadata is not a reason to discard a price. */
+    }
+  }
+  return undefined;
+}
 export function parseProduct(
   source: Retailer,
   url: string,
@@ -141,6 +169,7 @@ export function parseProduct(
     regularPriceCents: regular ? cents(regular) : undefined,
     currency: "MXN",
     productUrl: safe,
+    imageUrl: productImage(page),
     checkedAt,
   });
   if (Date.parse(result.checkedAt) > Date.parse(now) + 60000)

@@ -85,9 +85,10 @@ export async function productPrices(
         Date.now() - Date.parse(r.checkedAt) < 300000,
     );
     if (
-      new Set(
+      (new Set(
         rows.filter((r) => matches(r.productName, query)).map((r) => r.source),
-      ).size < 3 &&
+      ).size < 3 ||
+        rows.some((r) => matches(r.productName, query) && !r.imageUrl)) &&
       options.scraper
     ) {
       try {

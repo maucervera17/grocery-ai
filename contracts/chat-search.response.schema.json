@@ -356,6 +356,10 @@
                     "type": "string",
                     "pattern": "^https?:\\/\\/"
                   },
+                  "imageUrl": {
+                    "type": "string",
+                    "pattern": "^https:\\/\\/"
+                  },
                   "checkedAt": {
                     "type": "string",
                     "format": "date-time",
