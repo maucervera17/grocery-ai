@@ -34,7 +34,7 @@ const app = buildApp({
         )
       : undefined,
   scraper: key ? new FirecrawlScraper(key) : undefined,
-});
+}, { apiKey:process.env.ELEVENLABS_API_KEY, agentId:process.env.ELEVENLABS_AGENT_ID });
 const port = z.coerce
   .number()
   .int()

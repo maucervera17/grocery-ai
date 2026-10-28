@@ -1,0 +1,13 @@
+import {readFile,writeFile,chmod} from 'node:fs/promises';
+const key=process.env.ELEVENLABS_API_KEY;
+if(!key)throw Error('Guarda ELEVENLABS_API_KEY en .env antes de configurar voz.');
+if(process.env.ELEVENLABS_AGENT_ID)throw Error('Ya hay un agente configurado. No se creará otro ni se modificará sin revisar su configuración.');
+const config=JSON.parse(await readFile('config/elevenlabs-agent.json','utf8'));
+const response=await fetch('https://api.elevenlabs.io/v1/convai/agents/create',{method:'POST',headers:{'xi-api-key':key,'Content-Type':'application/json'},body:JSON.stringify(config),signal:AbortSignal.timeout(30000)});
+if(!response.ok)throw Error(`ElevenLabs rechazó la configuración (${response.status}). No se guardó ningún secreto en logs.`);
+const body=await response.json() as {agent_id:string};
+if(typeof body.agent_id!=='string'||!/^[A-Za-z0-9_-]+$/.test(body.agent_id))throw Error('ID de agente inválido');
+const env=await readFile('.env','utf8');
+await writeFile('.env',env.replace(/^ELEVENLABS_AGENT_ID=.*\n?/gm,'').trimEnd()+`\nELEVENLABS_AGENT_ID=${body.agent_id}\n`,{mode:0o600});
+await chmod('.env',0o600);
+console.log('Agente Barasu creado y configurado en .env. Reinicia el servidor.');

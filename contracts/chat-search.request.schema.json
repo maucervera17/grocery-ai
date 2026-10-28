@@ -6,6 +6,94 @@
       "properties": {
         "action": {
           "type": "string",
+          "const": "product_prices"
+        },
+        "price_scope": {
+          "type": "string",
+          "enum": ["published", "local"]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "items": {
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "client_item_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "quantity": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 100000,
+                "multipleOf": 0.001
+              },
+              "unit": {
+                "type": "string",
+                "enum": ["g", "kg", "ml", "L", "piece", "package", "dozen"]
+              },
+              "notes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": ["client_item_id", "name", "quantity", "unit", "notes"],
+            "additionalProperties": false
+          }
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "postal_code": {
+                  "type": "string",
+                  "pattern": "^\\d{5}$"
+                },
+                "fulfillment": {
+                  "type": "string",
+                  "enum": ["delivery", "pickup"]
+                },
+                "pickup_store": {
+                  "type": "string",
+                  "const": "chedraui-bellavista"
+                }
+              },
+              "required": ["postal_code"],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["action", "message", "items"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
           "const": "update_draft"
         },
         "message": {
@@ -63,6 +151,14 @@
                 "postal_code": {
                   "type": "string",
                   "pattern": "^\\d{5}$"
+                },
+                "fulfillment": {
+                  "type": "string",
+                  "enum": ["delivery", "pickup"]
+                },
+                "pickup_store": {
+                  "type": "string",
+                  "const": "chedraui-bellavista"
                 }
               },
               "required": ["postal_code"],
@@ -137,6 +233,14 @@
                 "postal_code": {
                   "type": "string",
                   "pattern": "^\\d{5}$"
+                },
+                "fulfillment": {
+                  "type": "string",
+                  "enum": ["delivery", "pickup"]
+                },
+                "pickup_store": {
+                  "type": "string",
+                  "const": "chedraui-bellavista"
                 }
               },
               "required": ["postal_code"],

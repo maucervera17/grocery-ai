@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { productPrices } from "./product-prices.js";
 import {
   ScrapedListing,
   type SearchInput,
@@ -6,6 +7,7 @@ import {
   type RawListing,
   type Failure,
   type Offer,
+  type ScrapeQuery,
 } from "../contracts/schema.js";
 import type { ListingRepository } from "./repository.js";
 import type { Scraper } from "../scrapers/firecrawl.js";
@@ -33,8 +35,10 @@ export function failure(
 }
 export function createSearch(options: Options) {
   return async (input: SearchInput): Promise<Response> => {
-    const signal = AbortSignal.timeout(options.timeoutMs ?? 25000),
+    const signal = AbortSignal.timeout(options.timeoutMs ?? 90000),
       errors: Failure[] = [];
+    if (input.action === "product_prices")
+      return productPrices(input, options, signal);
     if (input.action === "update_draft") {
       const agent =
         options.agent ??
@@ -94,15 +98,17 @@ export function createSearch(options: Options) {
       const age = Date.now() - Date.parse(r.checkedAt);
       return age >= 0 && age < (options.ttlMs ?? 3600000);
     };
-    // At most two items in flight (four source requests); one shared overall deadline.
+    // At most two items in flight (six source requests); one shared overall deadline.
     let cursor = 0;
     const worker = async () => {
       while (cursor < input.items.length) {
         const item = input.items[cursor++];
-        const query = {
+        const query: ScrapeQuery = {
           query: item.name,
           postalCode: input.location?.postal_code,
           maxResults: 10,
+          fulfillment: input.location?.fulfillment ?? "delivery",
+          pickupStore: input.location?.pickup_store,
         };
         if (options.mode === "demo") {
           let rows = options.fixtures;
@@ -137,6 +143,18 @@ export function createSearch(options: Options) {
         }
         let cached: RawListing[] = [],
           fetched: RawListing[] = [];
+        const scoped = (r: RawListing) =>
+          !query.postalCode ||
+          (r.locationEvidence?.postalCode === query.postalCode &&
+            r.locationEvidence.fulfillment === query.fulfillment &&
+            (query.fulfillment !== "pickup" ||
+              (r.source === "chedraui" &&
+                query.pickupStore === "chedraui-bellavista" &&
+                r.locationEvidence.storeName ===
+                  "Super Chedraui Bellavista")) &&
+            r.locationEvidence.availability === "in_stock" &&
+            Date.now() - Date.parse(r.checkedAt) >= 0 &&
+            Date.now() - Date.parse(r.checkedAt) < 300000);
         if (options.repository)
           try {
             cached = z
@@ -147,7 +165,7 @@ export function createSearch(options: Options) {
                   signal,
                 ),
               )
-              .filter((r) => matches(r.productName, item.name));
+              .filter((r) => matches(r.productName, item.name) && scoped(r));
           } catch {
             errors.push(
               failure(
@@ -165,7 +183,11 @@ export function createSearch(options: Options) {
             .map((r) => r.source)
             .filter((s) => RETAILERS.some((r) => r.id === s)),
         );
-        if (coverage.size < RETAILERS.length || cached.some((r) => !fresh(r))) {
+        if (
+          coverage.size <
+            (query.fulfillment === "pickup" ? 1 : RETAILERS.length) ||
+          cached.some((r) => !fresh(r))
+        ) {
           if (!options.scraper)
             errors.push(
               failure(
@@ -183,7 +205,7 @@ export function createSearch(options: Options) {
               fetched = z
                 .array(ScrapedListing)
                 .parse(batch.listings)
-                .filter((r) => matches(r.productName, item.name));
+                .filter((r) => matches(r.productName, item.name) && scoped(r));
               errors.push(
                 ...batch.errors.map((e) =>
                   failure(e.code, e.message, item.client_item_id, e.retryable),
@@ -249,7 +271,16 @@ export function createSearch(options: Options) {
       errors.push(
         failure("STALE_DATA", "Algunos precios están vencidos.", null, true),
       );
-    if (options.mode === "live" && plan.stores.length)
+    if (
+      options.mode === "live" &&
+      plan.stores.length &&
+      (!input.location?.postal_code ||
+        plan.stores.some((s) =>
+          s.items.some(
+            (i) => i.verified_postal_code !== input.location?.postal_code,
+          ),
+        ))
+    )
       errors.push(
         failure(
           "LOCATION_UNVERIFIED",
