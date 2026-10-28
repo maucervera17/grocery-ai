@@ -1,4 +1,8 @@
-# Grocery AI — backend, agente y Firecrawl
+# Barasu — súper semanal, guardados y voz
+
+Nuevo flujo de [lista semanal, conveniencia y ahorro](docs/WEEKLY_SHOPPING.md).
+
+Estado actual y pruebas de wishlist, GPS y ElevenLabs: [guía de integración](docs/VOICE_LOCATION_WISHLIST.md). Las secciones iniciales siguientes conservan documentación histórica del MVP; para ejecutar usa [setup](docs/setup.md).
 
 Backend local TypeScript/Node.js 22+ con Fastify, Zod y Vercel AI SDK. Implementa el acuerdo actualizado: un endpoint, borrador sin estado y comparación de una lista con hasta dos tiendas. Fuentes elegidas: **Chedraui y Bodega Aurrera**.
 
@@ -57,7 +61,7 @@ La ubicación aún no configura una sesión/sucursal del supermercado. Las compa
 
 `backend/repository.ts` define `search` y `upsert`. La integración concreta queda pendiente del esquema del responsable de datos. Se inyecta en `buildApp` en `backend/server.ts`. No se han inventado tablas ni creado otra base de datos. Sin adaptador, live consulta Firecrawl en cada comparación y no persiste.
 
-iOS puede trabajar con `fixtures/update-draft.response.json`, `fixtures/compare.response.json`, `fixtures/compare.partial.response.json`, `fixtures/compare.empty.response.json` y `fixtures/compare.error.response.json`. Los contratos y decisiones propuestas están en [contracts/api.md](contracts/api.md).
+iOS puede trabajar con `fixtures/update-draft.response.json`, `fixtures/compare.response.json`, `fixtures/compare.partial.response.json`, `fixtures/compare.empty.response.json` y `fixtures/compare.error.response.json`. Los contratos están en [contracts/api.md](contracts/api.md).
 
 ## Verificar
 
@@ -105,5 +109,5 @@ no consulta precios en vivo con Firecrawl.
 - `npm run smoke:scrapers`: dos consultas con la clave REST de Firecrawl.
 - Se retiró el caso de queso escrito directamente en el frontend.
 - Resultados web muestran fuentes, fechas, precio unitario, estado y elementos sin coincidencia.
-- La rama iOS del equipo está integrada localmente con `GroceryAPIClient`; aún requiere compilación y prueba en Xcode.
+- La app iOS del equipo usa `GroceryAPIClient`; esta rama no modifica `ios/` para evitar conflictos con el trabajo nativo de Arturo. La integración de los nuevos campos del contrato queda pendiente en su rama.
 - Guía canónica actual: `docs/setup.md`; estado de entrega: `docs/integration-checklist.md`.

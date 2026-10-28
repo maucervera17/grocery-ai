@@ -24,7 +24,7 @@ export function productUrl(value: string, source: Retailer): string | null {
     if (
       source.id === "chedraui"
         ? !url.pathname.endsWith("/p")
-        : !/^\/ip\/[^/]+\/\d+$/.test(url.pathname)
+        : !/^\/ip\/(?:[^/]+\/)+\d+$/.test(url.pathname)
     )
       return null;
     url.search = "";
@@ -40,6 +40,53 @@ function cents(value: string): number {
   const [whole, decimal = ""] = clean.split(".");
   return Number(whole) * 100 + Number(decimal.padEnd(2, "0"));
 }
+export function unavailablePrimary(primary: string): boolean {
+  const selected = primary
+    .match(/Tamaño:\s*([^\n]+)/)?.[1]
+    ?.trim()
+    .toLowerCase();
+  const stockText = primary
+    .split("\n")
+    .filter((line) => {
+      if (/devoluci[oó]n(?:es)? no disponible/i.test(line)) return false;
+      const variant = line.match(
+        /^(.+),\s*\$[\d,.]+,\s*(?:Agotado|No disponible)\s*$/i,
+      );
+      if (selected && variant && variant[1].trim().toLowerCase() !== selected)
+        return false;
+      return true;
+    })
+    .join("\n");
+  return /agotado|no disponible|sin existencia/i.test(stockText);
+}
+export function productImage(page: Page): string | undefined {
+  const meta = page.metadata ?? {};
+  const values = [meta.ogImage, meta["og:image"], meta["twitter:image"]].flat();
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    try {
+      const url = new URL(value);
+      const allowed = [
+        "i5-mx.walmartimages.com",
+        "i5.walmartimages.com",
+        "chedrauimx.vtexassets.com",
+        "chedrauimx.vteximg.com.br",
+      ];
+      if (
+        url.protocol === "https:" &&
+        !url.username &&
+        !url.password &&
+        !url.port &&
+        allowed.includes(url.hostname) &&
+        /\/(asr|arquivos\/ids)\//.test(url.pathname)
+      )
+        return url.href;
+    } catch {
+      /* Missing or invalid metadata is not a reason to discard a price. */
+    }
+  }
+  return undefined;
+}
 export function parseProduct(
   source: Retailer,
   url: string,
@@ -49,7 +96,7 @@ export function parseProduct(
   const safe = productUrl(url, source);
   if (!safe) throw new Error("Invalid product URL");
   const metadata = page.metadata ?? {},
-    markdown = page.markdown ?? "";
+    markdown = (page.markdown ?? "").replace(/\\([`*_])/g, "$1");
   if (
     Number(metadata.statusCode ?? 200) >= 400 ||
     /robot or human|captcha|access denied/i.test(markdown.slice(0, 1000))
@@ -69,8 +116,7 @@ export function parseProduct(
     .split(
       /\n# Promociones|\n## Información|\nProductos relacionados|\n## Artículos similares/,
     )[0];
-  if (/agotado|no disponible|sin existencia/i.test(primary))
-    throw new Error("Unavailable product");
+  if (unavailablePrimary(primary)) throw new Error("Unavailable product");
   let price: string | undefined,
     regular: string | undefined,
     storeName: string | undefined;
@@ -78,11 +124,15 @@ export function parseProduct(
     if (metadata["product:price:currency"] !== "MXN")
       throw new Error("Unknown currency");
     price = String(metadata["product:price:amount"] ?? "");
-    const visible = primary.match(/\n\$([\d,]+(?:\.\d{2})?)\s*\n/);
+    const visible = primary.match(
+      /\n\$([\d,]+(?:\.\d{2})?)(?:\s+\$[\d,]+(?:\.\d{2})?)?\s*\n/,
+    );
     if (!visible || cents(visible[1]) !== cents(price))
       throw new Error("Price evidence mismatch");
   } else {
-    price = primary.match(/Precio actual MXN\$([\d,]+(?:\.\d{2})?)/)?.[1];
+    price = primary.match(
+      /Precio actual (?:MXN\s*)?\$([\d,]+(?:\.\d{2})?)/,
+    )?.[1];
     regular = primary.match(/costaba \$([\d,]+(?:\.\d{2})?)/)?.[1];
     storeName = primary
       .match(/(?:Recoge en tienda,|Pickup sin costo,)[^\n]*? en ([^\n]+)/)?.[1]
@@ -103,15 +153,17 @@ export function parseProduct(
       /(\d+(?:\.\d+)?)\s*(kg|g|ml|l|piezas?|pzas?|pz|docenas?)\b/gi,
     ),
   ];
-  if (!sizes.length) throw new Error("Unknown package size");
+  const perKg = /\bpor\s+(?:kg|kilo(?:gramo)?)\b/i.test(sizeText);
+  if (!sizes.length && !perKg) throw new Error("Unknown package size");
   if (
+    !perKg &&
     !multi &&
     /\b(pack|paquete|caja|empaque)\b/i.test(title) &&
     sizes.length > 1
   )
     throw new Error("Ambiguous multipack");
-  const size = sizes[sizes.length - 1],
-    rawUnit = (multi?.[3] ?? size[2]).toLowerCase();
+  const size = perKg ? ["por kg", "1", "kg"] : sizes[sizes.length - 1],
+    rawUnit = (perKg ? "kg" : (multi?.[3] ?? size[2])).toLowerCase();
   const unit =
     rawUnit === "l"
       ? "L"
@@ -120,9 +172,11 @@ export function parseProduct(
         : ["g", "kg", "ml"].includes(rawUnit)
           ? rawUnit
           : "piece";
-  const quantity = multi
-    ? Number(multi[1]) * Number(multi[2])
-    : Number(size[1]);
+  const quantity = perKg
+    ? 1
+    : multi
+      ? Number(multi[1]) * Number(multi[2])
+      : Number(size[1]);
   // Never turn an old Firecrawl cache hit into a newly verified price.
   const checkedAt =
     metadata.cacheState === "hit" ? String(metadata.cachedAt ?? "") : now;
@@ -141,6 +195,7 @@ export function parseProduct(
     regularPriceCents: regular ? cents(regular) : undefined,
     currency: "MXN",
     productUrl: safe,
+    imageUrl: productImage(page),
     checkedAt,
   });
   if (Date.parse(result.checkedAt) > Date.parse(now) + 60000)

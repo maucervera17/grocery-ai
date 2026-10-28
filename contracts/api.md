@@ -48,3 +48,33 @@ Estos detalles resuelven vacíos del acuerdo para poder probar localmente; no im
 ## Repositorio de datos
 
 `ListingRepository.search(query, signal)` devuelve solo ofertas reales, aisladas por código postal; `upsert(listings, query, signal)` hace persistencia idempotente mediante el adaptador único. Nunca devolver seeds de demo como registros reales. Respetar AbortSignal, el TTL y la identidad de fuente/URL/sucursal.
+
+## Validación de ubicación (prototipo)
+
+`location` acepta `postal_code`, `fulfillment` opcional (`delivery` por defecto o `pickup`) y `pickup_store` opcional (`chedraui-bellavista`). Para recogida se requiere CP `52994` y esa sucursal. No se interpreta el CP de la sucursal como domicilio del usuario. La entrega de prueba sigue usando `52997`.
+
+Con CP, el modo live solo planifica ofertas con evidencia de destino aplicado en la ficha del producto, disponibilidad y fecha inferior a cinco minutos. No basta incluir el CP en el buscador ni en un campo de texto. `verified_postal_code` y `verified_fulfillment` identifican la confirmación en cada línea. La disponibilidad es una observación, no una reserva. Sin evidencia no se devuelve un precio alternativo de otra zona.
+
+La migración `202610280003_postal_evidence.sql` añade `location_evidence` a las ofertas y a los RPC de lectura/escritura. Los registros anteriores sin evidencia siguen siendo utilizables para consultas generales sin CP, pero no para validar un destino.
+
+Limitaciones verificadas: Walmart solicitó verificación humana y después mostró un error técnico al guardar 52997. Firecrawl tampoco confirmó ese destino. Chedraui Bellavista pudo seleccionarse en Chrome, pero su selección desde Firecrawl aún falla; esa observación del navegador no alimenta los precios automáticos. Para entrega Chedraui requiere dirección: `LOCATION_REQUIRES_ADDRESS`. No se ha implementado un flujo de dirección de entrega. Estos bloqueos impiden considerar terminada la validación real por CP. La web permite elegir ambas modalidades; iOS todavía usa entrega por defecto.
+
+## product_prices — consulta directa de un producto
+
+`{action:"product_prices", message, items, location?}` interpreta una pregunta como «Hola, quiero revisar el queso oaxaca en que tienda tiene el mejor precio?». Interpreta el producto en una lista vacía y conserva `draft_items` sin modificar: una consulta de precio no es una compra de una pieza ni una comparación del borrador anterior.
+
+La respuesta añade `comparison` con `query`, `scope:"published"`, `data_mode`, `requested_postal_code`, `offers` (listing, costo por 100 unidades y basis) y `winner_url`. Obtiene precios publicados en las tres fuentes, compara contenido equivalente (g/kg, ml/L), conserva presentación, fuente, fecha y enlace. Solo declara un ganador cuando las dimensiones son compatibles. El ganador es entre las opciones obtenidas, no un mínimo exhaustivo del catálogo. Marcas distintas se identifican como alternativas.
+
+El resultado es `partial` porque el precio publicado no confirma existencias en la ubicación solicitada. La disponibilidad por CP sigue siendo responsabilidad del flujo `compare`, que exige evidencia. La web distingue explícitamente los precios publicados de la validación local; no utiliza precios demo como alternativa a fallos reales. Solo muestra tarjetas después de una solicitud, y las preguntas de precio consultan directamente sin exigir un clic adicional.
+
+### Fotos de producto
+
+`ScrapedListing.imageUrl` es opcional y procede de metadatos de la ficha principal (`og:image`), con HTTPS y hosts CDN de las tiendas permitidos. No se toman imágenes de recomendaciones ni logotipos. La web las muestra después de la solicitud, con texto alternativo y respaldo si no cargan. Se renueva una caché que carece de imágenes. La migración 004 conserva la URL en las lecturas posteriores: aplicada en local; pendiente de aplicar en Supabase remoto (la consulta en vivo ya devuelve las fotos).
+
+## Consulta local explícita y robustez del catálogo
+
+`product_prices.price_scope` acepta `published` (predeterminado, precios de referencia) o `local` (requiere location). En local, tanto caché como resultados nuevos deben llevar evidencia coincidente de CP, modalidad, sucursal si aplica y observación menor a cinco minutos. Un fallo no cambia automáticamente a published. La web ofrece esa alternativa mediante una acción explícita, limpia resultados al cambiar ubicación y activa local al cambiar CP.
+
+`comparison.unit_winners` identifica ganadores por dimensión cuando hay al menos dos fuentes comparables. No se declara ganador entre gramos y mililitros, ni entre tiendas si solo respondió una. Los sinónimos de categoría, plurales comunes y el error de marca Axxe/Axe se normalizan. Precio principal, variación seleccionada y existencias de otras variantes se interpretan por separado.
+
+Las llamadas reales a Firecrawl se espacian 6.5 s por endpoint; los límites 429 se informan explícitamente sin reintento inmediato. El servidor permite hasta 90 s por consulta y el cliente espera hasta 95 s. Las pruebas usan un transporte simulado sin esperas. El informe de consultas reales está en `docs/CATALOG_TEST_REPORT.md`.

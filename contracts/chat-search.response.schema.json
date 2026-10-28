@@ -201,6 +201,14 @@
                         "match_type": {
                           "type": "string",
                           "enum": ["exact", "similar"]
+                        },
+                        "verified_fulfillment": {
+                          "type": "string",
+                          "enum": ["delivery", "pickup"]
+                        },
+                        "verified_postal_code": {
+                          "type": "string",
+                          "pattern": "^\\d{5}$"
                         }
                       },
                       "required": [
@@ -275,6 +283,185 @@
           "type": "null"
         }
       ]
+    },
+    "comparison": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["published", "local"]
+        },
+        "data_mode": {
+          "type": "string",
+          "enum": ["demo", "live"]
+        },
+        "requested_postal_code": {
+          "type": ["string", "null"]
+        },
+        "offers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "listing": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "retailer": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "storeName": {
+                    "type": "string"
+                  },
+                  "productName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 300
+                  },
+                  "brand": {
+                    "type": "string"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000,
+                    "multipleOf": 0.001
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": ["g", "kg", "ml", "L", "piece", "package", "dozen"]
+                  },
+                  "priceCents": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000000
+                  },
+                  "regularPriceCents": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100000000
+                  },
+                  "currency": {
+                    "type": "string",
+                    "const": "MXN"
+                  },
+                  "productUrl": {
+                    "type": "string",
+                    "pattern": "^https?:\\/\\/"
+                  },
+                  "imageUrl": {
+                    "type": "string",
+                    "pattern": "^https:\\/\\/"
+                  },
+                  "checkedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "locationEvidence": {
+                    "type": "object",
+                    "properties": {
+                      "postalCode": {
+                        "type": "string",
+                        "pattern": "^\\d{5}$"
+                      },
+                      "fulfillment": {
+                        "type": "string",
+                        "enum": ["delivery", "pickup"]
+                      },
+                      "storeName": {
+                        "type": "string"
+                      },
+                      "availability": {
+                        "type": "string",
+                        "const": "in_stock"
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                      }
+                    },
+                    "required": [
+                      "postalCode",
+                      "fulfillment",
+                      "availability",
+                      "text"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "source",
+                  "retailer",
+                  "productName",
+                  "priceCents",
+                  "currency",
+                  "productUrl",
+                  "checkedAt"
+                ],
+                "additionalProperties": false
+              },
+              "unit_price_cents_per_100": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "basis": {
+                "type": "string",
+                "enum": ["g", "ml", "piece", "package"]
+              }
+            },
+            "required": ["listing", "unit_price_cents_per_100", "basis"],
+            "additionalProperties": false
+          }
+        },
+        "winner_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^https?:\\/\\/"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit_winners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "basis": {
+                "type": "string",
+                "enum": ["g", "ml", "piece", "package"]
+              },
+              "winner_url": {
+                "type": "string",
+                "pattern": "^https?:\\/\\/"
+              }
+            },
+            "required": ["basis", "winner_url"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "query",
+        "scope",
+        "data_mode",
+        "requested_postal_code",
+        "offers",
+        "winner_url"
+      ],
+      "additionalProperties": false
     },
     "errors": {
       "type": "array",

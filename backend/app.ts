@@ -1,14 +1,18 @@
+import {registerLocation} from "./location.js";
+import { registerVoice, type VoiceOptions } from "./voice.js";
 import { readFile } from "node:fs/promises";
 import Fastify from "fastify";
 import { SearchRequest, SearchResponse } from "../contracts/schema.js";
 import { createSearch, failure, type Options } from "./service.js";
-export function buildApp(options: Options) {
+export function buildApp(options: Options, voiceOptions: VoiceOptions = {}) {
   const app = Fastify({
       bodyLimit: 32768,
       logger: false,
-      requestTimeout: 30000,
+      requestTimeout: 100000,
     }),
     search = createSearch(options);
+  registerVoice(app, voiceOptions);
+  registerLocation(app);
   const errorBody = (code: string, message: string) => ({
     reply: message,
     status: "error",
@@ -20,6 +24,13 @@ export function buildApp(options: Options) {
     ["/", "index.html", "text/html; charset=utf-8"],
     ["/style.css", "style.css", "text/css"],
     ["/app.js", "app.js", "text/javascript"],
+    ["/location.js", "location.js", "text/javascript"],
+    ["/wishlist.js", "wishlist.js", "text/javascript"],
+    ["/voice.js", "voice.js", "text/javascript"],
+    ["/savings.js", "savings.js", "text/javascript"],
+    ["/savings-view.js", "savings-view.js", "text/javascript"],
+    ["/weekly.js", "weekly.js", "text/javascript"],
+    ["/weekly-plan.js", "weekly-plan.js", "text/javascript"],
   ]) {
     app.get(route, async (_request, reply) =>
       reply
@@ -28,6 +39,7 @@ export function buildApp(options: Options) {
         .send(await readFile("./web/" + file, "utf8")),
     );
   }
+  app.get("/voice-sdk.js", async (_req, reply) => reply.type("text/javascript").send(await readFile("./dist/web/voice-sdk.js")));
   app.get("/baras-logo.png", async (_request, reply) =>
     reply.type("image/png").send(await readFile("./web/baras-logo.png")),
   );
