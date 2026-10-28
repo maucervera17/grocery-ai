@@ -18,6 +18,18 @@ Los clientes **no se conectan directamente a Supabase**. El backend usa `service
 
 ## Arranque desde un clon
 
+### URLs concretas y alcance
+
+| Servicio | URL | Quién puede usarla |
+| --- | --- | --- |
+| Proyecto Supabase Barasu | `https://vlfqqniorpfveuxhqnpt.supabase.co` | **Solo el backend** con su `SUPABASE_SERVICE_ROLE_KEY` secreta. Es el valor de `SUPABASE_URL` en `.env.example`. |
+| API Barasu local | `http://127.0.0.1:3000` | Web y simulador iOS que corren **en el mismo Mac** que el backend. |
+| Salud | `http://127.0.0.1:3000/health` | Comprueba el proceso local; no comprueba acceso remoto a proveedores. |
+| Búsqueda y comparación | `http://127.0.0.1:3000/v1/chat/search` | Cliente local que llama a Fastify, nunca a Supabase directamente. |
+| API pública para otro Mac o iPhone físico | **No existe todavía** | Hace falta desplegar un backend HTTPS con autenticación y configurar su URL base en el cliente. `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
+
+La URL de Supabase no sustituye la URL de la API Barasu: las RPC requieren una clave privilegiada que jamás debe enviarse a iOS o al navegador. Si otro agente solo necesita compilar o probar la app en su propio Mac, debe iniciar el backend allí y usar `http://127.0.0.1:3000`; si necesita usar **este** backend desde otro equipo, aún no hay un endpoint remoto seguro para ello.
+
 ```sh
 npm ci                       # Node.js 22+
 cp .env.example .env          # .env está ignorado por Git
@@ -30,7 +42,7 @@ curl http://127.0.0.1:3000/health
 | Variable | Función |
 | --- | --- |
 | `DATA_MODE=live` | Evita usar los fixtures demo como resultados reales. |
-| `SUPABASE_URL` | URL HTTPS del proyecto Supabase, formato `https://<project-ref>.supabase.co`. |
+| `SUPABASE_URL` | URL HTTPS del proyecto Barasu: `https://vlfqqniorpfveuxhqnpt.supabase.co`. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Clave secreta del servidor; jamás en Swift, JS del navegador, Git o logs. |
 | `FIRECRAWL_API_KEY` | Clave REST para consultas de fichas; el login MCP no la configura. |
 | `ANTHROPIC_API_KEY` + `CLAUDE_MODEL` | Agente de texto directo. El ejemplo usa `claude-haiku-5-5`. |
@@ -38,7 +50,7 @@ curl http://127.0.0.1:3000/health
 | `ELEVENLABS_API_KEY` + `ELEVENLABS_AGENT_ID` | Voz. La API key se queda en el servidor; el cliente recibe un token temporal. |
 | `HOST`, `PORT` | Por defecto `127.0.0.1:3000`, accesible desde ese Mac. |
 
-El proyecto remoto de Barasu usado por este repositorio tiene referencia `vlfqqniorpfveuxhqnpt`; esta referencia **no es una credencial**. Cada integrante debe obtener acceso al proyecto y su propia configuración segura. No distribuyas valores de `.env` por Git o chat.
+La referencia del proyecto remoto **no es una credencial**. Cada integrante debe obtener acceso al proyecto y su propia configuración segura. No distribuyas valores de `.env` por Git o chat.
 
 `GET /health` devuelve `mode` y si `agent`, `firecrawl` y `database` están **configurados**. No prueba que sus servicios remotos respondan. Para probar la base, usa `npm run smoke:db` con la URL y clave adecuadas; este comando escribe filas demo y confirma lectura, idempotencia y separación demo/live. No lo ejecutes contra una base ajena sin revisar ese efecto.
 
