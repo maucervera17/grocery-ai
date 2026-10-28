@@ -27,6 +27,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
     var lineTotalCents: Int
     var unitPriceCentsPer100: Int?
     var productURL: URL
+    var imageURL: URL?
     var checkedAt: Date
     var dataStatus: DataStatus
     var matchType: MatchType
@@ -47,6 +48,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
         lineTotalCents: Int,
         unitPriceCentsPer100: Int? = nil,
         productURL: URL,
+        imageURL: URL? = nil,
         checkedAt: Date,
         dataStatus: DataStatus,
         matchType: MatchType
@@ -66,6 +68,7 @@ struct StorePlanItem: Identifiable, Codable, Hashable, Sendable {
         self.lineTotalCents = lineTotalCents
         self.unitPriceCentsPer100 = unitPriceCentsPer100
         self.productURL = productURL
+        self.imageURL = imageURL
         self.checkedAt = checkedAt
         self.dataStatus = dataStatus
         self.matchType = matchType

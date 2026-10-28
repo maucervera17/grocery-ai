@@ -92,6 +92,7 @@ struct MockComparisonService: ComparisonServicing {
                 lineTotalCents: lineTotal,
                 unitPriceCentsPer100: unitPrice,
                 productURL: URL(string: "https://example.com/\(template.listingID)")!,
+                imageURL: template.imageURL,
                 checkedAt: MockFixtures.referenceDate,
                 dataStatus: .demo,
                 matchType: template.matchType
@@ -149,6 +150,19 @@ private struct MockOfferTemplate: Sendable {
     let priceCents: Int
     let regularPriceCents: Int?
     let matchType: MatchType
+
+    var imageURL: URL? {
+        switch listingID {
+        case "super-centro-leche-1l":
+            URL(string: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=240&q=80")
+        case "super-centro-arroz-1kg":
+            URL(string: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=240&q=80")
+        case "mercado-norte-huevos-12":
+            URL(string: "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=240&q=80")
+        default:
+            nil
+        }
+    }
 }
 
 private let offerTemplates: [MockOfferTemplate] = [

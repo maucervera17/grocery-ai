@@ -78,7 +78,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         let requested_quantity: Double; let requested_unit: ProductUnit
         let package_quantity: Double; let package_unit: ProductUnit; let package_count: Int
         let price_cents: Int; let regular_price_cents: Int?; let line_total_cents: Int; let unit_price_cents_per_100: Int?
-        let product_url: URL; let checked_at: String; let data_status: DataStatus; let match_type: MatchType
+        let product_url: URL; let image_url: URL?; let checked_at: String; let data_status: DataStatus; let match_type: MatchType
         func model() throws -> StorePlanItem {
             let format = ISO8601DateFormatter()
             format.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -91,12 +91,13 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
             return StorePlanItem(clientItemID:client_item_id, listingID:listing_id, productName:product_name, brand:brand,
                 requestedQuantity:requested_quantity, requestedUnit:requested_unit, packageQuantity:package_quantity, packageUnit:package_unit,
                 packageCount:package_count, priceCents:price_cents, regularPriceCents:regular_price_cents, lineTotalCents:line_total_cents,
-                unitPriceCentsPer100:unit_price_cents_per_100, productURL:product_url, checkedAt:date, dataStatus:data_status, matchType:match_type)
+                unitPriceCentsPer100:unit_price_cents_per_100, productURL:product_url, imageURL:image_url,
+                checkedAt:date, dataStatus:data_status, matchType:match_type)
         }
     }
     private func call(_ body: Request) async throws -> WireResponse {
         var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
-        request.httpMethod = "POST"; request.timeoutInterval = 30
+        request.httpMethod = "POST"; request.timeoutInterval = 100
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
         request.httpBody = try JSONEncoder().encode(body)
         let (data, response) = try await session.data(for:request)

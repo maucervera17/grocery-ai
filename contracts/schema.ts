@@ -113,6 +113,11 @@ export const PlanLine = z
     line_total_cents: Money,
     unit_price_cents_per_100: Money.nullable(),
     product_url: WebUrl,
+    image_url: z
+      .string()
+      .url()
+      .regex(/^https:\/\//)
+      .optional(),
     checked_at: z.string().datetime(),
     data_status: z.enum(["verified", "stale", "demo"]),
     match_type: z.enum(["exact", "similar"]),

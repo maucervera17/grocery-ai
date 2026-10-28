@@ -62,6 +62,7 @@ enum MockFixtures {
         lineTotalCents: 7990,
         unitPriceCentsPer100: 399,
         productURL: URL(string: "https://example.com/leche-demo")!,
+        imageURL: URL(string: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=240&q=80")!,
         checkedAt: referenceDate,
         dataStatus: .demo,
         matchType: .exact
@@ -83,6 +84,7 @@ enum MockFixtures {
         lineTotalCents: 4890,
         unitPriceCentsPer100: 489,
         productURL: URL(string: "https://example.com/arroz-demo")!,
+        imageURL: URL(string: "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=240&q=80")!,
         checkedAt: referenceDate,
         dataStatus: .demo,
         matchType: .exact
@@ -103,6 +105,7 @@ enum MockFixtures {
         regularPriceCents: 8320,
         lineTotalCents: 7190,
         productURL: URL(string: "https://example.com/huevos-demo")!,
+        imageURL: URL(string: "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=240&q=80")!,
         checkedAt: referenceDate,
         dataStatus: .demo,
         matchType: .similar

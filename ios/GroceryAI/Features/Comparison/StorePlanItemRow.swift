@@ -10,35 +10,37 @@ struct StorePlanItemRow: View {
     var body: some View {
         let colors = theme.colors(for: colorScheme)
 
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            HStack(alignment: .firstTextBaseline) {
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
-                    MatchStatusIndicator(isAlternative: isAlternative)
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            HStack(alignment: .top, spacing: AppSpacing.medium) {
+                ProductThumbnail(imageURL: item.imageURL)
 
-                    VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
+                        MatchStatusIndicator(isAlternative: isAlternative)
+
                         Text(item.productName)
                             .font(.body.weight(.semibold))
 
-                        if let brand = item.brand, !brand.isEmpty {
-                            Text(brand)
-                                .font(.caption)
-                                .foregroundStyle(colors.textSecondary)
-                        }
+                        Spacer(minLength: AppSpacing.small)
+
+                        Text(MoneyFormatter.string(cents: item.lineTotalCents, currencyCode: currencyCode))
+                            .font(.body.weight(.semibold))
+                    }
+
+                    if let brand = item.brand, !brand.isEmpty {
+                        Text(brand)
+                            .font(.caption)
+                            .foregroundStyle(colors.textSecondary)
+                    }
+
+                    Text(packageDescription)
+                        .font(.subheadline)
+                        .foregroundStyle(colors.textSecondary)
+
+                    if item.dataStatus.rawValue != "demo" {
+                        DataStatusBadge(status: item.dataStatus)
                     }
                 }
-
-                Spacer(minLength: AppSpacing.medium)
-
-                Text(MoneyFormatter.string(cents: item.lineTotalCents, currencyCode: currencyCode))
-                    .font(.body.weight(.semibold))
-            }
-
-            Text(packageDescription)
-                .font(.subheadline)
-                .foregroundStyle(colors.textSecondary)
-
-            if item.dataStatus.rawValue != "demo" {
-                DataStatusBadge(status: item.dataStatus)
             }
 
             DisclosureGroup("Detalles") {
