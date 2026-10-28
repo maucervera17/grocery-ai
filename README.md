@@ -1,6 +1,6 @@
 # Barasu — súper semanal, guardados y voz
 
-**Para dar acceso a otro agente o integrar otra app:** [guía de acceso y conexión](docs/AGENT_ACCESS.md). Para detalles técnicos, consulta la [guía de backend y Supabase](docs/BACKEND_SUPABASE_INTEGRATION.md). Los apartados históricos de este README pueden describir estados anteriores del prototipo.
+**Backend desplegado:** [https://barasu-api.onrender.com](https://barasu-api.onrender.com) · [estado de la API](https://barasu-api.onrender.com/health). Para dar acceso a otro agente o integrar otra app, empieza por la [guía de acceso y conexión](docs/AGENT_ACCESS.md). Para detalles técnicos, consulta la [guía de backend y Supabase](docs/BACKEND_SUPABASE_INTEGRATION.md). Los apartados históricos de este README pueden describir estados anteriores del prototipo.
 
 Nuevo flujo de [lista semanal, conveniencia y ahorro](docs/WEEKLY_SHOPPING.md).
 

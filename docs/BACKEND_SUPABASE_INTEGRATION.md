@@ -26,7 +26,7 @@ Los clientes **no se conectan directamente a Supabase**. El backend usa `service
 | API Barasu local | `http://127.0.0.1:3000` | Web y simulador iOS que corren **en el mismo Mac** que el backend. |
 | Salud | `http://127.0.0.1:3000/health` | Comprueba el proceso local; no comprueba acceso remoto a proveedores. |
 | Búsqueda y comparación | `http://127.0.0.1:3000/v1/chat/search` | Cliente local que llama a Fastify, nunca a Supabase directamente. |
-| API pública para otro Mac o iPhone físico | `https://barasu-api.onrender.com` | El despliegue usa HTTPS y acceso básico; `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
+| API pública para otro Mac o iPhone físico | [https://barasu-api.onrender.com](https://barasu-api.onrender.com) | El despliegue usa HTTPS y acceso básico; `127.0.0.1` en otro dispositivo apunta a ese dispositivo, no a este Mac. |
 
 La URL de Supabase no sustituye la URL de la API Barasu: las RPC requieren una clave privilegiada que jamás debe enviarse a iOS o al navegador. Si otro agente solo necesita compilar o probar la app en su propio Mac, puede iniciar el backend allí y usar `http://127.0.0.1:3000`. En Render la URL pública es `https://barasu-api.onrender.com`, protegida por una contraseña temporal que no se guarda en Git.
 

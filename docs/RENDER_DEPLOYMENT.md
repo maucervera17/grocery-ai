@@ -2,7 +2,7 @@
 
 `render.yaml` define un **Web Service gratuito** conectado a `maucervera17/grocery-ai`, rama `main`, con Node 22, `npm ci && npm run build`, `npm start` y `/health` como verificación. Render asigna una URL HTTPS `*.onrender.com`. El proceso escucha en `0.0.0.0` y usa el puerto que Render proporciona.
 
-El servicio actual es [barasu-api](https://dashboard.render.com/web/srv-dbh6k7flk1mc73fdlb4g), creado en el proyecto Barasu de Render. Su URL pública es **https://barasu-api.onrender.com**. El despliegue de `main` está activo y `GET /health` respondió `status: ok`, `mode: live`, con agente, Firecrawl y base de datos configurados.
+El servicio actual es [barasu-api](https://dashboard.render.com/web/srv-dbh6k7flk1mc73fdlb4g), creado en el proyecto Barasu de Render. Su URL pública es **[https://barasu-api.onrender.com](https://barasu-api.onrender.com)** y la [ruta de salud](https://barasu-api.onrender.com/health) es pública. El despliegue de `main` está activo y `GET /health` respondió `status: ok`, `mode: live`, con agente, Firecrawl y base de datos configurados.
 
 Las variables privadas se introducen en Render; sus valores nunca se guardan en Git. Configura `BARASU_ACCESS_PASSWORD` con una contraseña única de 24 caracteres o más, además de `SUPABASE_SERVICE_ROLE_KEY`, `FIRECRAWL_API_KEY`, `ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY` y `ELEVENLABS_AGENT_ID`. `SUPABASE_URL` y `CLAUDE_MODEL` ya están definidos sin secretos en `render.yaml`.
 

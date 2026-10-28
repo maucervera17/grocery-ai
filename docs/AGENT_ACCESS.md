@@ -1,13 +1,13 @@
 # Acceso e integración para otro agente de Barasu
 
-Esta es la entrada para quien clone el repositorio o conecte un cliente nuevo. Las URLs y los contratos sí se comparten por Git; las contraseñas y claves se obtienen por acceso autorizado a cada servicio, nunca de este repositorio.
+Esta es la entrada para quien clone el repositorio o conecte un cliente nuevo. **Backend desplegado: [https://barasu-api.onrender.com](https://barasu-api.onrender.com)**. Las URLs y los contratos sí se comparten por Git; las contraseñas y claves se obtienen por acceso autorizado a cada servicio, nunca de este repositorio.
 
 ## Servicios y permisos
 
 | Recurso | Dirección | Acceso necesario |
 | --- | --- | --- |
 | Código y contratos | [GitHub: maucervera17/grocery-ai](https://github.com/maucervera17/grocery-ai) | Permiso al repositorio para clonar y proponer cambios. |
-| API desplegada | `https://barasu-api.onrender.com` | `GET /health` es público. Las demás rutas requieren HTTP Basic: usuario `barasu` y la contraseña vigente de `BARASU_ACCESS_PASSWORD`, compartida por el responsable mediante un gestor de secretos. |
+| API desplegada | [https://barasu-api.onrender.com](https://barasu-api.onrender.com) | [GET /health](https://barasu-api.onrender.com/health) es público. Las demás rutas requieren HTTP Basic: usuario `barasu` y la contraseña vigente de `BARASU_ACCESS_PASSWORD`, compartida por el responsable mediante un gestor de secretos. |
 | Servicio y despliegues | [Render: barasu-api](https://dashboard.render.com/web/srv-dbh6k7flk1mc73fdlb4g) | Invitación al workspace/proyecto de Render para ver logs o cambiar variables. El servicio gratuito se despliega automáticamente desde `main`. |
 | Proyecto de datos | [Supabase: Barasu](https://supabase.com/dashboard/project/vlfqqniorpfveuxhqnpt) | Invitación al proyecto Supabase para ver esquema y SQL Editor. Su URL API es `https://vlfqqniorpfveuxhqnpt.supabase.co`, **no** la URL que usa iOS. |
 | Firecrawl | [Consola Firecrawl](https://firecrawl.dev/app) | Acceso a la cuenta o a una clave REST propia para ejecutar scraping desde el backend. El login MCP no configura `FIRECRAWL_API_KEY`. |
