@@ -69,7 +69,7 @@ El resultado es `partial` porque el precio publicado no confirma existencias en 
 
 ### Fotos de producto
 
-`ScrapedListing.imageUrl` es opcional y procede de metadatos de la ficha principal (`og:image`), con HTTPS y hosts CDN de las tiendas permitidos. No se toman imágenes de recomendaciones ni logotipos. La web las muestra después de la solicitud, con texto alternativo y respaldo si no cargan. Se renueva una caché que carece de imágenes. La migración 004 conserva la URL en las lecturas posteriores: aplicada en local; pendiente de aplicar en Supabase remoto (la consulta en vivo ya devuelve las fotos).
+`ScrapedListing.imageUrl` es opcional y procede de metadatos de la ficha principal (`og:image`), con HTTPS y hosts CDN de las tiendas permitidos. No se toman imágenes de recomendaciones ni logotipos. La web las muestra después de la solicitud, con texto alternativo y respaldo si no cargan. Se renueva una caché que carece de imágenes. La migración 004 se aplicó en el proyecto Supabase de Barasu el 28 de octubre de 2026; las observaciones antiguas obtienen foto al volver a consultarse desde la fuente.
 
 ## Consulta local explícita y robustez del catálogo
 
