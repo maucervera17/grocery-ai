@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   optimizeWeekly,
+  recommendWeekly,
   weeklyExport,
   recordWeeklyPurchase,
 } from "../web/weekly-plan.js";
@@ -54,6 +55,38 @@ test("weekly basket compares a split basket to complete single-store baskets", (
   });
   assert.deepEqual(withTravel.convenient.stores, ["B"]);
   assert.equal(withTravel.convenient.effectiveTotal, 16000);
+});
+test("autonomous recommendation compares unit prices for unspecified packs and full cost for quantities", () => {
+  const options = [offer("A", 5000, "small", 200), offer("B", 8000, "large", 500)];
+  const base = { id: "cheese", name: "cheese", query: "cheese", offers: options, selected: null };
+  const onePack = recommendWeekly([{ ...base, requested: { quantity: 1, unit: "package" } }], { now });
+  assert.equal(onePack.lines[0].listing.productUrl, options[1].listing.productUrl);
+  assert.equal(onePack.lines[0].packages, 1);
+  const grams = recommendWeekly([{ ...base, requested: { quantity: 500, unit: "g" } }], { now });
+  assert.equal(grams.lines[0].listing.productUrl, options[1].listing.productUrl);
+  assert.equal(grams.total, 8000);
+});
+test("autonomous recommendation respects manual selections, store limit, and missing rows", () => {
+  const a = offer("A", 5000, "a"), b = offer("B", 4000, "b"), c = offer("C", 3000, "c");
+  const rows = [
+    { id: "one", name: "one", query: "one", requested: { quantity: 400, unit: "g" }, offers: [a, b], selected: a.listing.productUrl, selectionSource: "manual" },
+    { id: "two", name: "two", query: "two", requested: { quantity: 400, unit: "g" }, offers: [b, c], selected: null },
+    { id: "three", name: "three", query: "three", requested: { quantity: 1, unit: "package" }, offers: [] },
+  ];
+  const result = recommendWeekly(rows, { now, maxStores: 2 });
+  assert.deepEqual(result.stores, ["A", "C"]);
+  assert.equal(result.lines.length, 2);
+  assert.deepEqual(result.missing, ["three"]);
+  assert.equal(result.complete, false);
+  const single = recommendWeekly(rows, { now, maxStores: 1 });
+  assert.equal(single.lines.length, 1);
+});
+test("autonomous recommendation leaves ambiguous units and stale offers pending", () => {
+  const mass = offer("A", 5000, "mass", 500, "g");
+  const volume = offer("B", 1000, "volume", 500, "ml");
+  const base = { id: "x", name: "x", requested: { quantity: 1, unit: "package" }, offers: [mass, volume] };
+  assert.deepEqual(recommendWeekly([base], { now }).missing, ["x"]);
+  assert.deepEqual(recommendWeekly([{ ...base, offers: [mass] }], { now: now + 3600001 }).missing, ["x"]);
 });
 test("unapproved substitutions and incompatible dimensions never enter a basket", () => {
   const r = row("cheese", [

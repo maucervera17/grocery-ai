@@ -40,6 +40,12 @@ async function send(text){
  if(busy||!text.trim())return;
  view('agent');$('conversation').querySelector('.welcome')?.remove();bubble(text,'user');$('message').value='';
  plan=null;$('plan').innerHTML='';
+ if(/\b(elige|selecciona|escoge|recomienda|decide|escoger|seleccionar|elegir)\b/i.test(text)&&/\b(opciones|productos|lista|por m[ií]|mejor(?:es)? precio|m[aá]s barato)\b/i.test(text)){
+   const reply=weekly.autoSelect();
+   bubble(reply,'assistant');
+   view('weekly');
+   return;
+ }
  let priceQuestion=/precio|barat[oa]|cu[aá]nto cuesta|compar[aá]/i.test(text)&&!/s[uú]per|semanal|mi lista/i.test(text);
  if(priceQuestion)lastPriceQuestion=text;
  let d=await request({action:priceQuestion?'product_prices':'update_draft',message:text,items,location:queryLocation(),...(priceQuestion?{price_scope:priceScope}:{})});
@@ -103,6 +109,10 @@ mountVoice({
  },
  onMessage:(text,role)=>{view('agent');$('conversation').querySelector('.welcome')?.remove();bubble(text,role)},
  runTool:async parameters=>{
+  if(parameters?.action==='select_best'){
+    view('weekly');
+    return {reply:weekly.autoSelect(),status:'selection_in_progress'};
+  }
   if(!parameters||typeof parameters.message!=='string'||!parameters.message.trim()||parameters.message.length>2000||!['product_prices','update_draft'].includes(parameters.action))return {error:'Parámetros inválidos.'};
   if(busy)return {error:'Espera la consulta actual antes de iniciar otra.'};
   view('agent');plan=null;$('plan').innerHTML='';

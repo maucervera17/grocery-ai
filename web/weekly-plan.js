@@ -29,6 +29,73 @@ export function measure(quantity, unit) {
     ? { kind: u[0], amount: quantity * u[1] }
     : null;
 }
+// Recommend only source-backed, fresh offers. Existing manual choices remain fixed.
+// With an unspecified presentation, compare unit prices within one dimension.
+export function recommendWeekly(rows, { maxStores = 2, now = Date.now() } = {}) {
+  if (![1, 2].includes(maxStores)) throw Error("Límite de tiendas inválido");
+  const candidates = rows.map((row) => {
+    const requested = measure(row.requested?.quantity, row.requested?.unit);
+    const unspecified = row.requested?.unit === "package";
+    const manual = row.selected && row.selectionSource !== "auto";
+    let options = (row.offers ?? []).flatMap((offer) => {
+      const listing = offer.listing;
+      const pack = measure(listing?.quantity, listing?.unit);
+      const age = now - Date.parse(listing?.checkedAt);
+      if (
+        !pack || !requested || (!unspecified && requested.kind !== pack.kind) ||
+        !qualifiersMatch(listing.productName, row.query ?? row.name) ||
+        !Number.isSafeInteger(listing.priceCents) || listing.priceCents < 0 ||
+        typeof listing.productUrl !== "string" || !/^https:\/\//.test(listing.productUrl) ||
+        typeof listing.retailer !== "string" || !listing.retailer ||
+        !Number.isFinite(age) || age < 0 || age > 3600000 ||
+        (manual && listing.productUrl !== row.selected)
+      ) return [];
+      const count = unspecified
+        ? requested.amount
+        : soldByWeight(listing)
+          ? Math.ceil((requested.amount / pack.amount) * 1000 - 1e-9) / 1000
+          : Math.ceil(requested.amount / pack.amount - 1e-9);
+      if (!Number.isFinite(count) || count <= 0 || count > 99) return [];
+      return [{ rowId: row.id, listing, packages: count,
+        total: Math.round(listing.priceCents * count),
+        unitCost: listing.priceCents / pack.amount,
+        dimension: pack.kind, unspecified, manual }];
+    });
+    if (unspecified) {
+      const counts = new Map();
+      for (const option of options) counts.set(option.dimension, (counts.get(option.dimension) ?? 0) + 1);
+      const ranked = [...counts].sort((a, b) => b[1] - a[1]);
+      if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) return [];
+      if (ranked.length) options = options.filter((option) => option.dimension === ranked[0][0]);
+    }
+    return options;
+  });
+  const stores = [...new Set(candidates.flatMap((list) => list.map((x) => x.listing.retailer)))].sort();
+  const hasUnspecified = candidates.some((list) => list.some((item) => item.unspecified));
+  const floor = candidates.map((list) => Math.min(...list.map((item) => item.unspecified ? item.unitCost : item.total)));
+  const subsets = stores.map((store) => [store]);
+  if (maxStores === 2)
+    for (let a = 0; a < stores.length; a++)
+      for (let b = a + 1; b < stores.length; b++) subsets.push([stores[a], stores[b]]);
+  const plans = subsets.map((subset) => {
+    const lines = candidates.flatMap((list) => {
+      const best = list.filter((item) => subset.includes(item.listing.retailer))
+        .sort((a, b) => (a.unspecified ? a.unitCost - b.unitCost : a.total - b.total) ||
+          a.total - b.total || a.listing.productUrl.localeCompare(b.listing.productUrl))[0];
+      return best ? [best] : [];
+    });
+    const score = lines.reduce((sum, item) => {
+      const index = rows.findIndex((row) => row.id === item.rowId);
+      return sum + (item.unspecified ? item.unitCost : item.total) / Math.max(1, floor[index]);
+    }, 0);
+    return { lines, stores: [...new Set(lines.map((x) => x.listing.retailer))],
+      total: lines.reduce((sum, item) => sum + item.total, 0), score };
+  });
+  plans.sort((a, b) => b.lines.length - a.lines.length || (hasUnspecified ? a.score - b.score : a.total - b.total) || a.total - b.total || a.stores.length - b.stores.length);
+  const best = plans[0] ?? { lines: [], stores: [], total: 0, score: 0 };
+  return { ...best, complete: rows.length > 0 && best.lines.length === rows.length,
+    missing: rows.filter((row) => !best.lines.some((line) => line.rowId === row.id)).map((row) => row.name) };
+}
 export function optimizeWeekly(
   rows,
   { maxStores = 2, travel = {}, hourlyCents = 0, now = Date.now() } = {},

@@ -1,5 +1,6 @@
 import {
   optimizeWeekly,
+  recommendWeekly,
   weeklyExport,
   measure,
   soldByWeight,
@@ -55,7 +56,8 @@ export function mountWeekly({ root, search, location, onRegister }) {
     batch = false,
     batchDone = 0,
     batchTotal = 0,
-    autoSearchedSignature = null;
+    autoSearchedSignature = null,
+    autoRequested = false;
   if (!Array.isArray(state.rows))
     state = {
       id: crypto.randomUUID(),
@@ -78,11 +80,18 @@ export function mountWeekly({ root, search, location, onRegister }) {
         row.approved = [];
       }
       activePlan = null;
+      autoRequested = false;
       persist();
     }
   }
   function setDraft(items) {
     invalidateLocation();
+    const changedDraft = items.length !== state.rows.length || items.some((item) => {
+      const old = state.rows.find((row) => row.id === item.client_item_id);
+      return !old || old.signature !== JSON.stringify([item.name, item.quantity, item.unit, item.notes]);
+    });
+    if (!changedDraft) return;
+    autoRequested = false;
     state.rows = items.map((i) => {
       const old = state.rows.find((r) => r.id === i.client_item_id);
       const signature = JSON.stringify([i.name, i.quantity, i.unit, i.notes]);
@@ -111,6 +120,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
       ) {
         row.selected = null;
         row.approved = [];
+        row.selectionSource = null;
       }
     }
     activePlan = null;
@@ -120,6 +130,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
   function show() {
     invalidateLocation();
     render();
+    if (activePlan) optimize();
     root.scrollIntoView({ behavior: "smooth", block: "start" });
     const signature = JSON.stringify([state.context, state.rows.map((r) => [r.signature, r.query])]);
     if (!batch && state.rows.length && autoSearchedSignature !== signature) {
@@ -141,6 +152,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
       row.offers = [];
       row.selected = null;
       row.approved = [];
+      row.selectionSource = null;
       row.usualPriceCents = null;
       activePlan = null;
     }
@@ -154,11 +166,20 @@ export function mountWeekly({ root, search, location, onRegister }) {
       if (row.query !== query || requestContext !== context() || !state.rows.includes(row)) return;
       row.error = result?.errors?.map((e) => e.message).join(" ") || "";
       if (result?.comparison?.data_mode === "live") {
+        const previousSelection = row.selected;
+        const previousSource = row.selectionSource;
         row.offers = result.comparison.offers;
         row.scope = result.comparison.scope;
-        row.selected = null;
-        row.approved = [];
-        row.usualPriceCents = null;
+        if (!row.offers.some((o) => o.listing.productUrl === previousSelection)) {
+          row.selected = null;
+          row.approved = [];
+          row.selectionSource = null;
+          row.usualPriceCents = null;
+        } else {
+          row.selected = previousSelection;
+          row.selectionSource = previousSource;
+          row.approved = [previousSelection];
+        }
         activePlan = null;
         row.error = row.offers.length
           ? row.error
@@ -173,6 +194,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     } finally {
       pending.delete(id);
       if (batch) batchDone++;
+      if (autoRequested) applyAutoSelection();
       persist();
       render();
     }
@@ -197,6 +219,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     } finally {
       batch = false;
       render();
+      if (autoRequested && recommendWeekly(state.rows, { maxStores: state.maxStores }).complete) optimize();
       const currentSignature = JSON.stringify([state.context, state.rows.map((r) => [r.signature, r.query])]);
       if (currentSignature !== batchSignature && state.rows.some((r) => !r.offers.length)) {
         autoSearchedSignature = currentSignature;
@@ -210,6 +233,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     if (row.selected === url) {
       row.selected = null;
       row.approved = [];
+      row.selectionSource = null;
       row.usualPriceCents = null;
       activePlan = null;
       persist();
@@ -218,6 +242,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     }
     row.selected = url;
     row.approved = [url];
+    row.selectionSource = "manual";
     row.usualPriceCents = null;
     const wanted = measure(row.requested.quantity, row.requested.unit),
       pack = measure(l.quantity, l.unit);
@@ -237,10 +262,48 @@ export function mountWeekly({ root, search, location, onRegister }) {
     persist();
     render();
   }
+  function applyAutoSelection() {
+    const recommendation = recommendWeekly(state.rows, { maxStores: state.maxStores });
+    const selectedIds = new Set(recommendation.lines.map((line) => line.rowId));
+    for (const row of state.rows) {
+      if (row.selectionSource === "auto" && !selectedIds.has(row.id)) {
+        row.selected = null;
+        row.approved = [];
+        row.selectionSource = null;
+      }
+    }
+    for (const line of recommendation.lines) {
+      const row = state.rows.find((r) => r.id === line.rowId);
+      if (!row || (row.selected && row.selectionSource !== "auto")) continue;
+      if (row.selected !== line.listing.productUrl) row.usualPriceCents = null;
+      row.selected = line.listing.productUrl;
+      row.approved = [line.listing.productUrl];
+      row.selectionSource = "auto";
+      row.packages = line.packages;
+    }
+    activePlan = null;
+    persist();
+    return recommendation;
+  }
+  function selectionReply(recommendation) {
+    const chosen = recommendation.lines.length;
+    const waiting = pending.size || batch;
+    return `${chosen} de ${state.rows.length} productos seleccionados entre ofertas publicadas${recommendation.stores.length ? ` en ${recommendation.stores.join(" y ")}` : ""}. ${recommendation.missing.length ? `Pendientes: ${recommendation.missing.join(", ")}.` : ""} ${waiting ? "Sigo buscando opciones; actualizaré la selección al recibirlas." : ""} Los precios y existencias finales se confirman en cada tienda. No he comprado nada.`.trim();
+  }
+  function autoSelect() {
+    if (!state.rows.length) return "Primero dime qué productos quieres agregar a tu lista.";
+    invalidateLocation();
+    autoRequested = true;
+    const recommendation = applyAutoSelection();
+    render();
+    if (recommendation.complete) optimize();
+    void searchAll();
+    return selectionReply(recommendation);
+  }
   function render() {
     root.hidden = false;
     const legacyUnspecified = state.rows.length >= 4 && state.rows.every((r) => r.requested.quantity === 1 && r.requested.unit === "piece");
-    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.filter((r) => r.selected).length}/${state.rows.length} elegidos</span></div><p class="comparison-help">Opciones con precios publicados. Confirma entrega, existencia y precio final para ${esc(location()?.postal_code || "tu zona")} en la tienda.</p><button class="secondary full" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>${batch ? `Buscando opciones · ${batchDone}/${batchTotal}` : "Actualizar opciones de mi lista"}</button><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button><p class="comparison-help">${batch ? "Las opciones aparecerán aquí conforme responda cada tienda. Ya puedes elegir las disponibles." : "Elige presentaciones y alternativas que sí comprarías. Marca, corte y calidad los decides tú."}</p>${
+    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.filter((r) => r.selected).length}/${state.rows.length} elegidos</span></div><p class="comparison-help">Opciones con precios publicados. Confirma entrega, existencia y precio final para ${esc(location()?.postal_code || "tu zona")} en la tienda.</p><button class="secondary full" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>${batch ? `Buscando opciones · ${batchDone}/${batchTotal}` : "Actualizar opciones de mi lista"}</button><button class="primary full" id="week-auto-select" ${!state.rows.length ? "disabled" : ""}>✦ Que Barasu elija por precio</button><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button><p class="comparison-help">${autoRequested ? "Barasu selecciona entre las opciones publicadas de menor precio comparable. Revisa marca, corte y presentación antes de ir a la tienda." : batch ? "Las opciones aparecerán aquí conforme responda cada tienda. Ya puedes elegir las disponibles." : "Elige presentaciones y alternativas que sí comprarías. Marca, corte y calidad los decides tú."}</p>${
       !state.rows.length
         ? "<p>Escribe una lista: «Quiero huevos, pollo, carne y queso».</p>"
         : state.rows
@@ -252,7 +315,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
                         .map((o) => {
                           const l = o.listing,
                             selected = r.selected === l.productUrl;
-                          return `<div class="weekly-offer ${selected ? "chosen" : ""}">${l.imageUrl ? `<img src="${esc(l.imageUrl)}" alt="${esc(l.productName)}" loading="lazy">` : '<span class="weekly-photo-fallback" aria-label="Sin foto disponible">🛒</span>'}<div><strong>${esc(l.productName)}</strong><small>${esc(l.retailer)} · ${money(l.priceCents)}<br>${money(o.basis === "piece" || o.basis === "package" ? o.unit_price_cents_per_100 / 100 : o.unit_price_cents_per_100)} / ${o.basis === "piece" ? "pieza" : o.basis === "package" ? "paquete" : "100 " + esc(o.basis)}</small><button data-choose="${esc(r.id)}" data-url="${esc(l.productUrl)}">${selected ? "✓ Elegido" : "Elegir esta opción"}</button>${r.selected && !selected ? `<label class="approve"><input type="checkbox" data-approve="${esc(r.id)}" data-url="${esc(l.productUrl)}" ${r.approved.includes(l.productUrl) ? "checked" : ""}> También acepto esta alternativa</label>` : ""}</div></div>`;
+                          return `<div class="weekly-offer ${selected ? "chosen" : ""}">${l.imageUrl ? `<img src="${esc(l.imageUrl)}" alt="${esc(l.productName)}" loading="lazy">` : '<span class="weekly-photo-fallback" aria-label="Sin foto disponible">🛒</span>'}<div><strong>${esc(l.productName)}</strong><small>${esc(l.retailer)} · ${money(l.priceCents)}<br>${money(o.basis === "piece" || o.basis === "package" ? o.unit_price_cents_per_100 / 100 : o.unit_price_cents_per_100)} / ${o.basis === "piece" ? "pieza" : o.basis === "package" ? "paquete" : "100 " + esc(o.basis)}</small><button data-choose="${esc(r.id)}" data-url="${esc(l.productUrl)}">${selected ? r.selectionSource === "auto" ? "✦ Barasu eligió" : "✓ Elegido" : "Elegir esta opción"}</button>${r.selected && !selected ? `<label class="approve"><input type="checkbox" data-approve="${esc(r.id)}" data-url="${esc(l.productUrl)}" ${r.approved.includes(l.productUrl) ? "checked" : ""}> También acepto esta alternativa</label>` : ""}</div></div>`;
                         })
                         .join(
                           "",
@@ -272,9 +335,14 @@ export function mountWeekly({ root, search, location, onRegister }) {
       };
     });
     root.querySelector("#week-search-all").onclick = searchAll;
+    root.querySelector("#week-auto-select").onclick = () => {
+      const reply = autoSelect();
+      root.querySelector("#week-error").textContent = reply;
+    };
     root.querySelector("#week-new").onclick = () => {
       state.id = crypto.randomUUID();
       activePlan = null;
+      autoRequested = false;
       persist();
       render();
     };
@@ -289,6 +357,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
         row.offers = [];
         row.selected = null;
         row.approved = [];
+        row.selectionSource = null;
         row.usualPriceCents = null;
         row.error = "";
         activePlan = null;
@@ -516,5 +585,5 @@ export function mountWeekly({ root, search, location, onRegister }) {
         },
       );
   }
-  return { setDraft, show, prefetch: searchAll, invalidateLocation };
+  return { setDraft, show, prefetch: searchAll, autoSelect, invalidateLocation };
 }
