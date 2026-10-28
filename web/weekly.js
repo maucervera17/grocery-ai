@@ -187,6 +187,9 @@ export function mountWeekly({ root, search, location, onRegister }) {
             "No hay ofertas. Prueba una presentación o marca específica.";
       } else {
         row.offers = [];
+        row.selected = null;
+        row.approved = [];
+        row.selectionSource = null;
         row.error = result?.reply || "No se encontraron opciones. Prueba con un tipo, marca o presentación más específica.";
       }
     } catch {
@@ -325,6 +328,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
             )
             .join("")
     }<details class="weekly-preferences"><summary>Costo y conveniencia</summary><label>Máximo de tiendas<select id="week-stores"><option value="1" ${state.maxStores === 1 ? "selected" : ""}>Una tienda</option><option value="2" ${state.maxStores === 2 ? "selected" : ""}>Hasta dos tiendas</option></select></label><label>Valor de una hora de tu tiempo (MXN)<input id="week-hour" inputmode="decimal" value="${state.hourlyCents / 100}"></label><p class="comparison-help">Opcional: indica el tiempo total de visita y traslado desde tu ubicación, y el costo de traslado o envío. Son estimaciones tuyas, no rutas medidas. Para dos tiendas sumamos las visitas por separado.</p>${[...new Set(state.rows.flatMap((r) => r.offers.map((o) => o.listing.retailer)))].map((s) => `<fieldset><legend>${esc(s)}</legend><label>Minutos por visita<input data-minutes="${esc(s)}" type="number" min="0" max="1440" value="${state.travel[s]?.minutes ?? ""}" placeholder="Sin estimación"></label><label>Traslado o envío (MXN)<input data-trip="${esc(s)}" inputmode="decimal" value="${state.travel[s]?.costCents == null ? "" : state.travel[s].costCents / 100}" placeholder="Sin estimación"></label><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s + " cerca de " + (location()?.postal_code || "mí"))}" target="_blank" rel="noopener noreferrer">Buscar sucursal en mapas ↗</a></fieldset>`).join("")}</details><div id="week-error" role="status"></div><button class="primary full" id="week-optimize" ${!state.rows.length ? "disabled" : ""}>Optimizar mi lista</button><div id="week-results"></div></section>`;
+    if (autoRequested) root.querySelector("#week-error").textContent = selectionReply(recommendWeekly(state.rows, { maxStores: state.maxStores }));
     root.querySelectorAll(".weekly-offer img").forEach((img) => {
       img.onerror = () => {
         const fallback = document.createElement("span");
