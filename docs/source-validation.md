@@ -12,3 +12,19 @@ Se usó la conexión MCP de Firecrawl con proxy basic. Esta prueba valida que se
 Las capturas en `fixtures/*.scrape.json` conservan metadatos y el fragmento relevante. No se cargan al servicio como ofertas actuales. Los fixtures de la cesta son ficticios y usan example.com.
 
 Pendiente: localidad del usuario, validación de sucursales equivalentes, huevo y más presentaciones, notas alimentarias, revisión de condiciones de las fuentes y una prueba de principio a fin con credenciales de aplicación. Los buscadores pueden mostrar productos irrelevantes: se filtran dominio, ruta y nombre, pero hace falta ampliar la clasificación de catálogo antes de uso general.
+
+## Integración REST y Walmart
+
+El 27 de octubre se configuró la clave REST en el servidor local y se probó
+`search → scrape → parse → Supabase → POST /v1/chat/search`. La consulta
+«leche entera» obtuvo ofertas de las tres tiendas y la lectura posterior
+confirmó su persistencia. Para 1 L, la API seleccionó Walmart por 2000 centavos
+entre las ofertas recuperadas. Es una observación de esa ejecución, no un precio garantizado.
+
+`fixtures/walmart.scrape.json` conserva la captura real de
+https://www.walmart.com.mx/ip/leche-great-value-entera-1-l/00750649501422
+con precio primario de $20.00 y sucursal observada SC TOREO. El parser excluye
+artículos similares y conserva el tamaño del producto seleccionado.
+La respuesta sigue siendo parcial por ubicación no verificada. Algunas fichas
+de la búsqueda fallaron; sus errores no borran las ofertas válidas. La prueba
+general de leche/arroz no garantiza cobertura completa de todas las tiendas.

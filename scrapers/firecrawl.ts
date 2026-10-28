@@ -125,7 +125,7 @@ export class FirecrawlScraper implements Scraper {
             .filter((s): s is string => !!s),
         ),
       ].slice(0, Math.min(query.maxResults ?? 2, 2));
-      // Sequential per source: four simultaneous requests maximum across two basket workers.
+      // Sequential per source: six simultaneous requests maximum across two basket workers.
       for (const url of urls) {
         try {
           const page = (await this.call(

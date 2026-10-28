@@ -9,6 +9,7 @@ import {
 } from "../contracts/schema.js";
 import type { ListingRepository } from "./repository.js";
 import type { Scraper } from "../scrapers/firecrawl.js";
+import { RETAILERS } from "../scrapers/retailers.js";
 import { DemoDraftAgent, applyChanges, type DraftAgent } from "./agent.js";
 import { matches } from "./normalize.js";
 import { planBasket } from "./planner.js";
@@ -157,14 +158,14 @@ export function createSearch(options: Options) {
               ),
             );
           }
-        // Refresh unless current cache covers both requested retailers.
+        // Refresh unless current cache covers every configured retailer.
         const coverage = new Set(
           cached
             .filter(fresh)
             .map((r) => r.source)
-            .filter((s) => ["chedraui", "bodega-aurrera"].includes(s)),
+            .filter((s) => RETAILERS.some((r) => r.id === s)),
         );
-        if (coverage.size < 2 || cached.some((r) => !fresh(r))) {
+        if (coverage.size < RETAILERS.length || cached.some((r) => !fresh(r))) {
           if (!options.scraper)
             errors.push(
               failure(
