@@ -3,6 +3,12 @@ import Foundation
 // Change this single value for a physical device or deployed backend.
 enum APIConfiguration {
     static let baseURL = URL(string: "http://127.0.0.1:3000")!
+
+    #if DEBUG
+    static let seedsDemoContent = true
+    #else
+    static let seedsDemoContent = false
+    #endif
 }
 
 struct GroceryAPIError: LocalizedError {
@@ -22,17 +28,19 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         let quantity: Double
         let unit: ProductUnit
         let notes: String?
+        let category_id: ProductCategory?
         init(_ item: ProductRequest) {
             client_item_id = item.id; name = item.name; quantity = item.quantity
-            unit = item.unit; notes = item.notes
+            unit = item.unit; notes = item.notes; category_id = item.categoryID
         }
-        enum CodingKeys: CodingKey { case client_item_id, name, quantity, unit, notes }
+        enum CodingKeys: CodingKey { case client_item_id, name, quantity, unit, notes, category_id }
         func encode(to encoder: Encoder) throws {
             var c = encoder.container(keyedBy: CodingKeys.self)
             try c.encode(client_item_id, forKey: .client_item_id)
             try c.encode(name, forKey: .name); try c.encode(quantity, forKey: .quantity)
             try c.encode(unit, forKey: .unit)
             if let notes { try c.encode(notes, forKey: .notes) } else { try c.encodeNil(forKey: .notes) }
+            try c.encodeIfPresent(category_id, forKey: .category_id)
         }
     }
     private struct Request: Encodable {
@@ -66,15 +74,15 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
     }
     private struct WireUnmatched: Decodable { let client_item_id: UUID; let name: String; let reason: String }
     private struct WireStore: Decodable {
-        let retailer: String; let store_name: String?; let subtotal_cents: Int; let items: [WireLine]
+        let retailer_id: String; let retailer_name: String; let store_name: String?; let subtotal_cents: Int; let items: [WireLine]
         func model() throws -> StorePlan {
             let lines = try items.map { try $0.model() }
             guard subtotal_cents >= 0, lines.reduce(0, {$0 + $1.lineTotalCents}) == subtotal_cents else { throw GroceryAPIError(message:"Subtotal inconsistente.") }
-            return StorePlan(retailer: retailer, storeName: store_name, subtotalCents: subtotal_cents, items: lines)
+            return StorePlan(retailerID: RetailerID(backendValue: retailer_id, displayName: retailer_name), retailer: retailer_name, storeName: store_name, subtotalCents: subtotal_cents, items: lines)
         }
     }
     private struct WireLine: Decodable {
-        let client_item_id: UUID; let listing_id: String; let product_name: String; let brand: String?
+        let client_item_id: UUID; let listing_id: String; let product_name: String; let brand: String?; let category_id: ProductCategory
         let requested_quantity: Double; let requested_unit: ProductUnit
         let package_quantity: Double; let package_unit: ProductUnit; let package_count: Int
         let price_cents: Int; let regular_price_cents: Int?; let line_total_cents: Int; let unit_price_cents_per_100: Int?
@@ -88,7 +96,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
                   package_quantity > 0, requested_quantity > 0 else { throw GroceryAPIError(message:"Oferta inválida.") }
             let product = price_cents.multipliedReportingOverflow(by:package_count)
             guard !product.overflow, product.partialValue == line_total_cents else { throw GroceryAPIError(message:"Importe de producto inconsistente.") }
-            return StorePlanItem(clientItemID:client_item_id, listingID:listing_id, productName:product_name, brand:brand,
+            return StorePlanItem(clientItemID:client_item_id, listingID:listing_id, productName:product_name, brand:brand, categoryID:category_id,
                 requestedQuantity:requested_quantity, requestedUnit:requested_unit, packageQuantity:package_quantity, packageUnit:package_unit,
                 packageCount:package_count, priceCents:price_cents, regularPriceCents:regular_price_cents, lineTotalCents:line_total_cents,
                 unitPriceCentsPer100:unit_price_cents_per_100, productURL:product_url, imageURL:image_url,

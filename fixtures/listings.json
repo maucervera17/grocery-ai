@@ -8,6 +8,7 @@
     "priceCents": 3000,
     "currency": "MXN",
     "productUrl": "https://example.com/demo/chedraui/leche",
+    "imageUrl": "https://chedrauimx.vtexassets.com/arquivos/ids/79601313/7501295600126_00.jpg?v=639287210270370000",
     "checkedAt": "2026-10-27T20:00:00Z"
   },
   {
@@ -30,6 +31,7 @@
     "priceCents": 3200,
     "currency": "MXN",
     "productUrl": "https://example.com/demo/chedraui/arroz",
+    "imageUrl": "https://chedrauimx.vtexassets.com/arquivos/ids/79565827/7502219833491_00.jpg?v=639286593324930000",
     "checkedAt": "2026-10-27T20:00:00Z"
   },
   {
@@ -41,6 +43,7 @@
     "priceCents": 3200,
     "currency": "MXN",
     "productUrl": "https://example.com/demo/bodega-aurrera/leche",
+    "imageUrl": "https://chedrauimx.vtexassets.com/arquivos/ids/79601313/7501295600126_00.jpg?v=639287210270370000",
     "checkedAt": "2026-10-27T20:00:00Z"
   },
   {
@@ -63,6 +66,7 @@
     "priceCents": 3500,
     "currency": "MXN",
     "productUrl": "https://example.com/demo/bodega-aurrera/arroz",
+    "imageUrl": "https://chedrauimx.vtexassets.com/arquivos/ids/79565827/7502219833491_00.jpg?v=639286593324930000",
     "checkedAt": "2026-10-27T20:00:00Z"
   },
   {
@@ -85,6 +89,186 @@
     "priceCents": 7900,
     "currency": "MXN",
     "productUrl": "https://example.com/bodega-aurrera/queso-oaxaca-demo",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Pechuga de pollo",
+    "quantity": 1,
+    "unit": "kg",
+    "priceCents": 15900,
+    "regularPriceCents": 16900,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/pollo",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Pechuga de pollo",
+    "quantity": 1,
+    "unit": "kg",
+    "priceCents": 14900,
+    "regularPriceCents": 16400,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/pollo",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Manzanas Gala",
+    "quantity": 1,
+    "unit": "kg",
+    "priceCents": 5490,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/manzanas",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Manzanas Gala",
+    "quantity": 1,
+    "unit": "kg",
+    "priceCents": 5190,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/manzanas",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Papel de baño 12 rollos",
+    "quantity": 1,
+    "unit": "package",
+    "priceCents": 13900,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/papel-bano",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Papel de baño 12 rollos",
+    "quantity": 1,
+    "unit": "package",
+    "priceCents": 12900,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/papel-bano",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Aceite vegetal",
+    "quantity": 1,
+    "unit": "L",
+    "priceCents": 5690,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/aceite",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Aceite vegetal",
+    "quantity": 1,
+    "unit": "L",
+    "priceCents": 5290,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/aceite",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Tortillas de maíz",
+    "quantity": 1,
+    "unit": "kg",
+    "priceCents": 2650,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/tortillas",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Tortillas de maíz",
+    "quantity": 1,
+    "unit": "kg",
+    "priceCents": 2450,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/tortillas",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Café molido",
+    "quantity": 500,
+    "unit": "g",
+    "priceCents": 11990,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/cafe",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Café molido",
+    "quantity": 500,
+    "unit": "g",
+    "priceCents": 11490,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/cafe",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Yogur natural 4 piezas",
+    "quantity": 4,
+    "unit": "piece",
+    "priceCents": 6490,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/yogur",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Yogur natural 4 piezas",
+    "quantity": 4,
+    "unit": "piece",
+    "priceCents": 6250,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/yogur",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "chedraui",
+    "retailer": "Chedraui (demo)",
+    "productName": "Pasta 500 g",
+    "quantity": 500,
+    "unit": "g",
+    "priceCents": 2450,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/chedraui/pasta",
+    "imageUrl": "https://chedrauimx.vtexassets.com/arquivos/ids/79564020/7501079011810_00.jpg?v=639286589338800000",
+    "checkedAt": "2026-10-27T20:00:00Z"
+  },
+  {
+    "source": "bodega-aurrera",
+    "retailer": "Bodega Aurrera (demo)",
+    "productName": "Pasta 500 g",
+    "quantity": 500,
+    "unit": "g",
+    "priceCents": 2290,
+    "currency": "MXN",
+    "productUrl": "https://example.com/demo/bodega-aurrera/pasta",
+    "imageUrl": "https://chedrauimx.vtexassets.com/arquivos/ids/79564020/7501079011810_00.jpg?v=639286589338800000",
     "checkedAt": "2026-10-27T20:00:00Z"
   }
 ]

@@ -1,45 +1,38 @@
 import SwiftUI
 
 struct ProductPickerView: View {
-    let onAdd: ([ProductRequest]) -> Void
-
-    @State private var items: [SelectableProduct]
-
-    init(products: [ProductRequest], onAdd: @escaping ([ProductRequest]) -> Void) {
-        self.onAdd = onAdd
-        _items = State(initialValue: products.map { SelectableProduct(product: $0, isSelected: false) })
-    }
+    @Binding var items: [SelectableProduct]
+    let searchText: String
 
     var body: some View {
-        Group {
-            if items.isEmpty {
-                ContentUnavailableView(
-                    "Sin productos frecuentes",
-                    systemImage: "basket",
-                    description: Text("Los productos aparecerán después de guardar comparaciones.")
-                )
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            Text("Frecuentes")
+                .font(.title3.bold())
+
+            if filteredIndices.isEmpty {
+                Text(searchText.isEmpty ? "Guarda una comparación para ver productos frecuentes." : "No hay productos frecuentes que coincidan.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, AppSpacing.large)
             } else {
-                List($items) { $item in
-                    SelectableProductRow(item: $item)
-                }
-                .safeAreaInset(edge: .bottom) {
-                    AddProductsButton(title: addButtonTitle) {
-                        onAdd(selectedProducts)
+                ScrollView(.horizontal) {
+                    LazyHStack(alignment: .top, spacing: AppSpacing.medium) {
+                        ForEach(filteredIndices, id: \.self) { index in
+                            FrequentProductCard(item: $items[index])
+                        }
                     }
-                    .disabled(selectedProducts.isEmpty)
-                    .padding(.horizontal, AppSpacing.large)
-                    .padding(.vertical, AppSpacing.medium)
                 }
+                .scrollIndicators(.hidden)
+                .scrollClipDisabled()
             }
         }
+        .id(AddContentSection.products)
     }
 
-    private var selectedProducts: [ProductRequest] {
-        items.filter(\.isSelected).map(\.product)
-    }
-
-    private var addButtonTitle: LocalizedStringKey {
-        let count = selectedProducts.count
-        return count == 1 ? "Agregar 1 producto" : "Agregar \(count) productos"
+    private var filteredIndices: [Int] {
+        items.indices.filter { index in
+            searchText.isEmpty || items[index].product.name.localizedCaseInsensitiveContains(searchText)
+        }
     }
 }

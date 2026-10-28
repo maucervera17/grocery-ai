@@ -11,13 +11,8 @@ struct SelectableProductRow: View {
                         .font(.title3)
                         .foregroundStyle(item.isSelected ? Color.accentColor : .secondary)
 
-                    VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                        Text(item.product.name)
-                            .font(.body)
-                        Text(item.product.quantityDescription)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(item.product.name)
+                        .font(.body)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(.rect)
@@ -26,28 +21,13 @@ struct SelectableProductRow: View {
             .accessibilityLabel("\(item.product.name), \(item.product.quantityDescription)")
             .accessibilityValue(item.isSelected ? "Seleccionado" : "No seleccionado")
 
-            if item.isSelected {
-                Stepper(
-                    value: $item.product.quantity,
-                    in: item.quantityStep...maximumQuantity,
-                    step: item.quantityStep
-                ) {
-                    Text("Cantidad de \(item.product.name)")
-                }
-                .labelsHidden()
-                .accessibilityValue(item.product.quantityDescription)
-            }
+            ProductQuantityControl(item: $item)
+                .frame(maxWidth: 180)
+                .opacity(item.isSelected ? 1 : 0)
+                .allowsHitTesting(item.isSelected)
+                .accessibilityHidden(!item.isSelected)
         }
         .padding(.vertical, AppSpacing.extraSmall)
-    }
-
-    private var maximumQuantity: Double {
-        switch item.product.unit {
-        case .gram, .milliliter:
-            10_000
-        default:
-            100
-        }
     }
 
     private func toggleSelection() {

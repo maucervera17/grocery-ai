@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProductThumbnail: View {
     let imageURL: URL?
+    var category: ProductCategory = .other
     var size: CGFloat = 64
 
     @Environment(\.appTheme) private var theme
@@ -20,13 +21,11 @@ struct ProductThumbnail: View {
                 ProgressView()
                     .tint(colors.textSecondary)
             case .empty, .failure:
-                Image(systemName: "cart")
-                    .font(.title3)
-                    .foregroundStyle(colors.textSecondary)
+                Text(category.fallbackEmoji)
+                    .font(.title2)
             @unknown default:
-                Image(systemName: "cart")
-                    .font(.title3)
-                    .foregroundStyle(colors.textSecondary)
+                Text(category.fallbackEmoji)
+                    .font(.title2)
             }
         }
         .frame(width: size, height: size)

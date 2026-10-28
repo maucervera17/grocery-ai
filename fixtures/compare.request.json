@@ -7,21 +7,24 @@
       "name": "leche",
       "quantity": 2,
       "unit": "L",
-      "notes": null
+      "notes": null,
+      "category_id": "dairy"
     },
     {
       "client_item_id": "00000000-0000-4000-8000-000000000002",
       "name": "huevos",
       "quantity": 12,
       "unit": "piece",
-      "notes": null
+      "notes": null,
+      "category_id": "eggs"
     },
     {
       "client_item_id": "00000000-0000-4000-8000-000000000003",
       "name": "arroz",
       "quantity": 1,
       "unit": "kg",
-      "notes": null
+      "notes": null,
+      "category_id": "pantry"
     }
   ],
   "location": {

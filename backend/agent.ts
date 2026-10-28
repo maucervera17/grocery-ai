@@ -2,7 +2,24 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { DraftItem, DraftItems, type Item } from "../contracts/schema.js";
 import { canonical } from "./normalize.js";
+import { productCategory } from "./product-category.js";
 const Fields = DraftItem.omit({ client_item_id: true });
+
+function demoDefaultAmount(name: string): {
+  quantity: number;
+  unit: Item["unit"];
+} {
+  if (/^huevos?$/.test(name)) return { quantity: 12, unit: "piece" };
+  if (/^yogurt?$/.test(name)) return { quantity: 4, unit: "piece" };
+  if (/^papel (?:de bano|higienico)$/.test(name))
+    return { quantity: 1, unit: "package" };
+  if (/^(?:cafe(?: molido)?|pasta)$/.test(name))
+    return { quantity: 500, unit: "g" };
+  if (/^(?:queso oaxaca|queso parmesano|parmesano)/.test(name))
+    return { quantity: 400, unit: "g" };
+  if (/^(?:leche|aceite)/.test(name)) return { quantity: 1, unit: "L" };
+  return { quantity: 1, unit: "kg" };
+}
 export const Operations = z
   .object({
     operations: z
@@ -56,7 +73,14 @@ export function applyChanges(
     if (op.type === "remove") next.splice(i, 1);
     else next[i] = { ...op.item, client_item_id: op.client_item_id };
   }
-  return { items: DraftItems.parse(next), clarification: null };
+  return {
+    items: DraftItems.parse(next.map(enrichCategory)),
+    clarification: null,
+  };
+}
+
+function enrichCategory(item: Item): Item {
+  return { ...structuredClone(item), category_id: productCategory(item.name) };
 }
 // Explicit offline demo grammar; live mode never silently falls back to it.
 export class DemoDraftAgent implements DraftAgent {
@@ -106,31 +130,35 @@ export class DemoDraftAgent implements DraftAgent {
           clarification:
             "Prueba: Agrega 2 litros de leche, 12 huevos y 1 kg de arroz.",
         };
-      const unitText = m[2] ?? "piece";
-      const unit: Item["unit"] = /^(kg|kilo)/.test(unitText)
-        ? "kg"
-        : /^(g|gramo)/.test(unitText)
-          ? "g"
-          : /^(ml|mililitro)/.test(unitText)
-            ? "ml"
-            : /^(l|litro)/.test(unitText)
-              ? "L"
-              : /^docena/.test(unitText)
-                ? "dozen"
-                : /^paquete/.test(unitText)
-                  ? "package"
-                  : "piece";
       const name = m[3].replace(/^de\s+/, "").trim();
       if (
-        !/^(leche|huevos?|arroz|queso oaxaca|queso parmesano|parmesano)(\s+(entera|blanco|rallado))?$/.test(
+        !/^(leche|huevos?|arroz|queso oaxaca|queso parmesano|parmesano|pechuga de pollo|pollo|manzanas?|papel de bano|papel higienico|aceite(?: vegetal)?|tortillas?|cafe(?: molido)?|yogur|yogurt|pasta)(?:\s+(?:entera|blanco|rallado))?$/.test(
           name,
         )
       )
         return {
           operations: [],
           clarification:
-            "El parser demo admite leche, huevos, arroz, queso Oaxaca y parmesano. Configura el agente IA para lenguaje libre.",
+            "El demo admite lácteos, despensa, frutas, pollo, limpieza y productos básicos del hogar. Configura el agente IA para lenguaje libre.",
         };
+      const defaults = demoDefaultAmount(name);
+      const unitText = m[2];
+      const unit: Item["unit"] =
+        unitText == null
+          ? defaults.unit
+          : /^(kg|kilo)/.test(unitText)
+            ? "kg"
+            : /^(g|gramo)/.test(unitText)
+              ? "g"
+              : /^(ml|mililitro)/.test(unitText)
+                ? "ml"
+                : /^(l|litro)/.test(unitText)
+                  ? "L"
+                  : /^docena/.test(unitText)
+                    ? "dozen"
+                    : /^paquete/.test(unitText)
+                      ? "package"
+                      : "piece";
       if (seen.has(name))
         return {
           operations: [],
@@ -140,7 +168,7 @@ export class DemoDraftAgent implements DraftAgent {
       seen.add(name);
       const item = {
         name,
-        quantity: Number((m[1] ?? "1").replace(",", ".")),
+        quantity: m[1] ? Number(m[1].replace(",", ".")) : defaults.quantity,
         unit,
         notes: null,
       };

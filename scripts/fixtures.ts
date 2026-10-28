@@ -13,7 +13,11 @@ const update = {
 };
 const draft = await search(update);
 draft.draft_items.forEach((item, i) => {
-  item.client_item_id = ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-000000000002", "00000000-0000-4000-8000-000000000003"][i];
+  item.client_item_id = [
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000002",
+    "00000000-0000-4000-8000-000000000003",
+  ][i];
 });
 const compare = {
   action: "compare" as const,
@@ -29,7 +33,7 @@ const partial = await search({
     ...compare.items,
     {
       client_item_id: "00000000-0000-4000-8000-000000000004",
-      name: "manzanas",
+      name: "plátanos",
       quantity: 1,
       unit: "kg",
       notes: null,

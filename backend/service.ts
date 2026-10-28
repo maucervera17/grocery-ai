@@ -114,7 +114,7 @@ export function createSearch(options: Options) {
           let rows = options.fixtures;
           if (options.repository) {
             try {
-              rows = z
+              const stored = z
                 .array(ScrapedListing)
                 .parse(
                   await bounded(
@@ -122,6 +122,17 @@ export function createSearch(options: Options) {
                     signal,
                   ),
                 );
+              const merged = new Map(
+                [...options.fixtures, ...stored].map((listing) => [
+                  JSON.stringify([
+                    listing.source,
+                    listing.productUrl,
+                    listing.storeName ?? null,
+                  ]),
+                  listing,
+                ]),
+              );
+              rows = [...merged.values()];
             } catch {
               errors.push(
                 failure(

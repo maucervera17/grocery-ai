@@ -225,14 +225,15 @@ private struct MockCatalogEntry: Sendable {
 
 private let catalog: [MockCatalogEntry] = [
     MockCatalogEntry(name: "Papel de baño", aliases: ["papel de baño", "papel higienico"], defaultUnit: .package, notes: nil),
-    MockCatalogEntry(name: "Pechuga de pollo", aliases: ["pechuga de pollo", "pollo"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Leche", aliases: ["leche"], defaultUnit: .piece, notes: nil),
+    MockCatalogEntry(name: "Pechuga de pollo", aliases: ["pechuga de pollo", "pollo"], defaultUnit: .kilogram, notes: nil),
+    MockCatalogEntry(name: "Leche", aliases: ["leche"], defaultUnit: .liter, notes: nil),
     MockCatalogEntry(name: "Huevos", aliases: ["huevos", "huevo"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Arroz", aliases: ["arroz"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Manzanas", aliases: ["manzanas", "manzana"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Aceite", aliases: ["aceite"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Tortillas", aliases: ["tortillas", "tortilla"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Café", aliases: ["cafe"], defaultUnit: .piece, notes: nil),
+    MockCatalogEntry(name: "Arroz", aliases: ["arroz"], defaultUnit: .kilogram, notes: nil),
+    MockCatalogEntry(name: "Manzanas", aliases: ["manzanas", "manzana"], defaultUnit: .kilogram, notes: nil),
+    MockCatalogEntry(name: "Aceite", aliases: ["aceite"], defaultUnit: .liter, notes: nil),
+    MockCatalogEntry(name: "Tortillas", aliases: ["tortillas", "tortilla"], defaultUnit: .kilogram, notes: nil),
+    MockCatalogEntry(name: "Café", aliases: ["cafe"], defaultUnit: .gram, notes: nil),
     MockCatalogEntry(name: "Yogur", aliases: ["yogur", "yogurt"], defaultUnit: .piece, notes: nil),
-    MockCatalogEntry(name: "Pasta", aliases: ["pasta"], defaultUnit: .piece, notes: nil)
+    MockCatalogEntry(name: "Pasta", aliases: ["pasta"], defaultUnit: .gram, notes: nil),
+    MockCatalogEntry(name: "Queso Oaxaca", aliases: ["queso oaxaca"], defaultUnit: .gram, notes: nil)
 ]
