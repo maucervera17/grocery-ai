@@ -37,7 +37,8 @@ adaptadores configurados; no es una comprobación de conectividad externa.
 Se incorporó la rama `feat/ios` del equipo (commit 9243aa01a80a80542c2bfa7f9cb3bbe6bc8479ba)
 para integración local. `GroceryAPIClient` implementa los dos servicios existentes,
 sin crear otra app. Configuración única: `APIConfiguration.baseURL`.
-El simulador puede usar 127.0.0.1; para dispositivo físico se requiere un servidor
-accesible por red y la configuración de red local de iOS correspondiente.
+El simulador Debug puede usar 127.0.0.1; Release exige `BARASU_API_BASE_URL`
+HTTPS. Para dispositivo físico se requiere un backend accesible y autenticado;
+la voz todavía está limitada a loopback. Véase `docs/SWIFT_INFRASTRUCTURE.md`.
 El proyecto requiere Xcode con SDK iOS 26. En este Mac no está instalado Xcode;
 la compilación se validó en GitHub Actions (run 40621570223), pero el flujo en simulador sigue pendiente.

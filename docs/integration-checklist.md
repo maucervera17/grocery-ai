@@ -30,8 +30,9 @@ probada de dependencias externas; no declara terminado el proyecto iOS.
   `smoke:db` y `smoke` aprobados: Claude → API → base remota → total 13400, ahorro 600.
 - [x] Firecrawl REST configurado y probado con leche entera en las tres tiendas,
   persistencia remota y comparación HTTP. Cobertura general aún parcial.
-- [ ] Cliente HTTP iOS conectado en la copia local de feat/ios. Sintaxis y proyecto plist
-  revisados. Compilación iOS aprobada en GitHub Actions (run 40621570223); Xcode no está instalado en este Mac.
+- [x] Cliente HTTP iOS integrado para borrador, precios y comparación. Compilación
+  iOS aprobada en GitHub Actions; Xcode no está instalado en este Mac. La nueva
+  lista semanal aún es web y requiere un contrato o planificador nativo.
 - [ ] Flujo obligatorio en dispositivo/simulador, VoiceOver, Dynamic Type y temas.
 - [ ] Ubicación real When In Use en iOS: adaptador añadido con timeout y alternativa manual; pendiente prueba con SDK/dispositivo.
 - [x] Fixtures contractuales de respuesta lenta y datos vencidos.

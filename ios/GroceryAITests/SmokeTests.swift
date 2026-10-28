@@ -1,7 +1,20 @@
+import Foundation
 import Testing
 @testable import GroceryAI
 
 struct SmokeTests {
+    @Test
+    func APIRequiresConfiguredURLForReleaseAndBuildsVersionedPaths() throws {
+        let endpoint = try APIConfiguration.endpoint(
+            "v1/chat/search",
+            baseURL: URL(string: "https://api.example.com")
+        )
+        #expect(endpoint.absoluteString == "https://api.example.com/v1/chat/search")
+        #expect(throws: GroceryAPIError.self) {
+            try APIConfiguration.endpoint("v1/voice/session", baseURL: nil)
+        }
+    }
+
     @Test
     func agentParsesQuantitiesAndUnits() async throws {
         let response = try await MockAgentService().updateDraft(

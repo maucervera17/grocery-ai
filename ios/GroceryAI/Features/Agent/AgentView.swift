@@ -275,7 +275,7 @@ private final class BarasuVoiceModel: ObservableObject {
         let id = UUID(); generation = id
         connectionTask = Task {
             do {
-                var request = URLRequest(url:APIConfiguration.baseURL.appendingPathComponent("v1/voice/session"))
+                var request = URLRequest(url:try APIConfiguration.endpoint("v1/voice/session"))
                 request.httpMethod = "POST"; request.timeoutInterval = 15
                 let (data,response) = try await URLSession.shared.data(for:request)
                 struct Session: Decodable { var conversation_token: String }

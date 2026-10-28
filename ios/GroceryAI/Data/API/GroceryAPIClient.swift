@@ -1,8 +1,34 @@
 import Foundation
 
-// Change this single value for a physical device or deployed backend.
+// Only a local Debug build may default to loopback. A device or Release build
+// must receive an HTTPS URL through BARASU_API_BASE_URL in Info.plist.
 enum APIConfiguration {
-    static let baseURL = URL(string: Bundle.main.object(forInfoDictionaryKey:"BARASU_API_BASE_URL") as? String ?? "http://127.0.0.1:3000")!
+    static let baseURL: URL? = {
+        let raw = (Bundle.main.object(forInfoDictionaryKey:"BARASU_API_BASE_URL") as? String)?
+            .trimmingCharacters(in:.whitespacesAndNewlines)
+        if let raw, !raw.isEmpty {
+            guard let url = URL(string:raw), let scheme = url.scheme?.lowercased(),
+                  let host = url.host?.lowercased(), url.user == nil, url.password == nil,
+                  url.query == nil, url.fragment == nil else { return nil }
+            if scheme == "https" { return url }
+            #if DEBUG
+            if scheme == "http" && ["127.0.0.1", "localhost", "::1"].contains(host) { return url }
+            #endif
+            return nil
+        }
+        #if DEBUG
+        return URL(string:"http://127.0.0.1:3000")
+        #else
+        return nil
+        #endif
+    }()
+
+    static func endpoint(_ path: String, baseURL: URL? = APIConfiguration.baseURL) throws -> URL {
+        guard let baseURL else {
+            throw GroceryAPIError(message:"Configura BARASU_API_BASE_URL con un servidor HTTPS para esta versión de Barasu.")
+        }
+        return baseURL.appendingPathComponent(path)
+    }
 }
 
 struct GroceryAPIError: LocalizedError {
@@ -10,8 +36,8 @@ struct GroceryAPIError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-struct GroceryAPIClient: AgentServicing, ComparisonServicing {
-    var baseURL: URL = APIConfiguration.baseURL
+struct GroceryAPIClient: AgentServicing, ComparisonServicing, ProductPriceServicing {
+    var baseURL: URL? = APIConfiguration.baseURL
     var session: URLSession = .shared
 
     private struct Location: Encodable { let postal_code: String }
@@ -97,7 +123,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         }
     }
     private func call(_ body: Request) async throws -> WireResponse {
-        var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
+        var request = URLRequest(url:try APIConfiguration.endpoint("v1/chat/search",baseURL:baseURL))
         request.httpMethod = "POST"; request.timeoutInterval = 95
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
         request.httpBody = try JSONEncoder().encode(body)

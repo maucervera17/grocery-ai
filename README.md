@@ -61,7 +61,7 @@ La ubicación aún no configura una sesión/sucursal del supermercado. Las compa
 
 `backend/repository.ts` define `search` y `upsert`. La integración concreta queda pendiente del esquema del responsable de datos. Se inyecta en `buildApp` en `backend/server.ts`. No se han inventado tablas ni creado otra base de datos. Sin adaptador, live consulta Firecrawl en cada comparación y no persiste.
 
-iOS puede trabajar con `fixtures/update-draft.response.json`, `fixtures/compare.response.json`, `fixtures/compare.partial.response.json`, `fixtures/compare.empty.response.json` y `fixtures/compare.error.response.json`. Los contratos y decisiones propuestas están en [contracts/api.md](contracts/api.md).
+iOS puede trabajar con `fixtures/update-draft.response.json`, `fixtures/compare.response.json`, `fixtures/compare.partial.response.json`, `fixtures/compare.empty.response.json` y `fixtures/compare.error.response.json`. Los contratos están en [contracts/api.md](contracts/api.md) y la frontera para el cliente nativo en [docs/SWIFT_INFRASTRUCTURE.md](docs/SWIFT_INFRASTRUCTURE.md).
 
 ## Verificar
 
@@ -109,5 +109,5 @@ no consulta precios en vivo con Firecrawl.
 - `npm run smoke:scrapers`: dos consultas con la clave REST de Firecrawl.
 - Se retiró el caso de queso escrito directamente en el frontend.
 - Resultados web muestran fuentes, fechas, precio unitario, estado y elementos sin coincidencia.
-- La rama iOS del equipo está integrada localmente con `GroceryAPIClient`; aún requiere compilación y prueba en Xcode.
+- La app iOS del equipo usa `GroceryAPIClient` y compila en GitHub Actions; aún requiere prueba del flujo en simulador y dispositivo.
 - Guía canónica actual: `docs/setup.md`; estado de entrega: `docs/integration-checklist.md`.

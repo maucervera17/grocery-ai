@@ -18,15 +18,18 @@ final class AppState {
 
     private let agentService: any AgentServicing
     private let comparisonService: any ComparisonServicing
+    private let productPriceService: any ProductPriceServicing
     private var modelContext: ModelContext?
     private var record: LocalAppStateRecord?
 
     init(
         agentService: any AgentServicing = GroceryAPIClient(),
-        comparisonService: any ComparisonServicing = GroceryAPIClient()
+        comparisonService: any ComparisonServicing = GroceryAPIClient(),
+        productPriceService: any ProductPriceServicing = GroceryAPIClient()
     ) {
         self.agentService = agentService
         self.comparisonService = comparisonService
+        self.productPriceService = productPriceService
     }
 
     var frequentProducts: [ProductRequest] {
@@ -73,7 +76,7 @@ final class AppState {
         productComparison = nil
         do {
             if trimmed.range(of:"precio|barat[oa]|cu[aá]nto cuesta|compar[aá]",options:[.regularExpression,.caseInsensitive]) != nil {
-                let (reply, result) = try await GroceryAPIClient().productPrices(message:trimmed,items:draft.items,postalCode:postalCode,local:localPrices)
+                let (reply, result) = try await productPriceService.productPrices(message:trimmed,items:draft.items,postalCode:postalCode,local:localPrices)
                 productComparison = result
                 messages.append(ChatMessage(role:.agent,text:reply,kind:.comparison))
                 loadingState = .idle
@@ -126,7 +129,7 @@ final class AppState {
         loadingState = .updatingDraft
         defer { loadingState = .idle }
         do {
-            let (_, result) = try await GroceryAPIClient().productPrices(message:product.query,items:[],postalCode:product.observations.last?.postalCode ?? "",local:product.observations.last?.scope == "local")
+            let (_, result) = try await productPriceService.productPrices(message:product.query,items:[],postalCode:product.observations.last?.postalCode ?? "",local:product.observations.last?.scope == "local")
             guard let result, let offer = result.offers.first(where: { $0.id == product.id }) else { return "No se pudo actualizar. Conservamos el precio y fecha anteriores." }
             saveDiscovery(offer,comparison:result)
             return "Precio actualizado desde la fuente."
@@ -138,7 +141,7 @@ final class AppState {
         defer { loadingState = .idle }
         do {
             if action == "product_prices" {
-                let (reply,result) = try await GroceryAPIClient().productPrices(message:message,items:draft.items,postalCode:postalCode,local:localPrices)
+                let (reply,result) = try await productPriceService.productPrices(message:message,items:draft.items,postalCode:postalCode,local:localPrices)
                 productComparison = result
                 struct VoiceResult: Encodable { let reply: String; let comparison: ProductPriceComparison? }
                 return String(decoding:try JSONEncoder().encode(VoiceResult(reply:reply,comparison:result)),as:UTF8.self)

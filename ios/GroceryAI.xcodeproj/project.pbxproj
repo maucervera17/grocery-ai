@@ -536,8 +536,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BARASU_API_BASE_URL = "";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GroceryAI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Barasu usa el micrófono para conversar contigo mediante ElevenLabs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";
@@ -629,8 +631,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				BARASU_API_BASE_URL = "http://127.0.0.1:3000";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GroceryAI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Barasu;
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Barasu usa el micrófono para conversar contigo mediante ElevenLabs.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Barasu usa tu ubicación para encontrar precios cercanos.";

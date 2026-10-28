@@ -7,14 +7,17 @@ Abrir `GroceryAI.xcodeproj` en Xcode con SDK iOS 26 / compilador Swift 6.2 o pos
 `SWIFT_VERSION=6.0` es el modo de lenguaje Swift 6; no selecciona la versión instalada del compilador.
 Elegir un simulador iOS 26 y ejecutar. El proyecto no necesita firma para simulador.
 
-`Data/API/GroceryAPIClient.swift` contiene la única URL base configurable.
-Por defecto conecta `http://127.0.0.1:3000`; primero iniciar el backend desde la raíz.
-En un iPhone físico hace falta URL accesible por red y configurar permiso de red
-local/ATS para ese entorno; no se habilita acceso HTTP arbitrario de producción.
+`Data/API/GroceryAPIClient.swift` contiene la única URL base configurable para
+borrador, precios y comparación. La voz usa el mismo valor. Debug sin configuración
+conecta a `http://127.0.0.1:3000` para el simulador. Release exige la clave
+`BARASU_API_BASE_URL` en Info.plist con un origen HTTPS; si falta, la app presenta
+un error de configuración en lugar de apuntar silenciosamente al propio teléfono.
+Para un iPhone físico se necesita un backend HTTPS alcanzable y autenticación de
+usuarios antes de habilitar voz fuera de loopback.
 
 Cambios de integración:
 - Servicios HTTP reales por defecto; mocks solo para previews/pruebas.
-- Un POST con tres acciones (borrador, comparación y búsqueda de precios); notes:null se serializa explícitamente.
+- Un POST con tres acciones (borrador, comparación y búsqueda de precios); notes:null se serializa explícitamente. Los tres flujos usan servicios inyectables para probar el cliente sin red.
 - Timeout de red 95 s, validación de respuesta y cantidades, manejo de error sin perder borrador.
 - Mapeo de JSON snake_case a modelos existentes, precios, fechas y fuentes.
 - Advertencias de respuestas parciales visibles; solo se guarda una comparación completa.

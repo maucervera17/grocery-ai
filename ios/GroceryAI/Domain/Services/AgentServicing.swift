@@ -7,6 +7,15 @@ protocol AgentServicing: Sendable {
     ) async throws -> AgentResponse
 }
 
+protocol ProductPriceServicing: Sendable {
+    func productPrices(
+        message: String,
+        items: [ProductRequest],
+        postalCode: String,
+        local: Bool
+    ) async throws -> (String, ProductPriceComparison?)
+}
+
 enum AgentServiceError: LocalizedError, Equatable, Sendable {
     case emptyMessage
     case noProductsFound
