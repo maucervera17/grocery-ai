@@ -63,6 +63,14 @@
                 "postal_code": {
                   "type": "string",
                   "pattern": "^\\d{5}$"
+                },
+                "fulfillment": {
+                  "type": "string",
+                  "enum": ["delivery", "pickup"]
+                },
+                "pickup_store": {
+                  "type": "string",
+                  "const": "chedraui-bellavista"
                 }
               },
               "required": ["postal_code"],
@@ -137,6 +145,14 @@
                 "postal_code": {
                   "type": "string",
                   "pattern": "^\\d{5}$"
+                },
+                "fulfillment": {
+                  "type": "string",
+                  "enum": ["delivery", "pickup"]
+                },
+                "pickup_store": {
+                  "type": "string",
+                  "const": "chedraui-bellavista"
                 }
               },
               "required": ["postal_code"],

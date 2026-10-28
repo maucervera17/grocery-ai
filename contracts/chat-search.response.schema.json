@@ -201,6 +201,14 @@
                         "match_type": {
                           "type": "string",
                           "enum": ["exact", "similar"]
+                        },
+                        "verified_fulfillment": {
+                          "type": "string",
+                          "enum": ["delivery", "pickup"]
+                        },
+                        "verified_postal_code": {
+                          "type": "string",
+                          "pattern": "^\\d{5}$"
                         }
                       },
                       "required": [

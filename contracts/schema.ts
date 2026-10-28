@@ -27,7 +27,11 @@ export const DraftItems = z
     "Duplicate item IDs",
   );
 const location = z
-  .object({ postal_code: z.string().regex(/^\d{5}$/) })
+  .object({
+    postal_code: z.string().regex(/^\d{5}$/),
+    fulfillment: z.enum(["delivery", "pickup"]).optional(),
+    pickup_store: z.literal("chedraui-bellavista").optional(),
+  })
   .strict()
   .nullable()
   .optional();
@@ -67,6 +71,16 @@ export const ScrapedListing = z
     currency: z.literal("MXN"),
     productUrl: WebUrl,
     checkedAt: z.string().datetime(),
+    locationEvidence: z
+      .object({
+        postalCode: z.string().regex(/^\d{5}$/),
+        fulfillment: z.enum(["delivery", "pickup"]),
+        storeName: z.string().optional(),
+        availability: z.literal("in_stock"),
+        text: z.string().min(1).max(1000),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export const PlanLine = z
@@ -88,6 +102,11 @@ export const PlanLine = z
     checked_at: z.string().datetime(),
     data_status: z.enum(["verified", "stale", "demo"]),
     match_type: z.enum(["exact", "similar"]),
+    verified_fulfillment: z.enum(["delivery", "pickup"]).optional(),
+    verified_postal_code: z
+      .string()
+      .regex(/^\d{5}$/)
+      .optional(),
   })
   .strict();
 export const UnmatchedItem = z
@@ -149,5 +168,7 @@ export type ScrapeQuery = {
   query: string;
   postalCode?: string;
   maxResults?: number;
+  fulfillment?: "delivery" | "pickup";
+  pickupStore?: "chedraui-bellavista";
 };
 export type Offer = { listing: RawListing; status: Line["data_status"] };

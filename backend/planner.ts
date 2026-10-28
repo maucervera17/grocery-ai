@@ -50,6 +50,12 @@ export function candidate(item: Item, offer: Offer): Candidate | null {
       checked_at: r.checkedAt,
       data_status: offer.status,
       match_type: "similar",
+      ...(r.locationEvidence
+        ? {
+            verified_postal_code: r.locationEvidence.postalCode,
+            verified_fulfillment: r.locationEvidence.fulfillment,
+          }
+        : {}),
     },
   };
 }

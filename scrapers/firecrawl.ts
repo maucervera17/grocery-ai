@@ -3,6 +3,13 @@ import type { RawListing, ScrapeQuery } from "../contracts/schema.js";
 import { matches } from "../backend/normalize.js";
 import { bounded } from "../backend/deadline.js";
 import {
+  postalActions,
+  verifyPostal,
+  PostalVerificationError,
+  pickupActions,
+  verifyPickup,
+} from "./postal.js";
+import {
   RETAILERS,
   productUrl,
   parseProduct,
@@ -52,7 +59,9 @@ export class FirecrawlScraper implements Scraper {
         signal,
       );
       const transient = response.status === 429 || response.status >= 500;
-      if (transient && attempt === 0) {
+      const hasPostalActions =
+        typeof payload === "object" && payload !== null && "actions" in payload;
+      if (transient && attempt === 0 && !hasPostalActions) {
         await delay(250, undefined, { signal });
         continue;
       }
@@ -77,7 +86,9 @@ export class FirecrawlScraper implements Scraper {
   }
   async scrape(query: ScrapeQuery, signal: AbortSignal): Promise<Batch> {
     const batches = await Promise.all(
-      RETAILERS.map((source) => this.source(source, query, signal)),
+      RETAILERS.filter(
+        (source) => query.fulfillment !== "pickup" || source.id === "chedraui",
+      ).map((source) => this.source(source, query, signal)),
     );
     return {
       listings: batches.flatMap((b) => b.listings),
@@ -95,15 +106,41 @@ export class FirecrawlScraper implements Scraper {
         source: source.id,
         code: signal.aborted
           ? "SOURCE_TIMEOUT"
-          : error instanceof SourceFailure
+          : error instanceof SourceFailure &&
+              ["FIRECRAWL_AUTH", "FIRECRAWL_CREDITS"].includes(error.code)
             ? error.code
-            : "SOURCE_INVALID",
-        message: `No se pudo verificar una consulta de ${source.retailer}.`,
+            : query.postalCode && !(error instanceof PostalVerificationError)
+              ? "LOCATION_VERIFICATION_FAILED"
+              : error instanceof SourceFailure ||
+                  error instanceof PostalVerificationError
+                ? error.code
+                : "SOURCE_INVALID",
+        message:
+          error instanceof PostalVerificationError
+            ? error.message
+            : query.postalCode
+              ? `${source.retailer} no permitió verificar ${query.fulfillment === "pickup" ? "recogida en Bellavista" : "entrega"} para CP ${query.postalCode}. Confirma la zona directamente en la tienda.`
+              : `No se pudo verificar una consulta de ${source.retailer}.`,
         retryable:
           signal.aborted || (error instanceof SourceFailure && error.retryable),
       });
     };
     try {
+      if (
+        query.fulfillment === "pickup" &&
+        (query.pickupStore !== "chedraui-bellavista" ||
+          query.postalCode !== "52994")
+      )
+        throw new PostalVerificationError(
+          "PICKUP_STORE_REQUIRED",
+          "Selecciona la sucursal de recogida Bellavista (CP 52994).",
+        );
+      const actions =
+        query.fulfillment === "pickup"
+          ? pickupActions()
+          : query.postalCode
+            ? postalActions(source, query.postalCode)
+            : undefined;
       const search = (await this.call(
         "search",
         {
@@ -135,12 +172,25 @@ export class FirecrawlScraper implements Scraper {
               formats: ["markdown"],
               maxAge: 0,
               proxy: "basic",
-              timeout: 10000,
-              onlyMainContent: true,
+              timeout: actions ? 20000 : 10000,
+              onlyMainContent: !actions,
+              ...(actions ? { actions } : {}),
             },
             signal,
           )) as Page;
-          const listing = parseProduct(source, url, page);
+          const locationEvidence =
+            query.fulfillment === "pickup"
+              ? verifyPickup(page)
+              : query.postalCode
+                ? verifyPostal(source, page, query.postalCode)
+                : undefined;
+          const listing = {
+            ...parseProduct(source, url, page),
+            ...(locationEvidence?.storeName
+              ? { storeName: locationEvidence.storeName }
+              : {}),
+            ...(locationEvidence ? { locationEvidence } : {}),
+          };
           if (matches(listing.productName, query.query))
             batch.listings.push(listing);
         } catch (error) {
