@@ -1,34 +1,8 @@
 import Foundation
 
-// Only a local Debug build may default to loopback. A device or Release build
-// must receive an HTTPS URL through BARASU_API_BASE_URL in Info.plist.
+// Change this single value for a physical device or deployed backend.
 enum APIConfiguration {
-    static let baseURL: URL? = {
-        let raw = (Bundle.main.object(forInfoDictionaryKey:"BARASU_API_BASE_URL") as? String)?
-            .trimmingCharacters(in:.whitespacesAndNewlines)
-        if let raw, !raw.isEmpty {
-            guard let url = URL(string:raw), let scheme = url.scheme?.lowercased(),
-                  let host = url.host?.lowercased(), url.user == nil, url.password == nil,
-                  url.query == nil, url.fragment == nil else { return nil }
-            if scheme == "https" { return url }
-            #if DEBUG
-            if scheme == "http" && ["127.0.0.1", "localhost", "::1"].contains(host) { return url }
-            #endif
-            return nil
-        }
-        #if DEBUG
-        return URL(string:"http://127.0.0.1:3000")
-        #else
-        return nil
-        #endif
-    }()
-
-    static func endpoint(_ path: String, baseURL: URL? = APIConfiguration.baseURL) throws -> URL {
-        guard let baseURL else {
-            throw GroceryAPIError(message:"Configura BARASU_API_BASE_URL con un servidor HTTPS para esta versión de Barasu.")
-        }
-        return baseURL.appendingPathComponent(path)
-    }
+    static let baseURL = URL(string: "http://127.0.0.1:3000")!
 }
 
 struct GroceryAPIError: LocalizedError {
@@ -36,8 +10,8 @@ struct GroceryAPIError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-struct GroceryAPIClient: AgentServicing, ComparisonServicing, ProductPriceServicing {
-    var baseURL: URL? = APIConfiguration.baseURL
+struct GroceryAPIClient: AgentServicing, ComparisonServicing {
+    var baseURL: URL = APIConfiguration.baseURL
     var session: URLSession = .shared
 
     private struct Location: Encodable { let postal_code: String }
@@ -67,7 +41,6 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing, ProductPriceServic
         let items: [ItemBody]
         let location: Location?
         let preferences: Preferences?
-        let price_scope: String?
     }
     private struct Issue: Decodable {
         let code: String; let message: String; let client_item_id: UUID?; let retryable: Bool
@@ -76,7 +49,6 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing, ProductPriceServic
     private struct WireResponse: Decodable {
         let reply: String; let status: AgentOperationStatus
         let draft_items: [ProductRequest]; let plan: WirePlan?; let errors: [Issue]
-        let comparison: ProductPriceComparison?
     }
     private struct WirePlan: Decodable {
         let total_price_cents: Int; let estimated_savings_cents: Int?; let currency: String
@@ -123,8 +95,8 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing, ProductPriceServic
         }
     }
     private func call(_ body: Request) async throws -> WireResponse {
-        var request = URLRequest(url:try APIConfiguration.endpoint("v1/chat/search",baseURL:baseURL))
-        request.httpMethod = "POST"; request.timeoutInterval = 95
+        var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
+        request.httpMethod = "POST"; request.timeoutInterval = 30
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
         request.httpBody = try JSONEncoder().encode(body)
         let (data, response) = try await session.data(for:request)
@@ -137,15 +109,11 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing, ProductPriceServic
         return result
     }
     func updateDraft(message: String, currentItems: [ProductRequest]) async throws -> AgentResponse {
-        let r = try await call(Request(action:"update_draft",message:message,items:currentItems.map(ItemBody.init),location:nil,preferences:nil,price_scope:nil))
+        let r = try await call(Request(action:"update_draft",message:message,items:currentItems.map(ItemBody.init),location:nil,preferences:nil))
         return AgentResponse(reply:r.reply,status:r.status,draftItems:r.draft_items,errors:r.errors.map(\.model))
     }
-    func productPrices(message: String, items: [ProductRequest], postalCode: String, local: Bool) async throws -> (String, ProductPriceComparison?) {
-        let r = try await call(Request(action:"product_prices",message:message,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil : Location(postal_code:postalCode),preferences:nil,price_scope:local ? "local" : "published"))
-        return (r.reply,r.comparison)
-    }
     func compare(items: [ProductRequest], postalCode: String) async throws -> ComparisonPlan {
-        let r = try await call(Request(action:"compare",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2),price_scope:nil))
+        let r = try await call(Request(action:"compare",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2)))
         guard let plan = r.plan else { throw GroceryAPIError(message:r.reply) }
         var model = try plan.model(requested:items)
         model.responseStatus = r.status

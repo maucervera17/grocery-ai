@@ -8,15 +8,9 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     DEVELOPMENT_TEAM: ""
-packages:
-  ElevenLabs:
-    url: https://github.com/elevenlabs/elevenlabs-swift-sdk.git
-    revision: 24e2c3c9ab80f4571d4d77ce71c1781094115dbb
 targets:
   GroceryAI:
     type: application
-    dependencies:
-      - package: ElevenLabs
     platform: iOS
     sources:
       - path: GroceryAI
@@ -24,17 +18,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.groceryai.app
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_FILE: GroceryAI/Info.plist
-        INFOPLIST_KEY_CFBundleDisplayName: Barasu
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: Barasu usa el micrófono para conversar contigo mediante ElevenLabs.
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Barasu usa tu ubicación para encontrar precios cercanos.
+        INFOPLIST_KEY_CFBundleDisplayName: Grocery AI
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Grocery AI usa tu ubicación para encontrar precios cercanos.
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
-      configs:
-        Debug:
-          BARASU_API_BASE_URL: "http://127.0.0.1:3000"
-        Release:
-          BARASU_API_BASE_URL: ""
     scheme:
       testTargets:
         - GroceryAITests

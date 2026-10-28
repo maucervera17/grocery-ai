@@ -15,9 +15,6 @@ struct RootView: View {
                 }
             }
 
-            Tab("Guardados",systemImage:"heart",value:AppTab.savings) {
-                NavigationStack { SavedProductsView(appState:appState) }
-            }
             Tab("Historial", systemImage: "clock", value: AppTab.history) {
                 NavigationStack {
                     HistoryView(

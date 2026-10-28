@@ -49,9 +49,6 @@ struct LocationRequestView: View {
                         .controlSize(.large)
                         .frame(maxWidth: .infinity)
 
-                        if let detail = locator.locationDescription {
-                            Text(detail).font(.footnote).foregroundStyle(colors.textSecondary)
-                        }
                         if let message = locator.errorMessage {
                             Text(message).font(.footnote).foregroundStyle(colors.textSecondary)
                         }
@@ -84,9 +81,9 @@ struct LocationRequestView: View {
                 PrimaryButton("Continuar", systemImage: "arrow.right") {
                     onContinue(postalCode)
                 }
-                .disabled(!isValidPostalCode || locator.isLoading)
+                .disabled(!isValidPostalCode)
 
-                Text("Puedes usar tu ubicación actual o una dirección de entrega distinta. Solo enviamos el CP al servidor; la ubicación exacta no se guarda.")
+                Text("La ubicación solo se usa para esta comparación.")
                     .font(.footnote)
                     .foregroundStyle(colors.textSecondary)
                     .multilineTextAlignment(.center)

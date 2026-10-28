@@ -10,26 +10,20 @@ final class AppState {
     var messages = MockFixtures.welcomeMessages
     var orders: [CompletedOrder] = []
     var postalCode = ""
-    var localPrices = false
-    var productComparison: ProductPriceComparison?
-    var savings = SavingsLedger()
     var loadingState: ChatLoadingState = .idle
     var comparisonPlan: ComparisonPlan?
 
     private let agentService: any AgentServicing
     private let comparisonService: any ComparisonServicing
-    private let productPriceService: any ProductPriceServicing
     private var modelContext: ModelContext?
     private var record: LocalAppStateRecord?
 
     init(
         agentService: any AgentServicing = GroceryAPIClient(),
-        comparisonService: any ComparisonServicing = GroceryAPIClient(),
-        productPriceService: any ProductPriceServicing = GroceryAPIClient()
+        comparisonService: any ComparisonServicing = GroceryAPIClient()
     ) {
         self.agentService = agentService
         self.comparisonService = comparisonService
-        self.productPriceService = productPriceService
     }
 
     var frequentProducts: [ProductRequest] {
@@ -73,16 +67,7 @@ final class AppState {
 
         messages.append(ChatMessage(role: .user, text: trimmed))
         loadingState = .updatingDraft
-        productComparison = nil
         do {
-            if trimmed.range(of:"precio|barat[oa]|cu[aá]nto cuesta|compar[aá]",options:[.regularExpression,.caseInsensitive]) != nil {
-                let (reply, result) = try await productPriceService.productPrices(message:trimmed,items:draft.items,postalCode:postalCode,local:localPrices)
-                productComparison = result
-                messages.append(ChatMessage(role:.agent,text:reply,kind:.comparison))
-                loadingState = .idle
-                persist()
-                return
-            }
             let response = try await agentService.updateDraft(
                 message: trimmed,
                 currentItems: draft.items
@@ -93,77 +78,11 @@ final class AppState {
             loadingState = .idle
             persist()
         } catch {
-            let message = error.localizedDescription
+            let message = "No pude interpretar esa lista. Prueba con: 2 litros de leche, 12 huevos."
             messages.append(ChatMessage(role: .agent, text: message, kind: .error))
             loadingState = .failed(message: message)
         }
     }
-
-    func setLocation(_ code: String, verifyLocal: Bool = true) {
-        guard code.range(of:"^[0-9]{5}$",options:.regularExpression) != nil else { return }
-        if postalCode != code {
-            postalCode = code
-            comparisonPlan = nil
-            productComparison = nil
-            // Confirmed purchases remain history; provisional local selections are invalidated.
-            savings.products = []
-            savings.basketID = UUID()
-        }
-        localPrices = verifyLocal
-        persist()
-    }
-    func saveDiscovery(_ offer: PriceOffer, comparison: ProductPriceComparison) {
-        guard comparison.data_mode == "live" else { return }
-        var saved = savings.savedProducts ?? []
-        var entry = saved.first { $0.id == offer.id } ?? SavedDiscovery(listing:offer.listing,query:comparison.query,observations:[])
-        let observed = SavedPriceObservation(priceCents:offer.listing.priceCents,checkedAt:offer.listing.checkedAt,scope:comparison.scope,postalCode:comparison.requested_postal_code)
-        if !entry.observations.contains(where: { $0.checkedAt == observed.checkedAt && $0.scope == observed.scope && $0.postalCode == observed.postalCode }) { entry.observations.append(observed) }
-        entry.observations = Array(entry.observations.suffix(60))
-        entry.listing = offer.listing
-        saved.removeAll { $0.id == entry.id }; saved.insert(entry,at:0)
-        savings.savedProducts = saved; persist()
-    }
-    func removeSaved(_ id: String) { savings.savedProducts?.removeAll { $0.id == id }; persist() }
-    func refreshSaved(_ product: SavedDiscovery) async -> String {
-        guard loadingState == .idle else { return "Espera la consulta en curso." }
-        loadingState = .updatingDraft
-        defer { loadingState = .idle }
-        do {
-            let (_, result) = try await productPriceService.productPrices(message:product.query,items:[],postalCode:product.observations.last?.postalCode ?? "",local:product.observations.last?.scope == "local")
-            guard let result, let offer = result.offers.first(where: { $0.id == product.id }) else { return "No se pudo actualizar. Conservamos el precio y fecha anteriores." }
-            saveDiscovery(offer,comparison:result)
-            return "Precio actualizado desde la fuente."
-        } catch { return "No se pudo actualizar. Conservamos el precio y fecha anteriores." }
-    }
-    func voiceSearch(action: String, message: String) async -> String {
-        guard loadingState == .idle, !message.isEmpty, message.count <= 2000 else { return "Espera la consulta actual o revisa el mensaje." }
-        loadingState = .updatingDraft
-        defer { loadingState = .idle }
-        do {
-            if action == "product_prices" {
-                let (reply,result) = try await productPriceService.productPrices(message:message,items:draft.items,postalCode:postalCode,local:localPrices)
-                productComparison = result
-                struct VoiceResult: Encodable { let reply: String; let comparison: ProductPriceComparison? }
-                return String(decoding:try JSONEncoder().encode(VoiceResult(reply:reply,comparison:result)),as:UTF8.self)
-            } else if action == "update_draft" {
-                let result = try await agentService.updateDraft(message:message,currentItems:draft.items)
-                draft.replaceItems(with:result.draftItems);persist()
-                return result.reply
-            }
-            return "Acción no admitida. No se realizaron cambios."
-        } catch { return "La consulta falló. No hay nuevos precios confirmados." }
-    }
-    func selectOffer(_ offer: PriceOffer, packages: Int, usualCents: Int?) {
-        guard productComparison?.data_mode == "live", (1...99).contains(packages), (0...100_000_000).contains(offer.listing.priceCents),
-              usualCents == nil || (0...100_000_000).contains(usualCents!) else { return }
-        let item = SelectedProduct(listing:offer.listing,packages:packages,usualPriceCents:usualCents)
-        if let index = savings.products.firstIndex(where: { $0.listing.productUrl == offer.id }) { savings.products[index] = item }
-        else { savings.products.append(item) }
-        persist()
-    }
-    func removeSelection(_ id: UUID) { savings.products.removeAll { $0.id == id }; persist() }
-    func deletePurchase(_ id: UUID) { savings.purchases.removeAll { $0.id == id }; persist() }
-    func confirmPurchase(paidCents: Int) { savings.confirm(paidCents:paidCents); persist() }
 
     func updateProduct(_ product: ProductRequest) {
         guard let index = draft.items.firstIndex(where: { $0.id == product.id }) else { return }
@@ -214,7 +133,7 @@ final class AppState {
 
     func compare(postalCode: String) async {
         guard loadingState == .idle else { return }
-        setLocation(postalCode)
+        self.postalCode = postalCode
         comparisonPlan = nil
         loadingState = .comparing
         do {
@@ -260,7 +179,6 @@ final class AppState {
             messages = storedMessages
         }
         postalCode = record.postalCode
-        if let data = record.savingsData, let ledger = try? decoder.decode(SavingsLedger.self,from:data) { savings = ledger }
     }
 
     private func persist() {
@@ -270,7 +188,6 @@ final class AppState {
         record.ordersData = (try? encoder.encode(orders)) ?? Data()
         record.messagesData = (try? encoder.encode(messages)) ?? Data()
         record.postalCode = postalCode
-        record.savingsData = try? encoder.encode(savings)
         try? modelContext.save()
     }
 }
