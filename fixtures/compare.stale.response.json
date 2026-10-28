@@ -1,0 +1,67 @@
+{
+  "reply": "Comparación de 1 productos en 1 tienda(s), entre las ofertas disponibles. Sustitutos marcados como similares. No incluye transporte ni entrega.",
+  "status": "partial",
+  "draft_items": [
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "name": "leche",
+      "quantity": 2,
+      "unit": "L",
+      "notes": null
+    }
+  ],
+  "plan": {
+    "total_price_cents": 6400,
+    "estimated_savings_cents": null,
+    "currency": "MXN",
+    "stores": [
+      {
+        "retailer": "Bodega Aurrera",
+        "store_name": "BA CANTIL",
+        "subtotal_cents": 6400,
+        "items": [
+          {
+            "client_item_id": "00000000-0000-4000-8000-000000000001",
+            "listing_id": "6819b944e21036855751322e",
+            "product_name": "Leche Santa Clara entera 1 l",
+            "brand": null,
+            "requested_quantity": 2,
+            "requested_unit": "L",
+            "package_quantity": 1,
+            "package_unit": "L",
+            "package_count": 2,
+            "price_cents": 3200,
+            "regular_price_cents": 3500,
+            "line_total_cents": 6400,
+            "unit_price_cents_per_100": 320,
+            "product_url": "https://www.bodegaaurrera.com.mx/ip/leche-santa-clara-entera-1-l/00750129560012",
+            "checked_at": "2020-01-01T00:00:00Z",
+            "data_status": "stale",
+            "match_type": "similar"
+          }
+        ]
+      }
+    ],
+    "unmatched_items": []
+  },
+  "errors": [
+    {
+      "code": "SOURCE_TIMEOUT",
+      "message": "Simulated timeout for fixture",
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "retryable": true
+    },
+    {
+      "code": "STALE_DATA",
+      "message": "Algunos precios están vencidos.",
+      "client_item_id": null,
+      "retryable": true
+    },
+    {
+      "code": "LOCATION_UNVERIFIED",
+      "message": "Los precios publicados no se han validado para el código postal solicitado.",
+      "client_item_id": null,
+      "retryable": false
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+import { z } from "zod";
+export const Money = z
+  .number()
+  .int()
+  .nonnegative()
+  .max(Number.MAX_SAFE_INTEGER);
+export const Quantity = z.number().positive().max(100000).multipleOf(0.001);
+export const Unit = z.enum(["g", "kg", "ml", "L", "piece", "package", "dozen"]);
+export const WebUrl = z
+  .string()
+  .url()
+  .regex(/^https?:\/\//);
+export const DraftItem = z
+  .object({
+    client_item_id: z.string().min(1).max(128),
+    name: z.string().trim().min(1).max(160),
+    quantity: Quantity,
+    unit: Unit,
+    notes: z.string().max(500).nullable(),
+  })
+  .strict();
+export const DraftItems = z
+  .array(DraftItem)
+  .max(20)
+  .refine(
+    (a) => new Set(a.map((i) => i.client_item_id)).size === a.length,
+    "Duplicate item IDs",
+  );
+const location = z
+  .object({ postal_code: z.string().regex(/^\d{5}$/) })
+  .strict()
+  .nullable()
+  .optional();
+export const SearchRequest = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("update_draft"),
+      message: z.string().trim().min(1).max(2000),
+      items: DraftItems,
+      location,
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("compare"),
+      message: z.null().optional(),
+      items: DraftItems,
+      location,
+      preferences: z
+        .object({ max_stores: z.number().int().min(1).max(2) })
+        .strict()
+        .optional(),
+    })
+    .strict(),
+]);
+export const ScrapedListing = z
+  .object({
+    source: z.string().min(1),
+    retailer: z.string().min(1),
+    storeName: z.string().optional(),
+    productName: z.string().min(1).max(300),
+    brand: z.string().optional(),
+    quantity: Quantity.optional(),
+    unit: Unit.optional(),
+    priceCents: Money.max(100000000),
+    regularPriceCents: Money.max(100000000).optional(),
+    currency: z.literal("MXN"),
+    productUrl: WebUrl,
+    checkedAt: z.string().datetime(),
+  })
+  .strict();
+export const PlanLine = z
+  .object({
+    client_item_id: z.string(),
+    listing_id: z.string(),
+    product_name: z.string(),
+    brand: z.string().nullable(),
+    requested_quantity: Quantity,
+    requested_unit: Unit,
+    package_quantity: Quantity,
+    package_unit: Unit,
+    package_count: z.number().int().positive(),
+    price_cents: Money,
+    regular_price_cents: Money.nullable(),
+    line_total_cents: Money,
+    unit_price_cents_per_100: Money.nullable(),
+    product_url: WebUrl,
+    checked_at: z.string().datetime(),
+    data_status: z.enum(["verified", "stale", "demo"]),
+    match_type: z.enum(["exact", "similar"]),
+  })
+  .strict();
+export const UnmatchedItem = z
+  .object({
+    client_item_id: z.string(),
+    name: z.string(),
+    reason: z.enum([
+      "NO_MATCH",
+      "INCOMPATIBLE_UNIT",
+      "STORE_LIMIT",
+      "SOURCE_FAILED",
+      "NOTES_REQUIRE_REVIEW",
+    ]),
+  })
+  .strict();
+export const Plan = z
+  .object({
+    total_price_cents: Money,
+    estimated_savings_cents: Money.nullable(),
+    currency: z.literal("MXN"),
+    stores: z.array(
+      z
+        .object({
+          retailer: z.string(),
+          store_name: z.string().nullable(),
+          subtotal_cents: Money,
+          items: z.array(PlanLine),
+        })
+        .strict(),
+    ),
+    unmatched_items: z.array(UnmatchedItem),
+  })
+  .strict();
+export const SearchError = z
+  .object({
+    code: z.string(),
+    message: z.string(),
+    client_item_id: z.string().nullable(),
+    retryable: z.boolean(),
+  })
+  .strict();
+export const SearchResponse = z
+  .object({
+    reply: z.string(),
+    status: z.enum(["complete", "partial", "error"]),
+    draft_items: DraftItems,
+    plan: Plan.nullable(),
+    errors: z.array(SearchError),
+  })
+  .strict();
+export type Item = z.infer<typeof DraftItem>;
+export type SearchInput = z.infer<typeof SearchRequest>;
+export type RawListing = z.infer<typeof ScrapedListing>;
+export type Line = z.infer<typeof PlanLine>;
+export type ShoppingPlan = z.infer<typeof Plan>;
+export type Failure = z.infer<typeof SearchError>;
+export type Response = z.infer<typeof SearchResponse>;
+export type ScrapeQuery = {
+  query: string;
+  postalCode?: string;
+  maxResults?: number;
+};
+export type Offer = { listing: RawListing; status: Line["data_status"] };

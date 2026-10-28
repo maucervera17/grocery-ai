@@ -5,6 +5,7 @@ struct LocationRequestView: View {
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    @StateObject private var locator = PostalCodeLocator()
     @State private var postalCode: String
     @FocusState private var isPostalCodeFocused: Bool
 
@@ -39,14 +40,18 @@ struct LocationRequestView: View {
 
                 SurfaceCard {
                     VStack(alignment: .leading, spacing: AppSpacing.large) {
-                        Button("Usar ubicación de demostración", systemImage: "location.fill") {
-                            postalCode = "06700"
+                        Button(locator.isLoading ? "Buscando código postal…" : "Usar mi ubicación", systemImage: "location.fill") {
+                            locator.request()
                             isPostalCodeFocused = false
                         }
+                        .disabled(locator.isLoading)
                         .buttonStyle(.bordered)
                         .controlSize(.large)
                         .frame(maxWidth: .infinity)
 
+                        if let message = locator.errorMessage {
+                            Text(message).font(.footnote).foregroundStyle(colors.textSecondary)
+                        }
                         HStack {
                             Divider()
                             Text("o ingresa tu código postal")
@@ -86,6 +91,8 @@ struct LocationRequestView: View {
             .padding(AppSpacing.extraLarge)
         }
         .background(colors.backgroundPrimary)
+        .onReceive(locator.$postalCode) { code in if let code { postalCode = code } }
+        .onDisappear { locator.cancel() }
         .navigationTitle("Ubicación")
         .navigationBarTitleDisplayMode(.inline)
     }

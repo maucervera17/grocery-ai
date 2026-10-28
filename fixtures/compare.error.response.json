@@ -1,0 +1,88 @@
+{
+  "reply": "No encontré ofertas comparables para esta lista.",
+  "status": "error",
+  "draft_items": [
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "name": "leche",
+      "quantity": 2,
+      "unit": "L",
+      "notes": null
+    },
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000002",
+      "name": "huevos",
+      "quantity": 12,
+      "unit": "piece",
+      "notes": null
+    },
+    {
+      "client_item_id": "00000000-0000-4000-8000-000000000003",
+      "name": "arroz",
+      "quantity": 1,
+      "unit": "kg",
+      "notes": null
+    }
+  ],
+  "plan": {
+    "total_price_cents": 0,
+    "estimated_savings_cents": null,
+    "currency": "MXN",
+    "stores": [],
+    "unmatched_items": [
+      {
+        "client_item_id": "00000000-0000-4000-8000-000000000001",
+        "name": "leche",
+        "reason": "NO_MATCH"
+      },
+      {
+        "client_item_id": "00000000-0000-4000-8000-000000000002",
+        "name": "huevos",
+        "reason": "NO_MATCH"
+      },
+      {
+        "client_item_id": "00000000-0000-4000-8000-000000000003",
+        "name": "arroz",
+        "reason": "NO_MATCH"
+      }
+    ]
+  },
+  "errors": [
+    {
+      "code": "SOURCES_NOT_CONFIGURED",
+      "message": "Falta la clave de Firecrawl.",
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "retryable": false
+    },
+    {
+      "code": "SOURCES_NOT_CONFIGURED",
+      "message": "Falta la clave de Firecrawl.",
+      "client_item_id": "00000000-0000-4000-8000-000000000002",
+      "retryable": false
+    },
+    {
+      "code": "SOURCES_NOT_CONFIGURED",
+      "message": "Falta la clave de Firecrawl.",
+      "client_item_id": "00000000-0000-4000-8000-000000000003",
+      "retryable": false
+    },
+    {
+      "code": "NO_MATCH",
+      "message": "No se pudo asignar este producto a una oferta comparable.",
+      "client_item_id": "00000000-0000-4000-8000-000000000001",
+      "retryable": false
+    },
+    {
+      "code": "NO_MATCH",
+      "message": "No se pudo asignar este producto a una oferta comparable.",
+      "client_item_id": "00000000-0000-4000-8000-000000000002",
+      "retryable": false
+    },
+    {
+      "code": "NO_MATCH",
+      "message": "No se pudo asignar este producto a una oferta comparable.",
+      "client_item_id": "00000000-0000-4000-8000-000000000003",
+      "retryable": false
+    }
+  ]
+}

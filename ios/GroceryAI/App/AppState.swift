@@ -8,7 +8,7 @@ final class AppState {
     var selectedTab: AppTab = .agent
     var draft = ShoppingDraft()
     var messages = MockFixtures.welcomeMessages
-    var orders: [CompletedOrder] = MockFixtures.previousOrders
+    var orders: [CompletedOrder] = []
     var postalCode = ""
     var loadingState: ChatLoadingState = .idle
     var comparisonPlan: ComparisonPlan?
@@ -19,8 +19,8 @@ final class AppState {
     private var record: LocalAppStateRecord?
 
     init(
-        agentService: any AgentServicing = MockAgentService(),
-        comparisonService: any ComparisonServicing = MockComparisonService()
+        agentService: any AgentServicing = GroceryAPIClient(),
+        comparisonService: any ComparisonServicing = GroceryAPIClient()
     ) {
         self.agentService = agentService
         self.comparisonService = comparisonService
@@ -72,6 +72,7 @@ final class AppState {
                 message: trimmed,
                 currentItems: draft.items
             )
+            comparisonPlan = nil
             draft.replaceItems(with: response.draftItems)
             messages.append(ChatMessage(role: .agent, text: response.reply, kind: .draftUpdate))
             loadingState = .idle
@@ -86,12 +87,14 @@ final class AppState {
     func updateProduct(_ product: ProductRequest) {
         guard let index = draft.items.firstIndex(where: { $0.id == product.id }) else { return }
         draft.items[index] = product
+        comparisonPlan = nil
         draft.updatedAt = .now
         persist()
     }
 
     func removeProducts(at offsets: IndexSet) {
         draft.items.remove(atOffsets: offsets)
+        comparisonPlan = nil
         draft.updatedAt = .now
         persist()
     }
@@ -109,11 +112,13 @@ final class AppState {
                 notes: product.notes
             ))
         }
+        comparisonPlan = nil
         draft.updatedAt = .now
         persist()
     }
 
     func repeatOrder(_ order: CompletedOrder) {
+        comparisonPlan = nil
         draft.replaceItems(with: order.requestedItems.map {
             ProductRequest(name: $0.name, quantity: $0.quantity, unit: $0.unit, notes: $0.notes)
         })
@@ -127,10 +132,11 @@ final class AppState {
     }
 
     func compare(postalCode: String) async {
+        guard loadingState == .idle else { return }
         self.postalCode = postalCode
+        comparisonPlan = nil
         loadingState = .comparing
         do {
-            try await Task.sleep(for: .milliseconds(900))
             comparisonPlan = try await comparisonService.compare(
                 items: draft.items,
                 postalCode: postalCode
@@ -143,7 +149,7 @@ final class AppState {
     }
 
     func completeComparison() {
-        guard let comparisonPlan else { return }
+        guard let comparisonPlan, comparisonPlan.responseStatus != .partial, comparisonPlan.responseStatus != .error else { return }
         orders.insert(CompletedOrder(requestedItems: draft.items, plan: comparisonPlan), at: 0)
         messages.append(ChatMessage(
             role: .agent,

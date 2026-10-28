@@ -107,6 +107,8 @@ struct UnmatchedItem: Identifiable, Codable, Hashable, Sendable {
 }
 
 struct ComparisonPlan: Identifiable, Codable, Hashable, Sendable {
+    var responseStatus: AgentOperationStatus? = nil
+    var warnings: [String]? = nil
     var id: UUID
     var totalPriceCents: Int
     var estimatedSavingsCents: Int?

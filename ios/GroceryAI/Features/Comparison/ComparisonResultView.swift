@@ -18,6 +18,9 @@ struct ComparisonResultView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: AppSpacing.extraLarge) {
                 ComparisonSummaryCard(plan: plan)
+                ForEach(Array((plan.warnings ?? []).enumerated()), id: \.offset) { _, warning in
+                    Text(warning).font(.footnote).foregroundStyle(colors.textSecondary)
+                }
 
                 VStack(alignment: .leading, spacing: AppSpacing.medium) {
                     Text("Plan por supermercado")
@@ -36,8 +39,8 @@ struct ComparisonResultView: View {
                     .font(.footnote)
                     .foregroundStyle(colors.textSecondary)
 
-                PrimaryButton("Guardar y terminar", systemImage: "checkmark") {
-                    onDone()
+                if plan.responseStatus != .partial && plan.responseStatus != .error {
+                    PrimaryButton("Guardar y terminar", systemImage: "checkmark") { onDone() }
                 }
             }
             .padding(AppSpacing.large)

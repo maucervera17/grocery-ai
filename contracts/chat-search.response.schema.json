@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "reply": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["complete", "partial", "error"]
+    },
+    "draft_items": {
+      "maxItems": 20,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "client_item_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "quantity": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 100000,
+            "multipleOf": 0.001
+          },
+          "unit": {
+            "type": "string",
+            "enum": ["g", "kg", "ml", "L", "piece", "package", "dozen"]
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["client_item_id", "name", "quantity", "unit", "notes"],
+        "additionalProperties": false
+      }
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "total_price_cents": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "estimated_savings_cents": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "currency": {
+              "type": "string",
+              "const": "MXN"
+            },
+            "stores": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "retailer": {
+                    "type": "string"
+                  },
+                  "store_name": {
+                    "type": ["string", "null"]
+                  },
+                  "subtotal_cents": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "client_item_id": {
+                          "type": "string"
+                        },
+                        "listing_id": {
+                          "type": "string"
+                        },
+                        "product_name": {
+                          "type": "string"
+                        },
+                        "brand": {
+                          "type": ["string", "null"]
+                        },
+                        "requested_quantity": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "maximum": 100000,
+                          "multipleOf": 0.001
+                        },
+                        "requested_unit": {
+                          "type": "string",
+                          "enum": [
+                            "g",
+                            "kg",
+                            "ml",
+                            "L",
+                            "piece",
+                            "package",
+                            "dozen"
+                          ]
+                        },
+                        "package_quantity": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "maximum": 100000,
+                          "multipleOf": 0.001
+                        },
+                        "package_unit": {
+                          "type": "string",
+                          "enum": [
+                            "g",
+                            "kg",
+                            "ml",
+                            "L",
+                            "piece",
+                            "package",
+                            "dozen"
+                          ]
+                        },
+                        "package_count": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "price_cents": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "regular_price_cents": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "line_total_cents": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "unit_price_cents_per_100": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "product_url": {
+                          "type": "string",
+                          "pattern": "^https?:\\/\\/"
+                        },
+                        "checked_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "data_status": {
+                          "type": "string",
+                          "enum": ["verified", "stale", "demo"]
+                        },
+                        "match_type": {
+                          "type": "string",
+                          "enum": ["exact", "similar"]
+                        }
+                      },
+                      "required": [
+                        "client_item_id",
+                        "listing_id",
+                        "product_name",
+                        "brand",
+                        "requested_quantity",
+                        "requested_unit",
+                        "package_quantity",
+                        "package_unit",
+                        "package_count",
+                        "price_cents",
+                        "regular_price_cents",
+                        "line_total_cents",
+                        "unit_price_cents_per_100",
+                        "product_url",
+                        "checked_at",
+                        "data_status",
+                        "match_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "retailer",
+                  "store_name",
+                  "subtotal_cents",
+                  "items"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "unmatched_items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "client_item_id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "enum": [
+                      "NO_MATCH",
+                      "INCOMPATIBLE_UNIT",
+                      "STORE_LIMIT",
+                      "SOURCE_FAILED",
+                      "NOTES_REQUIRE_REVIEW"
+                    ]
+                  }
+                },
+                "required": ["client_item_id", "name", "reason"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "total_price_cents",
+            "estimated_savings_cents",
+            "currency",
+            "stores",
+            "unmatched_items"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "client_item_id": {
+            "type": ["string", "null"]
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "required": ["code", "message", "client_item_id", "retryable"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["reply", "status", "draft_items", "plan", "errors"],
+  "additionalProperties": false
+}
