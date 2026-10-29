@@ -34,7 +34,54 @@ class SourceFailure extends Error {
     super(code);
   }
 }
-const nextSlot = new Map<string, number>();
+// Firecrawl's free tier allows 10 requests/minute per endpoint and two
+// concurrent browsers. Let a small search finish in parallel, then wait only
+// when the rolling limit is actually exhausted.
+export class RequestWindow {
+  private buckets = new Map<string, { starts: number[]; active: number }>();
+  constructor(
+    private maxRequests = 10,
+    private windowMs = 60_000,
+    private maxConcurrent = 2,
+  ) {}
+  async run<T>(
+    path: string,
+    task: () => Promise<T>,
+    signal: AbortSignal,
+  ): Promise<T> {
+    let bucket = this.buckets.get(path);
+    if (!bucket) {
+      bucket = { starts: [], active: 0 };
+      this.buckets.set(path, bucket);
+    }
+    while (true) {
+      signal.throwIfAborted();
+      const now = Date.now();
+      bucket.starts = bucket.starts.filter(
+        (start) => now - start < this.windowMs,
+      );
+      if (
+        bucket.active < this.maxConcurrent &&
+        bucket.starts.length < this.maxRequests
+      ) {
+        bucket.starts.push(now);
+        bucket.active++;
+        break;
+      }
+      const wait =
+        bucket.active >= this.maxConcurrent
+          ? 25
+          : Math.max(1, bucket.starts[0] + this.windowMs - now);
+      await delay(wait, undefined, { signal });
+    }
+    try {
+      return await task();
+    } finally {
+      bucket.active--;
+    }
+  }
+}
+const requestWindow = new RequestWindow();
 export class FirecrawlScraper implements Scraper {
   constructor(
     private key: string,
@@ -47,25 +94,24 @@ export class FirecrawlScraper implements Scraper {
   ): Promise<unknown> {
     for (let attempt = 0; attempt < 2; attempt++) {
       signal.throwIfAborted();
-      if (this.request === fetch) {
-        const start = Math.max(Date.now(), nextSlot.get(path) ?? 0);
-        nextSlot.set(path, start + 6500);
-        if (start > Date.now())
-          await delay(start - Date.now(), undefined, { signal });
-      }
-      const response = await bounded(
-        () =>
-          this.request("https://api.firecrawl.dev/v2/" + path, {
-            method: "POST",
-            signal,
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${this.key}`,
-            },
-            body: JSON.stringify(payload),
-          }),
-        signal,
-      );
+      const request = () =>
+        bounded(
+          () =>
+            this.request("https://api.firecrawl.dev/v2/" + path, {
+              method: "POST",
+              signal,
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${this.key}`,
+              },
+              body: JSON.stringify(payload),
+            }),
+          signal,
+        );
+      const response =
+        this.request === fetch
+          ? await requestWindow.run(path, request, signal)
+          : await request();
       const transient = response.status >= 500;
       const hasPostalActions =
         typeof payload === "object" && payload !== null && "actions" in payload;
@@ -195,8 +241,9 @@ export class FirecrawlScraper implements Scraper {
             .map((r) => productUrl(r.url, source))
             .filter((s): s is string => !!s),
         ),
-      ].slice(0, Math.min(query.maxResults ?? 2, 2));
-      // Sequential per source: six simultaneous requests maximum across two basket workers.
+      ].slice(0, 2);
+      // Try a second search hit only if the fast path did not produce a
+      // matching listing. Basket comparisons can still collect two options.
       for (const url of urls) {
         try {
           const page = (await this.call(
@@ -225,8 +272,11 @@ export class FirecrawlScraper implements Scraper {
               : {}),
             ...(locationEvidence ? { locationEvidence } : {}),
           };
-          if (matches(listing.productName, query.query))
+          if (matches(listing.productName, query.query)) {
             batch.listings.push(listing);
+            if (batch.listings.length >= Math.min(query.maxResults ?? 2, 2))
+              break;
+          }
         } catch (error) {
           failed(error);
         }

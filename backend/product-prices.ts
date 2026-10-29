@@ -72,7 +72,9 @@ export async function productPrices(
     };
   const search: ScrapeQuery = {
     query,
-    maxResults: 2,
+    // One verified product page per store gives a useful first comparison
+    // without waiting for six additional product pages.
+    maxResults: 1,
     ...(local
       ? {
           postalCode: input.location!.postal_code,
@@ -108,20 +110,21 @@ export async function productPrices(
       } catch {
         errors.push(failure("CACHE_FAILED", "No pude consultar la caché."));
       }
-    // Reuse only a short-lived published observation. Never relabel it as postal evidence.
+    // Published prices are explicitly labelled as such; keep them available
+    // briefly so repeat searches avoid another full crawl. Local availability
+    // still requires fresh postal evidence through inScope().
     rows = rows.filter(
       (r) =>
         Date.now() - Date.parse(r.checkedAt) >= 0 &&
-        Date.now() - Date.parse(r.checkedAt) < 300000 &&
+        Date.now() - Date.parse(r.checkedAt) < (local ? 300000 : 900000) &&
         inScope(r) &&
         (!/\bpor\s+(?:kg|kilo(?:gramo)?)\b/i.test(r.productName) ||
           (r.unit === "kg" && r.quantity === 1)),
     );
     if (
-      (new Set(
+      new Set(
         rows.filter((r) => matches(r.productName, query)).map((r) => r.source),
-      ).size < 3 ||
-        rows.some((r) => matches(r.productName, query) && !r.imageUrl)) &&
+      ).size < (local && search.fulfillment === "pickup" ? 1 : 3) &&
       options.scraper
     ) {
       try {
@@ -218,7 +221,7 @@ export async function productPrices(
     ? `${prefix}${winner.listing.retailer} tiene el menor precio por 100 ${winner.basis} entre las ${offers.length} opciones consultadas: ${winner.listing.productName}, ${money(winner.listing.priceCents)} por presentación (${money(winner.unit_price_cents_per_100)} / 100 ${winner.basis}). Comparamos presentaciones y marcas distintas. ${local ? `La fuente confirmó ${search.fulfillment === "pickup" ? "recogida" : "entrega"} para CP ${search.postalCode} al consultar; está sujeto a cambios.` : `Son precios publicados; no confirman existencias ni entrega${input.location?.postal_code ? ` para CP ${input.location.postal_code}` : " en tu ubicación"}.`}`
     : offers.length
       ? new Set(offers.map((o) => o.listing.source)).size < 2
-        ? `Solo obtuve precios de una tienda${local ? ` para CP ${search.postalCode}` : ""}; todavía no puedo determinar cuál tienda tiene el mejor precio.`
+        ? `Encontré ${offers[0].listing.productName} en ${offers[0].listing.retailer} por ${money(offers[0].listing.priceCents)}${local ? ` para CP ${search.postalCode}` : " (precio publicado; disponibilidad local sin confirmar)"}. Esa opción aparece en la app. Aún faltan precios comparables de otras tiendas, así que no puedo afirmar cuál es la más barata.`
         : unitWinners.length
           ? unitWinners
               .map(

@@ -12,7 +12,7 @@ import {
   type RawListing,
   type Offer,
 } from "../contracts/schema.js";
-import { FirecrawlScraper } from "../scrapers/firecrawl.js";
+import { FirecrawlScraper, RequestWindow } from "../scrapers/firecrawl.js";
 import {
   RETAILERS,
   parseProduct,
@@ -479,6 +479,60 @@ test("Firecrawl searches then scrapes only allowed product pages; snippets are n
   assert.equal(calls, RETAILERS.length * 2);
   assert.equal(result.listings.length, RETAILERS.length);
   assert.equal(result.errors.length, 0);
+});
+test("Firecrawl window permits parallel starts and delays only after its quota", async () => {
+  const window = new RequestWindow(2, 60, 2);
+  const signal = AbortSignal.timeout(1000);
+  let active = 0;
+  let peak = 0;
+  const started: number[] = [];
+  const task = () =>
+    window.run(
+      "search",
+      async () => {
+        started.push(Date.now());
+        peak = Math.max(peak, ++active);
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        active--;
+      },
+      signal,
+    );
+  await Promise.all([task(), task(), task()]);
+  assert.equal(peak, 2);
+  assert.ok(started[1] - started[0] < 30);
+  assert.ok(started[2] - started[0] >= 55);
+});
+test("fast product search uses one valid page per store and falls back if the first is invalid", async () => {
+  const attempts: string[] = [];
+  const fetcher: typeof fetch = async (url, init) => {
+    const payload = JSON.parse(init!.body as string);
+    if (String(url).endsWith("/search")) {
+      const i = RETAILERS.findIndex(
+        (r) => r.host === payload.includeDomains[0],
+      );
+      const wrong =
+        i === 0
+          ? new URL("/wrong/p", urls[i]).href
+          : new URL("/ip/wrong/123456789", urls[i]).href;
+      return Response.json({
+        success: true,
+        data: { web: [{ url: wrong }, { url: urls[i] }] },
+      });
+    }
+    attempts.push(payload.url);
+    return Response.json({
+      success: true,
+      data: payload.url.includes("/wrong/")
+        ? { markdown: "No product data", metadata: { sourceURL: payload.url } }
+        : pages[urls.indexOf(payload.url)],
+    });
+  };
+  const result = await new FirecrawlScraper("test", fetcher).scrape(
+    { query: "leche", maxResults: 1 },
+    AbortSignal.timeout(1000),
+  );
+  assert.equal(result.listings.length, RETAILERS.length);
+  assert.equal(attempts.length, RETAILERS.length * 2);
 });
 test("Firecrawl does not retry auth errors; retries temporary errors once per source", async () => {
   let count = 0;

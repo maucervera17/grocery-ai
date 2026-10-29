@@ -122,6 +122,48 @@ test("no source data never becomes a fabricated winner", async () => {
   assert.equal(result.comparison!.winner_url, null);
   assert.equal(result.comparison!.offers.length, 0);
 });
+test("one-store result acknowledges the visible offer without claiming a comparison winner", async () => {
+  const result = await createSearch({
+    mode: "live",
+    fixtures: [],
+    agent,
+    scraper: {
+      scrape: async () => ({
+        listings: [listing("A", 6400, 400, "g")],
+        errors: [],
+      }),
+    },
+  })(question);
+  assert.equal(result.comparison!.offers.length, 1);
+  assert.equal(result.comparison!.winner_url, null);
+  assert.match(result.reply, /Encontré Queso Oaxaca 400g en A por \$64\.00/);
+  assert.match(result.reply, /Esa opción aparece en la app/);
+});
+test("recent published offers from all stores avoid another crawl even without images", async () => {
+  let crawls = 0;
+  const result = await createSearch({
+    mode: "live",
+    fixtures: [],
+    agent,
+    repository: {
+      search: async () =>
+        ["chedraui", "walmart", "bodega-aurrera"].map((source, index) => ({
+          ...listing(source, 6400 + index * 100, 400, "g"),
+          productUrl: `https://www.walmart.com.mx/ip/queso/${index}`,
+          checkedAt: new Date(Date.now() - 600_000).toISOString(),
+        })),
+      upsert: async () => {},
+    },
+    scraper: {
+      scrape: async () => {
+        crawls++;
+        return { listings: [], errors: [] };
+      },
+    },
+  })(question);
+  assert.equal(crawls, 0);
+  assert.equal(result.comparison!.offers.length, 3);
+});
 test("clarification preserves the draft and does not scrape", async () => {
   const result = await createSearch({
     mode: "live",
