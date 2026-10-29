@@ -76,6 +76,7 @@ export const SearchRequest = z.discriminatedUnion("action", [
   z
     .object({
       action: z.literal("compare"),
+      price_scope: z.enum(["published", "local"]).optional(),
       message: z.null().optional(),
       items: DraftItems,
       location,

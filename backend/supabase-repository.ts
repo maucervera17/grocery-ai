@@ -60,7 +60,9 @@ export class SupabaseListingRepository implements ListingRepository {
         {
           p_query: tokens(query.query).join(" "),
           p_postal_code: this.demo ? "" : (query.postalCode ?? ""),
-          p_limit: Math.min(query.maxResults ?? 20, 100),
+          // maxResults limits new pages scraped per retailer. The cache must
+          // still return enough rows to cover several retailers and variants.
+          p_limit: 50,
           p_demo: this.demo,
         },
         signal,

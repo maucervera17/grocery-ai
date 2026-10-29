@@ -36,13 +36,19 @@ test("Supabase adapter validates output and isolates demo and postal scopes", as
   assert.equal(calls[0].body.p_query, "huevo");
   assert.equal(calls[0].body.p_postal_code, "06700");
   assert.equal(calls[0].body.p_demo, false);
+  assert.ok(calls[0].body.p_limit >= 3);
+  await repo.search(
+    { query: "huevos", maxResults: 1 },
+    AbortSignal.timeout(1000),
+  );
+  assert.ok(calls[1].body.p_limit >= 3);
   await repo.upsert(
     rows,
     { query: "leche", postalCode: "12345" },
     AbortSignal.timeout(1000),
   );
-  assert.equal(calls[1].body.p_postal_code, "12345");
-  assert.deepEqual(calls[1].body.p_listings, rows);
+  assert.equal(calls[2].body.p_postal_code, "12345");
+  assert.deepEqual(calls[2].body.p_listings, rows);
   const bad = new SupabaseListingRepository(
     "https://example.com",
     "test",

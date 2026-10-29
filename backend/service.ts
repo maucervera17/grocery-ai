@@ -97,6 +97,7 @@ export function createSearch(options: Options) {
       }
     }
     const offers = new Map<string, Offer[]>();
+    const published = input.price_scope === "published";
     const fresh = (r: RawListing) => {
       const age = Date.now() - Date.parse(r.checkedAt);
       return age >= 0 && age < (options.ttlMs ?? 3600000);
@@ -108,10 +109,14 @@ export function createSearch(options: Options) {
         const item = input.items[cursor++];
         const query: ScrapeQuery = {
           query: item.name,
-          postalCode: input.location?.postal_code,
-          maxResults: 10,
-          fulfillment: input.location?.fulfillment ?? "delivery",
-          pickupStore: input.location?.pickup_store,
+          maxResults: published ? 1 : 10,
+          ...(!published && input.location?.postal_code
+            ? {
+                postalCode: input.location.postal_code,
+                fulfillment: input.location.fulfillment ?? "delivery",
+                pickupStore: input.location.pickup_store,
+              }
+            : {}),
         };
         if (options.mode === "demo") {
           let rows = options.fixtures;
@@ -190,7 +195,8 @@ export function createSearch(options: Options) {
               ),
             );
           }
-        // Refresh unless current cache covers every configured retailer.
+        // A published basket can return a useful two-store comparison from
+        // recent observations. Postal verification still asks every retailer.
         const coverage = new Set(
           cached
             .filter(fresh)
@@ -199,8 +205,12 @@ export function createSearch(options: Options) {
         );
         if (
           coverage.size <
-            (query.fulfillment === "pickup" ? 1 : RETAILERS.length) ||
-          cached.some((r) => !fresh(r))
+            (published
+              ? 2
+              : query.fulfillment === "pickup"
+                ? 1
+                : RETAILERS.length) ||
+          (!published && cached.some((r) => !fresh(r)))
         ) {
           if (!options.scraper)
             errors.push(
@@ -313,7 +323,7 @@ export function createSearch(options: Options) {
         (input.items.length === 0
           ? "Agrega productos al borrador."
           : plan.stores.length
-            ? `Comparación de ${plan.stores.reduce((n, s) => n + s.items.length, 0)} productos en ${plan.stores.length} tienda(s), entre las ofertas disponibles. Sustitutos marcados como similares. No incluye transporte ni entrega.`
+            ? `Comparación de ${plan.stores.reduce((n, s) => n + s.items.length, 0)} productos en ${plan.stores.length} tienda(s), entre las ofertas disponibles. ${published ? "Son precios publicados; no confirman existencias ni entrega en tu código postal. " : ""}Sustitutos marcados como similares. No incluye transporte ni entrega.`
             : "No encontré ofertas comparables para esta lista."),
       status,
       draft_items: input.items,

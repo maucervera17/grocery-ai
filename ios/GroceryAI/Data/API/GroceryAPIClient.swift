@@ -88,6 +88,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
     }
     private struct Request: Encodable {
         let action: String
+        let price_scope: String?
         let message: String?
         let items: [ItemBody]
         let location: Location?
@@ -217,14 +218,17 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         return result
     }
     func updateDraft(message: String, currentItems: [ProductRequest]) async throws -> AgentResponse {
-        let r = try await call(Request(action:"update_draft",message:message,items:currentItems.map(ItemBody.init),location:nil,preferences:nil))
+        let r = try await call(Request(action:"update_draft",price_scope:nil,message:message,items:currentItems.map(ItemBody.init),location:nil,preferences:nil))
         return AgentResponse(reply:r.reply,status:r.status,draftItems:r.draft_items,errors:r.errors.map(\.model))
     }
     func compare(items: [ProductRequest], postalCode: String) async throws -> ComparisonPlan {
         ComparisonDiagnostics.event(
             "Comparison started: items=\(items.count), postalCodeLength=\(postalCode.count)"
         )
-        let r = try await call(Request(action:"compare",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2)))
+        // Retailer pages frequently cannot confirm local stock by postal code.
+        // Use source-backed published prices for the basket and keep the CP so
+        // the server can clearly mark local availability as unverified.
+        let r = try await call(Request(action:"compare",price_scope:"published",message:nil,items:items.map(ItemBody.init),location:postalCode.isEmpty ? nil:Location(postal_code:postalCode),preferences:Preferences(max_stores:2)))
         guard let plan = r.plan else {
             ComparisonDiagnostics.error(
                 "Comparison response did not contain a plan: status=\(r.status.rawValue), issues=\(r.errors.count)"

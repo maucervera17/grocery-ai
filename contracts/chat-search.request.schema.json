@@ -212,6 +212,10 @@
           "type": "string",
           "const": "compare"
         },
+        "price_scope": {
+          "type": "string",
+          "enum": ["published", "local"]
+        },
         "message": {
           "type": "null"
         },

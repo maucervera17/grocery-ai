@@ -100,6 +100,75 @@ test("HTTP acceptance: conversational draft -> three products -> two-store plan"
     await app.close();
   }
 });
+test("iOS basket can compare published egg prices without claiming postal availability", async () => {
+  const checkedAt = new Date().toISOString();
+  let requests = 0;
+  const search = createSearch({
+    mode: "live",
+    fixtures: [],
+    scraper: {
+      scrape: async (query) => {
+        requests++;
+        assert.equal(query.postalCode, undefined);
+        assert.equal(query.maxResults, 1);
+        return {
+          listings: fixtures
+            .filter((row) => /huevos/i.test(row.productName))
+            .map((row) => ({ ...row, checkedAt })),
+          errors: [],
+        };
+      },
+    },
+  });
+  const response = SearchResponse.parse(
+    await search(
+      SearchRequest.parse({
+        action: "compare",
+        price_scope: "published",
+        items: [basket[1]],
+        location: { postal_code: "52997" },
+      }),
+    ),
+  );
+  assert.equal(requests, 1);
+  assert.equal(response.plan!.unmatched_items.length, 0);
+  assert.equal(response.plan!.stores.length, 1);
+  assert.equal(
+    response.errors.some((issue) => issue.code === "LOCATION_UNVERIFIED"),
+    true,
+  );
+  assert.match(response.reply, /precios publicados; no confirman existencias/);
+});
+test("published basket returns recent two-store cache without waiting for Firecrawl", async () => {
+  const search = createSearch({
+    mode: "live",
+    fixtures: [],
+    repository: {
+      search: async () =>
+        fixtures
+          .filter((row) => /huevos/i.test(row.productName))
+          .map((row) => ({ ...row, checkedAt: new Date().toISOString() })),
+      upsert: async () => {},
+    },
+    scraper: {
+      scrape: async () => {
+        throw Error("cache should be enough");
+      },
+    },
+  });
+  const response = await search({
+    action: "compare",
+    price_scope: "published",
+    items: [basket[1]],
+    location: { postal_code: "52997" },
+  });
+  assert.equal(response.plan!.unmatched_items.length, 0);
+  assert.equal(response.plan!.stores.length, 1);
+  assert.equal(
+    response.errors.some((issue) => issue.code === "REFRESH_FAILED"),
+    false,
+  );
+});
 test("draft operations preserve IDs, notes and unrelated items without mutation", async () => {
   const original = structuredClone(basket),
     agent = new DemoDraftAgent();
