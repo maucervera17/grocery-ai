@@ -545,6 +545,115 @@ dialog::backdrop {
   border-color: var(--brand);
   background: var(--brand-soft);
 }
+
+/* Composer: one calm focus state, with clear hover targets for each action. */
+#chat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+#chat:hover { border-color: var(--brand-border); }
+#chat:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+#chat input:focus-visible { outline: none; }
+#chat #add,
+#chat #voice-open,
+#chat .send {
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+#chat #add,
+#chat #voice-open { background: var(--surface-raised); border-color: transparent; }
+#chat #add:hover,
+#chat #voice-open:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+  transform: translateY(-1px);
+}
+#chat .send:hover {
+  background: #0054d6;
+  transform: translateY(-1px);
+}
+#chat #add:active,
+#chat #voice-open:active,
+#chat .send:active { transform: scale(.96); }
+#chat button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Secondary comparison controls read as one compact set of disclosures. */
+.week-notes,
+.weekly-guidance,
+.weekly-edit,
+.weekly-preferences {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  background: var(--surface);
+  overflow: hidden;
+}
+.week-notes,
+.weekly-guidance,
+.weekly-preferences { margin: var(--space-small) 0; }
+.weekly-edit { margin-top: var(--space-small); }
+.week-notes > summary,
+.weekly-guidance > summary,
+.weekly-edit > summary,
+.weekly-preferences > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  min-height: 44px;
+  margin: 0;
+  padding: 11px 14px;
+  list-style: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.week-notes > summary::-webkit-details-marker,
+.weekly-guidance > summary::-webkit-details-marker,
+.weekly-edit > summary::-webkit-details-marker,
+.weekly-preferences > summary::-webkit-details-marker { display: none; }
+.week-notes > summary:hover,
+.weekly-guidance > summary:hover,
+.weekly-edit > summary:hover,
+.weekly-preferences > summary:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.week-notes > summary::after,
+.weekly-guidance > summary::after,
+.weekly-edit > summary::after,
+.weekly-preferences > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: none;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+.week-notes[open] > summary::after,
+.weekly-guidance[open] > summary::after,
+.weekly-edit[open] > summary::after,
+.weekly-preferences[open] > summary::after {
+  transform: rotate(225deg) translateY(-2px);
+}
+.week-notes[open] > summary,
+.weekly-guidance[open] > summary,
+.weekly-edit[open] > summary,
+.weekly-preferences[open] > summary { border-bottom: 1px solid var(--line); }
+.week-notes > :not(summary),
+.weekly-guidance > :not(summary),
+.weekly-preferences > :not(summary) { margin-left: 14px; margin-right: 14px; }
+.weekly-edit > summary span { margin-left: auto; color: var(--brand); }
+.weekly-edit > summary::after { margin-left: 3px; }
 .week-handoff-head {
   display: flex;
   justify-content: space-between;
