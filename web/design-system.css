@@ -1,11 +1,15 @@
 /* Web counterpart of ios/GroceryAI/Core/DesignSystem/{BarasuPalette,AppTheme,
    AppSpacing,AppRadius,AppControlSize}.swift. Loaded after the legacy styles. */
 :root {
+  color-scheme: light dark;
+  --background-primary: #ffffff;
+  --background-secondary: #f9fafb;
+  --cell-background: #f9fafb;
   --brand: #0066ff;
-  --brand-soft: #eaf1ff;
+  --brand-soft: #0066ff1a;
   --brand-border: #b8d0ff;
   --ink: #0b2220;
-  --muted: #6d7a79;
+  --muted: #0b2220a3;
   --line: #e5e7eb;
   --surface: #ffffff;
   --surface-raised: #f9fafb;
@@ -16,8 +20,10 @@
   --radius-medium: 12px;
   --radius-large: 18px;
   --space-small: 8px;
+  --space-extra-small: 4px;
   --space-medium: 12px;
   --space-large: 16px;
+  --space-extra-large: 24px;
   --space-section: 32px;
   /* Existing components use these names. */
   --green: var(--brand);
@@ -55,7 +61,7 @@ a,
 main {
   background: var(--surface);
   border-color: var(--line);
-  box-shadow: 0 16px 48px #0b22200b;
+  box-shadow: none;
 }
 header {
   background: var(--surface);
@@ -88,6 +94,34 @@ header {
   color: var(--brand);
   border-color: var(--brand-border);
 }
+.spark,
+.bubble.assistant::before,
+.voice-orb {
+  background: #000 url('/brand-dark.svg') center / 29px auto no-repeat;
+  color: transparent;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  box-shadow: none;
+  font-size: 0;
+}
+.welcome .spark {
+  margin: 0 auto 24px;
+  width: 44px;
+  height: 44px;
+  background: #000 url('/brand-dark.svg') center / 29px auto no-repeat;
+  color: transparent;
+}
+.bubble.assistant::before {
+  content: '';
+  top: 12px;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  background-size: 20px auto;
+}
+.voice-orb { flex: 0 0 44px; }
 .sample small {
   color: var(--muted);
 }
@@ -127,7 +161,7 @@ header {
 form,
 #chat {
   border-color: var(--line);
-  box-shadow: 0 3px 12px #0b22200b;
+  box-shadow: none;
 }
 form:focus-within,
 #chat:focus-within {
@@ -235,7 +269,7 @@ form input,
 .weekly-item-emoji,
 .weekly-photo-fallback,
 .menu-row {
-  background: var(--surface-raised);
+  background: var(--cell-background);
   border-color: var(--line);
   border-radius: var(--radius-medium);
 }
@@ -373,8 +407,8 @@ form input,
   color: var(--muted);
 }
 .voice-orb {
-  background: var(--brand);
-  box-shadow: 0 0 0 5px var(--brand-soft);
+  background: #000 url('/brand-dark.svg') center / 29px auto no-repeat;
+  box-shadow: none;
 }
 #voice-panel[data-state="muted"] .voice-orb {
   background: var(--muted);
@@ -417,4 +451,91 @@ dialog::backdrop {
   main {
     box-shadow: none;
   }
+}
+
+/* Match SwiftUI's semantic surfaces and floating controls in both appearances. */
+.workspace { background: var(--background-secondary); }
+.welcome p, .disclaimer, .search-hint { color: var(--muted); }
+.draft-card, .history-card, .weekly-row, .savings-entry, .week-plan-card,
+.week-option, .result, .savings-hero, #voice-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.draft-card, .history-card, .result, .savings-hero { border-radius: var(--radius-large); }
+.draft-card { padding: var(--space-large); }
+.product { padding: var(--space-medium); }
+.product img, .weekly-offer img, .week-buy-line img {
+  background: var(--cell-background);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-medium);
+  object-fit: cover;
+}
+.bubble.user { background: var(--brand-soft); }
+.bubble.assistant { background: var(--surface); border: 1px solid var(--line); }
+.bottom-nav { background: var(--surface); }
+.bottom-nav .nav.active { color: var(--brand); background: var(--brand-soft); }
+#chat { min-height: 52px; background: var(--surface); }
+#chat #add, #voice-open, .send { min-width: 44px; min-height: 44px; }
+.send { background: var(--brand); color: #fff; }
+.weekly-option.recommended, .week-plan-card.recommended,
+.weekly-offer.chosen { border-color: var(--brand); background: var(--brand-soft); }
+.weekly-suggestions button, .weekly-carousel-tabs button[aria-selected="true"] {
+  color: var(--brand); border-color: var(--brand-border); background: var(--brand-soft);
+}
+.savings-hero:not(.negative) { background: var(--brand-soft); border-color: var(--brand-border); }
+.week-basket { background: transparent; border: 0; }
+.notice, .weekly-warning { background: #facc1524; border-color: #facc1570; color: #72560a; }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-primary: #000;
+    --background-secondary: #1c1c1e;
+    --cell-background: #1c1c1e;
+    --surface: #000;
+    --surface-raised: #2c2c2e;
+    --brand-soft: #0066ff2e;
+    --brand-border: #0066ff80;
+    --ink: #f5f5f7;
+    --muted: #ebebf599;
+    --line: #54545899;
+    --error: #ff7a7a;
+  }
+  body, .workspace { background: var(--background-primary); color: var(--ink); }
+  main, header, footer, dialog, .bottom-nav { background: var(--surface); color: var(--ink); }
+  footer { background: linear-gradient(transparent, #000 18%); }
+  .welcome .spark, .bubble.assistant::before, .voice-orb {
+    background-color: #fff;
+    background-image: url('/brand-light.svg');
+  }
+  .bubble.user { background: var(--brand-soft); }
+  .bubble.assistant, .draft-card, .history-card, .weekly-row, .savings-entry,
+  .week-plan-card, .week-option, .result, .savings-hero, #voice-panel,
+  .weekly-preferences, .menu-row, .product, .week-store-list,
+  .savings-metrics > div, .savings-method, .savings-empty {
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .product, .menu-row, .weekly-item-emoji, .weekly-photo-fallback,
+  .savings-entry.prepared { background: var(--cell-background); }
+  .primary, .send, #voice-start { background: var(--brand); color: #fff; }
+  .secondary, .outline, .field input, .edit-row input, .edit-row select,
+  .weekly-query input, .weekly-fields input, .weekly-preferences input,
+  .weekly-preferences select { background: var(--surface-raised); color: var(--ink); border-color: var(--line); }
+  #chat, #chat input, form input { background: var(--surface); color: var(--ink); }
+  .week-option.recommended, .week-plan-card.recommended,
+  .weekly-offer.chosen, .savings-hero:not(.negative) { background: var(--brand-soft); }
+  .notice, .weekly-warning { background: #facc1524; color: #facc15; }
+  .savings-hero.negative { background: #b81f2124; }
+  dialog::backdrop { background: #000a; }
+}
+@media (max-width: 680px) {
+  .workspace { min-height: 100dvh; margin: 0; }
+  main { height: 100dvh; border: 0; border-radius: 0; }
+  #agent-view, #history-view { padding-bottom: 24px; }
+  #composer { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; }
 }

@@ -77,6 +77,8 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
     ["/", "index.html", "text/html; charset=utf-8"],
     ["/style.css", "style.css", "text/css"],
     ["/design-system.css", "design-system.css", "text/css"],
+    ["/brand-light.svg", "brand-light.svg", "image/svg+xml"],
+    ["/brand-dark.svg", "brand-dark.svg", "image/svg+xml"],
     ["/app.js", "app.js", "text/javascript"],
     ["/location.js", "location.js", "text/javascript"],
     ["/wishlist.js", "wishlist.js", "text/javascript"],
@@ -109,6 +111,8 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
     database: options.repository ? "configured" : "unconfigured",
   }));
   app.setErrorHandler((error, request, reply) => {
+    const issues = error && typeof error === "object" && "issues" in error
+      ? error.issues : undefined;
     const code =
       error instanceof Error && "statusCode" in error
         ? Number(error.statusCode)
@@ -118,10 +122,19 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
       JSON.stringify({
         event: "request_error",
         request_id: request.id,
+        route: request.routeOptions.url,
         status,
+        error_type: error instanceof Error ? error.name : "unknown",
+        // Keep product names, credentials and provider responses out of logs.
+        validation_issues: Array.isArray(issues)
+          ? issues.map((issue: { code?: string; path?: PropertyKey[] }) => ({
+              code: issue.code,
+              path: issue.path?.map(String).join("."),
+            }))
+          : undefined,
       }),
     );
-    reply
+    reply.header("X-Request-ID", request.id)
       .code(status)
       .send(
         errorBody(

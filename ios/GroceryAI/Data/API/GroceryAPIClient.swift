@@ -152,7 +152,8 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         )
         var request = URLRequest(url:baseURL.appendingPathComponent("v1/chat/search"))
         request.httpMethod = "POST"
-        request.timeoutInterval = body.action == "compare" ? .infinity : 100
+        // Render may take time to wake, but a comparison must never hang forever.
+        request.timeoutInterval = body.action == "compare" ? 95 : 100
         request.setValue("application/json", forHTTPHeaderField:"Content-Type")
         try APIAccess.authorize(&request)
         request.httpBody = try JSONEncoder().encode(body)
@@ -161,7 +162,15 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(for:request)
+            var result = try await session.data(for:request)
+            if body.action == "compare",
+               let http = result.1 as? HTTPURLResponse,
+               [500, 502, 503, 504, 520, 522, 524].contains(http.statusCode) {
+                ComparisonDiagnostics.event("Transient comparison HTTP \(http.statusCode); retrying once")
+                try await Task.sleep(for: .seconds(1))
+                result = try await session.data(for:request)
+            }
+            (data, response) = result
         } catch {
             ComparisonDiagnostics.error(
                 "Search transport failed after \(startedAt.duration(to: clock.now)): action=\(body.action), error=\(error.localizedDescription)"
@@ -180,9 +189,10 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
             ComparisonDiagnostics.error(
                 "Search origin failed: HTTP \(http.statusCode), cfErrorType=\(http.value(forHTTPHeaderField: "cf-error-type") ?? "none")"
             )
+            let reference = http.value(forHTTPHeaderField: "X-Request-ID").map { " (ref. \($0))" } ?? ""
             let message = http.statusCode == 520
-                ? "El servidor de precios cerró la conexión durante la comparación."
-                : "El servidor de precios respondió con el código \(http.statusCode)."
+                ? "El servidor de precios cerró la conexión durante la comparación.\(reference)"
+                : "El servidor de precios respondió con el código \(http.statusCode).\(reference)"
             throw GroceryAPIError(message: message)
         }
         let result: WireResponse
