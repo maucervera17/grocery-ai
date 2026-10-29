@@ -8,6 +8,8 @@ struct RootView: View {
     @State private var appState: AppState
     @State private var composerState: AgentComposerState
     @State private var voiceController: VoiceConversationController
+    @State private var errorMessage = ""
+    @State private var isShowingErrorAlert = false
 
     init() {
         let appState = AppState()
@@ -53,6 +55,26 @@ struct RootView: View {
         .onChange(of: appState.selectedTab) { _, tab in
             guard tab != .agent else { return }
             Task { await voiceController.endConversation() }
+        }
+        .onChange(of: appState.loadingState) { _, loadingState in
+            presentErrorIfNeeded(loadingState)
+        }
+        .alert("No se pudo completar", isPresented: $isShowingErrorAlert) {
+            Button("Aceptar", action: appState.clearError)
+        } message: {
+            Text(errorMessage)
+        }
+    }
+
+    private func presentErrorIfNeeded(_ loadingState: ChatLoadingState) {
+        guard case let .failed(message) = loadingState else { return }
+
+        composerState.presentedSheet = nil
+        appState.comparisonPlan = nil
+        errorMessage = message
+        Task { @MainActor in
+            await Task.yield()
+            isShowingErrorAlert = true
         }
     }
 }

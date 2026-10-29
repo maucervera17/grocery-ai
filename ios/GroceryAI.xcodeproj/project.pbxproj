@@ -103,7 +103,6 @@
 		CE1B55108D1AAF84A4CD8799 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F907355F82D4FA801DDF258 /* EmptyStateView.swift */; };
 		CE51B2F4A8D84F95145268D0 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7783B1401D18356D6BDBC22 /* AppState.swift */; };
 		D0C0DBECC0F3FD6747506478 /* SuggestionChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC31C6CE489866FADFF29B7 /* SuggestionChip.swift */; };
-		D0E94094E6933FC62F63CBDE /* AgentErrorActionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E28A07617D319BF1477493B6 /* AgentErrorActionsView.swift */; };
 		D22518A581579B1CE2F0D6E2 /* PreviousOrderSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11B83D60DD75EF5A272BEC5E /* PreviousOrderSelectionView.swift */; };
 		D28E2BB5123BFA30C71897FD /* RepeatOrderOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE2115357DED523B44D2517C /* RepeatOrderOverlay.swift */; };
 		D560106C7F8C7FC6E2EC867E /* ComparisonDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D369D38830C1573DFC67569 /* ComparisonDiagnostics.swift */; };
@@ -236,7 +235,6 @@
 		DEE5673FCB0D36E778FC300A /* VoiceConversationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceConversationState.swift; sourceTree = "<group>"; };
 		DF16497776533993B56DD4AE /* SurfaceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurfaceCard.swift; sourceTree = "<group>"; };
 		DF81DE44889BAC08B984A764 /* GroceryAI.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = GroceryAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E28A07617D319BF1477493B6 /* AgentErrorActionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentErrorActionsView.swift; sourceTree = "<group>"; };
 		E4454FBB87E62F65DCE23A6A /* HistoryFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryFormatters.swift; sourceTree = "<group>"; };
 		EB50078395F73007B9BFFA02 /* AppRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRadius.swift; sourceTree = "<group>"; };
 		ED6D50A15B08AA6285CB3D0C /* RetailerLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetailerLogo.swift; sourceTree = "<group>"; };
@@ -432,7 +430,6 @@
 				5401874FEAE41AAAF511E542 /* AgentComposerState.swift */,
 				281CF4CC321DE28242D9A133 /* AgentComposerSuggestionsView.swift */,
 				5F010639CCBD65E3E400F4C4 /* AgentEmptyStateView.swift */,
-				E28A07617D319BF1477493B6 /* AgentErrorActionsView.swift */,
 				1835845EB0F679F913B28C55 /* AgentSettingsView.swift */,
 				1C010453942B26DFB14136E1 /* AgentSheet.swift */,
 				12E5A43E6440000DFE4DF40A /* AgentSheetView.swift */,
@@ -663,7 +660,6 @@
 				5C9E24192D50B2A55E70851A /* AgentComposerState.swift in Sources */,
 				CAF00B562B7EA606067E4F74 /* AgentComposerSuggestionsView.swift in Sources */,
 				6FF0603D864139C4182F1C8E /* AgentEmptyStateView.swift in Sources */,
-				D0E94094E6933FC62F63CBDE /* AgentErrorActionsView.swift in Sources */,
 				91B04F2D14B33098E0441980 /* AgentServicing.swift in Sources */,
 				7AF058170D76A8286556F503 /* AgentSettingsView.swift in Sources */,
 				E23ABAAA892C81F9608C9174 /* AgentSheet.swift in Sources */,

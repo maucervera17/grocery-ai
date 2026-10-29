@@ -17,7 +17,6 @@ final class AppState {
     private let comparisonService: any ComparisonServicing
     private var modelContext: ModelContext?
     private var record: LocalAppStateRecord?
-    private var failedInput: String?
 
     init(
         agentService: any AgentServicing = GroceryAPIClient(),
@@ -109,14 +108,7 @@ final class AppState {
             return false
         }
 
-        let isRetry = failedInput == trimmed
-        if isRetry {
-            if messages.last?.kind == .error {
-                messages.removeLast()
-            }
-        } else {
-            messages.append(ChatMessage(role: .user, text: trimmed))
-        }
+        messages.append(ChatMessage(role: .user, text: trimmed))
         loadingState = .updatingDraft
         do {
             let response = try await agentService.updateDraft(
@@ -127,22 +119,13 @@ final class AppState {
             draft.replaceItems(with: response.draftItems)
             messages.append(ChatMessage(role: .agent, text: response.reply, kind: .draftUpdate))
             loadingState = .idle
-            failedInput = nil
             persist()
             return true
         } catch {
-            let message = "No pude actualizar la lista. Revisa tu conexión o intenta de nuevo."
-            messages.append(ChatMessage(role: .agent, text: message, kind: .error))
-            loadingState = .failed(message: message)
-            failedInput = trimmed
+            loadingState = .failed(message: error.localizedDescription)
             persist()
             return false
         }
-    }
-
-    func retryFailedSend() async {
-        guard let failedInput else { return }
-        await send(failedInput)
     }
 
     func updateProduct(_ product: ProductRequest) {
@@ -222,7 +205,7 @@ final class AppState {
             persist()
         } catch {
             ComparisonDiagnostics.error("App comparison failed: \(error.localizedDescription)")
-            loadingState = .failed(message: "No fue posible crear la comparación.")
+            loadingState = .failed(message: error.localizedDescription)
         }
     }
 
@@ -244,7 +227,6 @@ final class AppState {
         draft = ShoppingDraft()
         messages = []
         comparisonPlan = nil
-        failedInput = nil
         selectedTab = .agent
         persist()
     }

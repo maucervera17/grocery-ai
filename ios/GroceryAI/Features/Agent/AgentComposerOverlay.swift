@@ -9,10 +9,6 @@ struct AgentComposerOverlay: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if case .failed = appState.loadingState {
-                AgentErrorActionsView(onRetry: retry, onDismiss: appState.clearError)
-            }
-
             if composerState.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
                appState.loadingState != .updatingDraft {
                 AgentComposerSuggestionsView(
@@ -50,12 +46,6 @@ struct AgentComposerOverlay: View {
         inputIsFocused = false
         Task {
             await appState.send(message)
-        }
-    }
-
-    private func retry() {
-        Task {
-            await appState.retryFailedSend()
         }
     }
 
