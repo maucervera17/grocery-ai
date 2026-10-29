@@ -39,7 +39,8 @@ const app = buildApp({
         )
       : undefined,
   scraper: key ? new FirecrawlScraper(key) : undefined,
-}, { apiKey:process.env.ELEVENLABS_API_KEY, agentId:process.env.ELEVENLABS_AGENT_ID }, accessPassword);
+}, { apiKey:process.env.ELEVENLABS_API_KEY, agentId:process.env.ELEVENLABS_AGENT_ID }, accessPassword,
+  process.env.BARASU_PUBLIC_WEB_ORIGIN ?? "https://barasu-web.vercel.app");
 const port = z.coerce
   .number()
   .int()
