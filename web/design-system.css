@@ -539,3 +539,122 @@ dialog::backdrop {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; }
 }
+
+/* Basket handoff: one clear choice, product links, then optional follow-up. */
+.week-option[aria-pressed="true"] {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+.week-handoff-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-medium);
+  margin: var(--space-extra-large) 0 var(--space-medium);
+}
+.week-handoff-head .eyebrow {
+  color: var(--brand);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.week-handoff-head h3 {
+  margin: 4px 0;
+  color: var(--ink);
+  font-size: 19px;
+  line-height: 1.25;
+}
+.week-handoff-head p {
+  margin: 0;
+  max-width: 32ch;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.week-handoff-head > strong {
+  flex: none;
+  color: var(--brand);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.week-store-list {
+  margin: 0 0 var(--space-medium);
+  padding: var(--space-medium) var(--space-large);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-large);
+}
+.week-store-list h4 {
+  margin: 0;
+  padding-bottom: var(--space-medium);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-medium);
+  font-size: 14px;
+}
+.week-store-list h4 small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.week-buy-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-medium);
+  padding: var(--space-medium) 0;
+  border-top: 1px solid var(--line);
+}
+.week-buy-line:last-child { padding-bottom: 0; }
+.week-buy-line img,
+.week-buy-line > .weekly-photo-fallback {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: var(--radius-medium);
+}
+.week-buy-info { min-width: 0; flex: 1; }
+.week-buy-info strong {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.week-buy-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.week-buy-info a {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  text-decoration: none;
+}
+.week-buy-info a:hover { text-decoration: underline; }
+.week-buy-price {
+  flex: none;
+  color: var(--ink);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.week-handoff-actions {
+  display: grid;
+  gap: var(--space-small);
+  margin-top: var(--space-large);
+}
+.week-handoff-actions button { margin: 0; }
+.week-handoff-actions .secondary {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--brand);
+}
+.week-handoff-note {
+  margin: var(--space-medium) 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}

@@ -311,10 +311,16 @@ final class AppState {
             comparisonPlan = plan
             loadingState = .idle
             persist()
+            let matched = plan.stores.reduce(0) { $0 + $1.items.count }
+            let retailers = plan.stores.map(\.retailer).joined(separator: " y ")
+            let amount = String(format: "$%.2f", Double(plan.totalPriceCents) / 100)
+            let missing = plan.unmatchedItems.map { $0.requestedItem.name }
+            let missingNote = missing.isEmpty ? "" : " Quedan sin opción: \(missing.joined(separator: ", "))."
+            let summary = matched > 0
+                ? "Encontré \(matched) de \(draft.items.count) productos en \(retailers), por \(amount) en total. Son precios publicados; confirma precio y existencias en la tienda.\(missingNote)"
+                : "No encontré precios publicados comparables para esta lista. Prueba con una marca o presentación específica."
             return VoiceComparisonToolResult(
-                reply: plan.unmatchedItems.isEmpty
-                    ? "Preparé la comparación de tu lista."
-                    : "Preparé una comparación parcial; algunos productos no tuvieron coincidencia.",
+                reply: summary,
                 status: plan.responseStatus?.rawValue ?? "complete",
                 totalPriceCents: plan.totalPriceCents,
                 storeCount: plan.stores.count,
@@ -324,7 +330,7 @@ final class AppState {
             loadingState = .idle
             ComparisonDiagnostics.error("Voice comparison failed: \(error.localizedDescription)")
             return VoiceComparisonToolResult(
-                reply: "No pude comparar la lista. Conservé todos tus productos.",
+                reply: "La comparación no terminó: \(error.localizedDescription). Conservé todos tus productos.",
                 status: "error",
                 totalPriceCents: nil,
                 storeCount: 0,

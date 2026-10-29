@@ -317,13 +317,17 @@ export function createSearch(options: Options) {
         : "error"
       : "complete";
     const prefix = options.mode === "demo" ? "DEMO: precios de ejemplo. " : "";
+    const matchedCount = plan.stores.reduce(
+      (count, store) => count + store.items.length,
+      0,
+    );
     return {
       reply:
         prefix +
         (input.items.length === 0
           ? "Agrega productos al borrador."
           : plan.stores.length
-            ? `Comparación de ${plan.stores.reduce((n, s) => n + s.items.length, 0)} productos en ${plan.stores.length} tienda(s), entre las ofertas disponibles. ${published ? "Son precios publicados; no confirman existencias ni entrega en tu código postal. " : ""}Sustitutos marcados como similares. No incluye transporte ni entrega.`
+            ? `Comparación de ${matchedCount} ${matchedCount === 1 ? "producto" : "productos"} en ${plan.stores.length} ${plan.stores.length === 1 ? "tienda" : "tiendas"}, entre las ofertas disponibles. ${published ? "Son precios publicados; no confirman existencias ni entrega en tu código postal. " : ""}Sustitutos marcados como similares. No incluye transporte ni entrega.`
             : "No encontré ofertas comparables para esta lista."),
       status,
       draft_items: input.items,

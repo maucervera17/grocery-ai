@@ -575,14 +575,17 @@ export function mountWeekly({ root, search, location, onRegister }) {
     target.innerHTML = `<section class="week-basket"><div class="week-basket-head"><span class="eyebrow">TU LISTA COMPARADA</span><h3>¿Dónde compras mejor?</h3><p>${esc(reason)}</p></div><div class="week-plan-grid">${cards}</div><p class="week-fineprint">Precios publicados · disponibilidad por confirmar</p><details class="week-notes"><summary>Sobre esta comparación</summary><p>Precios publicados; verifica disponibilidad, precio final y entrega en el comercio. El total no incluye traslado ni envío. Las opciones pueden cambiar marca o presentación.${!equivalent ? " Algunos tamaños no están definidos: compara el precio por unidad." : ""}</p>${mixed.stores.length < 2 && singles.length > 1 ? "<p>Combinar tiendas no mejoró la cobertura ni el precio encontrado.</p>" : ""}</details><div id="week-handoff"></div></section>`;
     target.querySelectorAll("[data-plan]").forEach((button) => {
       button.onclick = () => {
-        handoff(plans[Number(button.dataset.plan)]);
+        handoff(plans[Number(button.dataset.plan)], Number(button.dataset.plan));
         target.querySelector("#week-handoff").scrollIntoView({ behavior: "smooth", block: "start" });
       };
     });
     if (scroll) target.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function handoff(p) {
+  function handoff(p, selectedIndex = null) {
     activePlan = p;
+    root.querySelectorAll("#week-results [data-plan]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(Number(button.dataset.plan) === selectedIndex));
+    });
     const reference = p.complete && p.lines.every((line) => {
       const row = state.rows.find((item) => item.id === line.rowId);
       return row?.selected === line.listing.productUrl && row.usualPriceCents !== null && Number.isSafeInteger(row?.usualPriceCents);
@@ -605,20 +608,20 @@ export function mountWeekly({ root, search, location, onRegister }) {
       ),
     );
     const target = root.querySelector("#week-handoff");
-    target.innerHTML = `<div class="week-handoff-head"><h3>${p.complete ? "Productos para comprar" : "Productos encontrados"}</h3><p>${p.complete ? "Abre cada ficha y agrégala al carrito del comercio." : "Faltan productos para completar esta lista."}</p></div>${p.stores
+    target.innerHTML = `<div class="week-handoff-head"><div><span class="eyebrow">OPCIÓN ELEGIDA</span><h3>${p.stores.length === 2 ? "Compra en dos tiendas" : `Compra en ${esc(p.stores[0] || "la tienda")}`}</h3><p>${p.lines.length} de ${state.rows.length} productos encontrados${p.complete ? " · Abre sus fichas para agregarlos en la tienda." : " · Faltan opciones para completar tu lista."}</p></div><strong>${money(p.total)}</strong></div>${p.stores
       .map(
         (s) =>
-          `<article class="weekly-row week-store-list"><h4>${esc(s)} <span>${money(p.lines.filter((l) => l.listing.retailer === s).reduce((sum, l) => sum + l.total, 0))}</span></h4>${p.lines
+          `<article class="weekly-row week-store-list"><h4><span>${esc(s)}</span><small>Subtotal ${money(p.lines.filter((l) => l.listing.retailer === s).reduce((sum, l) => sum + l.total, 0))}</small></h4>${p.lines
             .filter((l) => l.listing.retailer === s)
             .map(
               (l) =>
-                `<div class="week-buy-line">${l.listing.imageUrl ? `<img src="${esc(l.listing.imageUrl)}" alt="" loading="lazy">` : '<span class="weekly-photo-fallback">🛒</span>'}<div><strong>${esc(l.listing.productName)}</strong><small>${l.packages} ${soldByWeight(l.listing) ? "kg estimados" : "paquete(s)"} · ${money(l.total)}</small>${state.rows.find((row) => row.id === l.rowId)?.selected && state.rows.find((row) => row.id === l.rowId).selected !== l.listing.productUrl ? '<small>Alternativa a tu elección · revisa marca y presentación</small>' : ""}<a href="${esc(l.listing.productUrl)}" target="_blank" rel="noopener noreferrer">Abrir producto ↗</a></div></div>`,
+                `<div class="week-buy-line">${l.listing.imageUrl ? `<img src="${esc(l.listing.imageUrl)}" alt="" loading="lazy">` : '<span class="weekly-photo-fallback">🛒</span>'}<div class="week-buy-info"><strong>${esc(l.listing.productName)}</strong><small>${l.packages} ${soldByWeight(l.listing) ? "kg estimados" : "paquete(s)"}${state.rows.find((row) => row.id === l.rowId)?.selected && state.rows.find((row) => row.id === l.rowId).selected !== l.listing.productUrl ? " · Revisa el cambio de marca o presentación" : ""}</small><a href="${esc(l.listing.productUrl)}" target="_blank" rel="noopener noreferrer">Ver en ${esc(s)} ↗</a></div><strong class="week-buy-price">${money(l.total)}</strong></div>`,
             )
             .join("")}</article>`,
       )
       .join(
         "",
-      )}<p class="week-handoff-note">Barasu no llena el carrito. Confirma precio y existencias en la tienda.</p><button class="secondary full" id="week-export">Descargar lista con enlaces</button>${p.complete ? '<button class="primary full" id="week-record">Ya compré: registrar ahorro</button>' : ""}<div id="week-saved" role="status"></div>`;
+      )}<div class="week-handoff-actions">${p.complete ? '<button class="primary full" id="week-record">Ya compré · registrar ahorro</button>' : ""}<button class="secondary full" id="week-export">Descargar enlaces</button></div><p class="week-handoff-note">Completa la compra en cada tienda. Confirma precio y disponibilidad antes de pagar.</p><div id="week-saved" role="status"></div>`;
     target.querySelector("#week-export").onclick = () => {
       const blob = new Blob([weeklyExport(p)], {
           type: "text/plain;charset=utf-8",
