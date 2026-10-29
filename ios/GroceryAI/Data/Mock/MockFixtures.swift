@@ -1,7 +1,7 @@
 import Foundation
 
 enum MockFixtures {
-    static let referenceDate = Date(timeIntervalSince1970: 1_782_588_800)
+    static let referenceDate = Date(timeIntervalSince1970: 1_793_210_400)
 
     static let milk = ProductRequest(
         id: UUID(uuidString: "10000000-0000-0000-0000-000000000001")!,

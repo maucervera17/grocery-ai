@@ -91,12 +91,14 @@ final class AppState {
             record = stored
             restore(from: stored)
             seedDemoContentIfNeeded()
+            refreshMockOrderDates()
             persist()
         } else {
             let newRecord = LocalAppStateRecord()
             context.insert(newRecord)
             record = newRecord
             seedDemoContentIfNeeded()
+            refreshMockOrderDates()
             persist()
         }
     }
@@ -370,6 +372,18 @@ final class AppState {
               messages.isEmpty else { return }
         orders = MockFixtures.previousOrders
         messages = MockFixtures.welcomeMessages
+    }
+
+    private func refreshMockOrderDates() {
+        guard APIConfiguration.seedsDemoContent else { return }
+        let datesByID = Dictionary(
+            uniqueKeysWithValues: MockFixtures.previousOrders.map { ($0.id, $0.completedAt) }
+        )
+        for index in orders.indices {
+            if let date = datesByID[orders[index].id] {
+                orders[index].completedAt = date
+            }
+        }
     }
 
     private func normalizedProductName(_ name: String) -> String {

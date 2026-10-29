@@ -65,7 +65,7 @@ extension MockFixtures {
 
     private static let householdOrder = CompletedOrder(
         id: UUID(uuidString: "50000000-0000-0000-0000-000000000002")!,
-        completedAt: referenceDate.addingTimeInterval(-1_209_600),
+        completedAt: referenceDate.addingTimeInterval(-21_600),
         requestedItems: [chicken, toiletPaper, apples, milk, yogurt],
         stores: [
             mockStore(
@@ -90,7 +90,7 @@ extension MockFixtures {
 
     private static let pantryOrder = CompletedOrder(
         id: UUID(uuidString: "50000000-0000-0000-0000-000000000003")!,
-        completedAt: referenceDate.addingTimeInterval(-3_024_000),
+        completedAt: referenceDate.addingTimeInterval(-86_400),
         requestedItems: [rice, eggs, oil, tortillas, coffee, pasta, cheese],
         stores: [
             mockStore(
