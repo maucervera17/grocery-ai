@@ -7,13 +7,16 @@ Esta es la entrada para quien clone el repositorio o conecte un cliente nuevo. *
 | Recurso | Dirección | Acceso necesario |
 | --- | --- | --- |
 | Código y contratos | [GitHub: maucervera17/grocery-ai](https://github.com/maucervera17/grocery-ai) | Permiso al repositorio para clonar y proponer cambios. |
-| API desplegada | [https://barasu-api.onrender.com](https://barasu-api.onrender.com) | [GET /health](https://barasu-api.onrender.com/health) es público. Las demás rutas requieren HTTP Basic: usuario `barasu` y la contraseña vigente de `BARASU_ACCESS_PASSWORD`, compartida por el responsable mediante un gestor de secretos. |
+| Web pública | [https://barasu-web.vercel.app](https://barasu-web.vercel.app) | Interfaz desplegada en Vercel desde `main`; sus rutas `/v1` se reenvían a Render. No pide usuario ni contraseña. |
+| API desplegada | [https://barasu-api.onrender.com](https://barasu-api.onrender.com) | [GET /health](https://barasu-api.onrender.com/health) es público. El acceso directo y los clientes iOS usan HTTP Basic: usuario `barasu` y la contraseña vigente de `BARASU_ACCESS_PASSWORD`, compartida por el responsable mediante un gestor de secretos. |
 | Servicio y despliegues | [Render: barasu-api](https://dashboard.render.com/web/srv-dbh6k7flk1mc73fdlb4g) | Invitación al workspace/proyecto de Render para ver logs o cambiar variables. El servicio gratuito se despliega automáticamente desde `main`. |
 | Proyecto de datos | [Supabase: Barasu](https://supabase.com/dashboard/project/vlfqqniorpfveuxhqnpt) | Invitación al proyecto Supabase para ver esquema y SQL Editor. Su URL API es `https://vlfqqniorpfveuxhqnpt.supabase.co`, **no** la URL que usa iOS. |
 | Firecrawl | [Consola Firecrawl](https://firecrawl.dev/app) | Acceso a la cuenta o a una clave REST propia para ejecutar scraping desde el backend. El login MCP no configura `FIRECRAWL_API_KEY`. |
 | ElevenLabs | [Consola ElevenLabs](https://elevenlabs.io/app) | Acceso al agente y a una clave limitada si se va a administrar voz. iOS nunca recibe la clave del proveedor. |
 
 Si falta acceso a una cuenta, pide al responsable del proyecto una invitación para esa cuenta. GitHub no concede por sí mismo permisos en Render, Supabase, Firecrawl ni ElevenLabs. No copies `.env` ni valores del panel de Render a una issue, PR, chat, archivo Swift o documentación.
+
+La web de Vercel puede usar búsqueda, ubicación y voz sin HTTP Basic mediante una excepción para su origen HTTPS, con cupos globales por minuto y por día. Este acceso es para la demo pública, no para integrar otros clientes. Los clientes nativos conservan HTTP Basic. El aviso `.env not found` en los logs de Render es normal: las claves llegan desde **Environment**; comprueba `/health` y las rutas reales para diagnosticar el servicio.
 
 ## Conectar un cliente a la API existente
 
