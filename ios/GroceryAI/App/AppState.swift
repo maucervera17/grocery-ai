@@ -224,6 +224,24 @@ final class AppState {
         persist()
     }
 
+    func completeOnboarding(items: [ProductRequest], postalCode: String) {
+        if !items.isEmpty {
+            draft.replaceItems(with: items)
+        }
+        if !postalCode.isEmpty {
+            self.postalCode = postalCode
+        }
+        comparisonPlan = nil
+        messages.append(ChatMessage(
+            role: .agent,
+            text: "Tu lista está lista. Toca Comparar precios cuando quieras.",
+            kind: .draftUpdate
+        ))
+        loadingState = .idle
+        selectedTab = .agent
+        persist()
+    }
+
     func startNewList() {
         guard loadingState == .idle else { return }
         draft = ShoppingDraft()
