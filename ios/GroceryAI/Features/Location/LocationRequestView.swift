@@ -83,6 +83,7 @@ struct LocationRequestView: View {
             }
             .padding(AppSpacing.extraLarge)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .background(colors.backgroundPrimary)
         .onChange(of: locator.postalCode) {
             if let code = locator.postalCode {

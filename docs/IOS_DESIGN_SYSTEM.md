@@ -231,6 +231,8 @@ Las acciones flotantes sobre contenido, como enviar o repetir compra, usan Liqui
 
 Para botones circulares, usar `.circle`. Los botones adyacentes al composer deben tener la misma altura de 52 puntos.
 
+Las acciones principales fijadas al borde inferior en onboarding y paywall usan `GlassProminentButton` (`.glassProminent` en cápsula, tinte `brandPrimary`) en lugar de `PrimaryButton`.
+
 ### 8.4 Chips
 
 - Forma cápsula.

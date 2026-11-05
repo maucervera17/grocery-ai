@@ -5,9 +5,12 @@ struct RootView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
 
+    @AppStorage("barasu.hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     @State private var appState: AppState
     @State private var composerState: AgentComposerState
     @State private var voiceController: VoiceConversationController
+    @State private var subscriptionService: PlaceholderSubscriptionService
     @State private var errorMessage = ""
     @State private var isShowingErrorAlert = false
 
@@ -16,6 +19,11 @@ struct RootView: View {
         _appState = State(initialValue: appState)
         _composerState = State(initialValue: AgentComposerState())
         _voiceController = State(initialValue: VoiceConversationController(appState: appState))
+        _subscriptionService = State(initialValue: PlaceholderSubscriptionService())
+    }
+
+    private var showsOnboarding: Bool {
+        !(hasCompletedOnboarding && subscriptionService.isPro)
     }
 
     var body: some View {
@@ -64,6 +72,23 @@ struct RootView: View {
         } message: {
             Text(errorMessage)
         }
+        .fullScreenCover(
+            isPresented: Binding(
+                get: { showsOnboarding },
+                set: { _ in }
+            )
+        ) {
+            OnboardingFlowView(
+                appState: appState,
+                subscriptionService: subscriptionService
+            ) {
+                hasCompletedOnboarding = true
+            }
+            .interactiveDismissDisabled()
+            .environment(subscriptionService)
+            .environment(\.appTheme, .grocery)
+        }
+        .environment(subscriptionService)
     }
 
     private func presentErrorIfNeeded(_ loadingState: ChatLoadingState) {

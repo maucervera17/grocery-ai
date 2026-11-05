@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AgentSettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(PlaceholderSubscriptionService.self) private var subscriptionService
+    @AppStorage("barasu.hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var accessPassword = ""
     @State private var hasSavedPassword = APIAccess.password() != nil
     @State private var accessError: String?
@@ -10,6 +12,19 @@ struct AgentSettingsView: View {
         NavigationStack {
             Form {
                 PermissionSettingsSection()
+
+                #if DEBUG
+                Section("Depuración") {
+                    Button("Reiniciar onboarding") {
+                        dismiss()
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(400))
+                            subscriptionService.resetForDebug()
+                            hasCompletedOnboarding = false
+                        }
+                    }
+                }
+                #endif
 
                 Section("Backend") {
                     LabeledContent("Servidor", value: APIConfiguration.baseURL.absoluteString)
