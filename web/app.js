@@ -44,6 +44,7 @@ function render(){
   requestAnimationFrame(sync);
  }
  $('compare')?.addEventListener('click',()=>{weekly.setDraft(items);view('weekly');weekly.autoSelect()});
+ $('draft-expand')?.addEventListener('click',()=>{draftCollapsed=false;render()});
  $('edit')?.addEventListener('click',editor);
  if(busy)lock(true);
 }
