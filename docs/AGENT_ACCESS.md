@@ -16,7 +16,7 @@ Esta es la entrada para quien clone el repositorio o conecte un cliente nuevo. *
 
 Si falta acceso a una cuenta, pide al responsable del proyecto una invitación para esa cuenta. GitHub no concede por sí mismo permisos en Render, Supabase, Firecrawl ni ElevenLabs. No copies `.env` ni valores del panel de Render a una issue, PR, chat, archivo Swift o documentación.
 
-La web de Vercel puede usar búsqueda, ubicación y voz sin HTTP Basic mediante una excepción para su origen HTTPS, con cupos globales por minuto y por día. Este acceso es para la demo pública, no para integrar otros clientes. Los clientes nativos conservan HTTP Basic. El aviso `.env not found` en los logs de Render es normal: las claves llegan desde **Environment**; comprueba `/health` y las rutas reales para diagnosticar el servicio.
+La web de Vercel puede usar búsqueda, ubicación y voz sin HTTP Basic mediante una excepción para su origen HTTPS. La búsqueda no tiene cupo de la aplicación; ubicación y sesiones de voz conservan cupos globales por minuto y por día. Este acceso es para la demo pública, no para integrar otros clientes. Los clientes nativos conservan HTTP Basic. El aviso `.env not found` en los logs de Render es normal: las claves llegan desde **Environment**; comprueba `/health` y las rutas reales para diagnosticar el servicio.
 
 ## Conectar un cliente a la API existente
 

@@ -16,7 +16,6 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
     const expected = createHash("sha256").update(`barasu:${accessPassword}`).digest();
     const publicBudgets = new Map<string, { day: number; dayCount: number; minute: number; minuteCount: number }>();
     const publicLimits: Record<string, { daily: number; minute: number }> = {
-      "/v1/chat/search": { daily: 40, minute: 5 },
       "/v1/location/resolve": { daily: 30, minute: 5 },
       "/v1/voice/session": { daily: 8, minute: 2 },
     };
@@ -37,7 +36,8 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
       if (valid) return;
       if (!header && publicWebOrigin &&
           ((path === "/v1/voice/status" && request.method === "GET") ||
-           (request.method === "POST" && request.headers.origin === publicWebOrigin && path in publicLimits))) {
+           (request.method === "POST" && request.headers.origin === publicWebOrigin &&
+             (path === "/v1/chat/search" || path in publicLimits)))) {
         const limit = publicLimits[path];
         if (!limit) return;
         const now = Date.now();

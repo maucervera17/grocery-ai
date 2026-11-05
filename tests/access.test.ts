@@ -32,7 +32,7 @@ test("remote deployment protects application and paid routes while exposing heal
   }
 });
 
-test("public Vercel web origin can use capped API without exposing server assets", async () => {
+test("public Vercel search has no application quota while server assets stay protected", async () => {
   const origin = "https://barasu-web.vercel.app";
   const app = buildApp(
     { mode: "demo", fixtures: [] },
@@ -49,8 +49,10 @@ test("public Vercel web origin can use capped API without exposing server assets
     const voice = await app.inject({method:"POST",url:"/v1/voice/session",remoteAddress:"10.0.0.2",headers:{origin,host:"barasu-api.onrender.com"}});
     assert.equal(voice.statusCode, 200);
     assert.deepEqual(voice.json(), {conversation_token:"temporary"});
-    for (let i = 0; i < 4; i++) await app.inject({method:"POST",url:"/v1/chat/search",headers:{origin},payload:{}});
-    assert.equal((await app.inject({method:"POST",url:"/v1/chat/search",headers:{origin},payload:{}})).statusCode, 429);
+    for (let i = 0; i < 12; i++) {
+      const result = await app.inject({method:"POST",url:"/v1/chat/search",headers:{origin},payload:{action:"compare",items:[]}});
+      assert.equal(result.statusCode, 200);
+    }
   } finally {
     await app.close();
   }
