@@ -41,7 +41,12 @@ const load = (k, f) => {
     return f;
   }
 };
-export function mountWeekly({ root, search, location, onRegister }) {
+const presentation = (l) =>
+  l?.unit === "package" || !Number.isFinite(l?.quantity)
+    ? "paquete"
+    : `${l.quantity} ${({ piece: "pzas", dozen: "docena" })[l.unit] ?? l.unit}`;
+
+export function mountWeekly({ root, search, location, onRegister, onWrite }) {
   let state = load("barasu-weekly-v1", {
       id: crypto.randomUUID(),
       rows: [],
@@ -53,6 +58,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     activePlan = null,
     pending = new Set(),
     batch = false,
+    revealEditor = false,
     batchDone = 0,
     batchTotal = 0,
     autoSearchedSignature = null,
@@ -166,7 +172,8 @@ export function mountWeekly({ root, search, location, onRegister }) {
       const result = await search(query);
       if (row.query !== query || requestContext !== context() || !state.rows.includes(row)) return;
       row.error = result?.errors?.map((e) => e.message).join(" ") || "";
-      if (result?.comparison?.data_mode === "live") {
+      if (result?.comparison) {
+        row.dataMode = result.comparison.data_mode;
         const previousSelection = row.selected;
         const previousSource = row.selectionSource;
         row.offers = result.comparison.offers;
@@ -193,8 +200,8 @@ export function mountWeekly({ root, search, location, onRegister }) {
         row.selectionSource = null;
         row.error = result?.reply || "No se encontraron opciones. Prueba con un tipo, marca o presentación más específica.";
       }
-    } catch {
-      row.error = "La fuente tardó demasiado o no respondió. Puedes reintentar este producto.";
+    } catch (e) {
+      row.error = e?.name !== "TimeoutError" && e?.message ? e.message : "La fuente tardó demasiado o no respondió. Puedes reintentar este producto.";
     } finally {
       pending.delete(id);
       if (batch) batchDone++;
@@ -222,6 +229,11 @@ export function mountWeekly({ root, search, location, onRegister }) {
       await Promise.all(Array.from({ length: Math.min(2, queue.length) }, worker));
     } finally {
       batch = false;
+      const failed = state.rows.find((r) => r.error && !r.offers.length);
+      if (failed) {
+        activeRowId = failed.id;
+        revealEditor = true;
+      }
       render();
       if (autoRequested) optimize(false);
       const currentSignature = JSON.stringify([state.context, state.rows.map((r) => [r.signature, r.query])]);
@@ -322,15 +334,16 @@ export function mountWeekly({ root, search, location, onRegister }) {
   }
   function render() {
     root.hidden = false;
-    const editorOpen = root.querySelector(".weekly-edit")?.open ?? false;
+    const editorOpen = revealEditor || (root.querySelector(".weekly-edit")?.open ?? false);
+    revealEditor = false;
     const legacyUnspecified = state.rows.length >= 4 && state.rows.every((r) => r.requested.quantity === 1 && r.requested.unit === "piece");
     const activeIndex = Math.max(0, state.rows.findIndex((row) => row.id === activeRowId));
     const carouselStart = state.rows.length
       ? `<div class="weekly-carousel-nav" aria-label="Navegar productos"><span class="weekly-carousel-count" aria-live="polite">Producto ${activeIndex + 1} de ${state.rows.length}</span><div><button type="button" id="week-prev" aria-label="Producto anterior">‹</button><button type="button" id="week-next" aria-label="Producto siguiente">›</button></div></div><div class="weekly-carousel-tabs" role="tablist" aria-label="Productos de la lista">${state.rows.map((row, index) => `<button type="button" role="tab" id="week-tab-${esc(row.id)}" aria-controls="week-panel-${esc(row.id)}" data-week-slide="${index}">${esc(row.name)} <span aria-hidden="true">${row.selected ? "✓" : pending.has(row.id) ? "…" : row.offers.length ? "•" : "○"}</span></button>`).join("")}</div><div class="weekly-slides">`
       : "";
-    root.innerHTML = `<section class="weekly"><div class="card-top"><h2>Mi súper semanal</h2><span>${state.rows.length} productos</span></div><div class="weekly-toolbar"><button class="primary" id="week-auto-select" ${!state.rows.length ? "disabled" : ""}>Comparar tiendas</button><button class="secondary" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>↻ Actualizar</button></div><div id="week-results"></div><details class="weekly-guidance"><summary>Más opciones</summary><p>Precios publicados ${location()?.postal_code ? `para CP ${esc(location().postal_code)}` : "sin zona confirmada"}. Confirma existencias y precio final en la tienda.</p><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button></details>${
+    root.innerHTML = `<section class="weekly${state.rows.length ? "" : " empty"}"><div class="card-top"><h2>Mi lista</h2><span>${state.rows.length} ${state.rows.length === 1 ? "producto" : "productos"}</span></div><div class="weekly-toolbar"><button class="primary" id="week-auto-select" ${!state.rows.length ? "disabled" : ""}>Comparar precios</button><button class="secondary" id="week-search-all" ${batch || !state.rows.length ? "disabled" : ""}>↻ Actualizar</button></div><div id="week-results"></div><details class="weekly-guidance"><summary>Más opciones</summary><p>Precios publicados ${location()?.postal_code ? `para CP ${esc(location().postal_code)}` : "sin zona confirmada"}. Confirma existencias y precio final en la tienda.</p><button class="weekly-new secondary" id="week-new">Nueva semana · conservar productos</button></details>${
       !state.rows.length
-        ? "<p>Escribe una lista: «Quiero huevos, pollo, carne y queso».</p>"
+        ? '<div class="weekly-empty"><p>Tu lista está vacía. Escribe lo que necesitas, por ejemplo «Quiero huevos, pollo, carne y queso».</p><button type="button" class="primary full" id="week-write">Escribir mi lista</button></div>'
         : `<details class="weekly-edit"><summary>Revisar productos <span>${state.rows.length} artículos</span></summary>${carouselStart}${state.rows
             .map(
               (r, index) =>
@@ -344,7 +357,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
                         })
                         .join(
                           "",
-                        )}</div><small>${r.scope === "local" ? "Zona verificada al consultar" : "Precios publicados; existencias locales sin confirmar"} · ${esc(location()?.postal_code || "Sin CP")}</small>`
+                        )}</div><small>${r.dataMode === "demo" ? "Precios de ejemplo (modo demo)" : r.scope === "local" ? "Zona verificada al consultar" : "Precios publicados; existencias locales sin confirmar"} · ${esc(location()?.postal_code || "Sin CP")}</small>`
                     : ""
                 }${r.selected ? `<div class="weekly-fields"><label>${soldByWeight(r.offers.find((o) => o.listing.productUrl === r.selected)?.listing) ? "Kilos (estimados)" : "Paquetes"}<input data-qty="${esc(r.id)}" type="number" min="0.001" step="0.001" max="99" value="${r.packages}"></label><label>Mi precio habitual / presentación o kg (MXN)<input data-usual="${esc(r.id)}" inputmode="decimal" placeholder="Sin referencia" value="${r.usualPriceCents === null ? "" : (r.usualPriceCents / 100).toFixed(2)}"></label></div><p class="comparison-help">La referencia corresponde al producto elegido. Aprobar alternativas expresa tu preferencia, no una certificación de calidad.</p>` : ""}</article>`,
             )
@@ -387,6 +400,8 @@ export function mountWeekly({ root, search, location, onRegister }) {
       };
     });
     root.querySelector("#week-search-all").onclick = searchAll;
+    const write = root.querySelector("#week-write");
+    if (write) write.onclick = () => onWrite?.();
     root.querySelector("#week-auto-select").onclick = () => {
       autoSelect();
     };
@@ -545,7 +560,7 @@ export function mountWeekly({ root, search, location, onRegister }) {
     const openRows = state.rows.map((row) => ({ ...row, selected: null, selectionSource: null }));
     const stores = [...new Set(openRows.flatMap((row) => row.offers.map((offer) => offer.listing.retailer)))].sort();
     if (!stores.length) {
-      target.innerHTML = `<div class="notice">${pending.size || batch ? "Buscando precios para comparar toda tu lista…" : "Aún no hay precios publicados vigentes. Actualiza la búsqueda o precisa productos sin opciones."}</div>`;
+      target.innerHTML = `<div class="notice">${pending.size || batch ? "Buscando precios para comparar toda tu lista…" : "No encontramos precios para comparar. Abre «Revisar productos» para ver el aviso de cada producto o toca «↻ Actualizar»."}</div>`;
       return;
     }
     const singles = stores.map((store) => ({
@@ -570,9 +585,9 @@ export function mountWeekly({ root, search, location, onRegister }) {
         const row = state.rows.find((item) => item.id === line.rowId);
         return row?.selected && row.selected !== line.listing.productUrl;
       }).length;
-      return `<button type="button" class="week-option ${recommended === index && plan.complete ? "recommended" : ""}" data-plan="${index}" ${!plan.lines.length ? "disabled" : ""} aria-label="${esc(plan.stores.join(" y ") || plan.kind)}, ${plan.lines.length} de ${state.rows.length} productos, ${money(plan.total)}. Ver productos"><span class="week-option-name"><small>${plan.stores.length === 2 ? "DOS TIENDAS" : "UNA TIENDA"}${recommended === index && plan.complete ? " · RECOMENDADO" : ""}</small><strong>${plan.stores.length ? plan.stores.map(esc).join(" + ") : esc(plan.kind)}</strong><span>${plan.lines.length}/${state.rows.length} productos${changes ? ` · ${changes} ${changes === 1 ? "cambio" : "cambios"} por revisar` : ""}</span>${plan.missing.length ? `<em>Faltan: ${plan.missing.map(esc).join(", ")}</em>` : ""}</span><span class="week-option-price">${!plan.complete && plan.lines.length ? "<small>Total parcial</small>" : ""}<strong>${plan.lines.length ? money(plan.total) : "—"}</strong><span>Ver productos →</span></span></button>`;
+      return `<button type="button" class="week-option ${recommended === index && plan.complete ? "recommended" : ""}" data-plan="${index}" ${!plan.lines.length ? "disabled" : ""} aria-label="${esc(plan.stores.join(" y ") || plan.kind)}, ${plan.lines.length} de ${state.rows.length} productos, ${money(plan.total)}. Ver productos"><span class="week-option-name"><small>${plan.stores.length === 2 ? "DOS TIENDAS" : "UNA TIENDA"}${recommended === index && plan.complete ? " · RECOMENDADO" : ""}</small><strong>${plan.stores.length ? plan.stores.map(esc).join(" + ") : esc(plan.kind)}</strong><span>${plan.lines.length}/${state.rows.length} productos${changes ? ` · cambia ${changes} ${changes === 1 ? "producto" : "productos"} de tu selección` : ""}</span>${plan.missing.length ? `<em>Faltan: ${plan.missing.map(esc).join(", ")}</em>` : ""}</span><span class="week-option-price">${!plan.complete && plan.lines.length ? "<small>Total parcial</small>" : ""}<strong>${plan.lines.length ? money(plan.total) : "—"}</strong><span>Ver productos →</span></span></button>`;
     }).join("");
-    target.innerHTML = `<section class="week-basket"><div class="week-basket-head"><span class="eyebrow">TU LISTA COMPARADA</span><h3>¿Dónde compras mejor?</h3><p>${esc(reason)}</p></div><div class="week-plan-grid">${cards}</div><p class="week-fineprint">Precios publicados · disponibilidad por confirmar</p><details class="week-notes"><summary>Sobre esta comparación</summary><p>Precios publicados; verifica disponibilidad, precio final y entrega en el comercio. El total no incluye traslado ni envío. Las opciones pueden cambiar marca o presentación.${!equivalent ? " Algunos tamaños no están definidos: compara el precio por unidad." : ""}</p>${mixed.stores.length < 2 && singles.length > 1 ? "<p>Combinar tiendas no mejoró la cobertura ni el precio encontrado.</p>" : ""}</details><div id="week-handoff"></div></section>`;
+    target.innerHTML = `<section class="week-basket"><div class="week-basket-head"><span class="eyebrow">TU LISTA COMPARADA</span><h3>¿Dónde compras mejor?</h3><p>${esc(reason)}</p></div><div class="week-plan-grid">${cards}</div><p class="week-fineprint">${state.rows.some((r) => r.dataMode === "demo") ? "Precios de ejemplo (modo demo) · no son precios reales" : "Precios publicados · disponibilidad por confirmar"}</p><details class="week-notes"><summary>Sobre esta comparación</summary><p>Precios publicados; verifica disponibilidad, precio final y entrega en el comercio. El total no incluye traslado ni envío. Las opciones pueden cambiar marca o presentación.${!equivalent ? " Algunos tamaños no están definidos: compara el precio por unidad." : ""}</p>${mixed.stores.length < 2 && singles.length > 1 ? "<p>Combinar tiendas no mejoró la cobertura ni el precio encontrado.</p>" : ""}</details><div id="week-handoff"></div></section>`;
     target.querySelectorAll("[data-plan]").forEach((button) => {
       button.onclick = () => {
         handoff(plans[Number(button.dataset.plan)], Number(button.dataset.plan));
@@ -600,6 +615,8 @@ export function mountWeekly({ root, search, location, onRegister }) {
       stores: p.stores,
       products: state.rows.map((r) => r.name),
       postal: location()?.postal_code ?? null,
+      items: state.rows.map((r) => ({ name: r.requested?.name ?? r.name, quantity: r.requested?.quantity ?? 1, unit: r.requested?.unit ?? "piece", notes: r.requested?.notes ?? null })),
+      demo: p.lines.some((l) => state.rows.find((r) => r.id === l.rowId)?.dataMode === "demo"),
     };
     if (p.complete) localStorage.setItem(
       "barasu-weekly-history",
@@ -608,20 +625,20 @@ export function mountWeekly({ root, search, location, onRegister }) {
       ),
     );
     const target = root.querySelector("#week-handoff");
-    target.innerHTML = `<div class="week-handoff-head"><div><span class="eyebrow">OPCIÓN ELEGIDA</span><h3>${p.stores.length === 2 ? "Compra en dos tiendas" : `Compra en ${esc(p.stores[0] || "la tienda")}`}</h3><p>${p.lines.length} de ${state.rows.length} productos encontrados${p.complete ? " · Abre sus fichas para agregarlos en la tienda." : " · Faltan opciones para completar tu lista."}</p></div><strong>${money(p.total)}</strong></div>${p.stores
+    target.innerHTML = `<div class="week-handoff-head"><div><span class="eyebrow">OPCIÓN ELEGIDA</span><h3>${p.stores.length === 2 ? "Compra en dos tiendas" : `Compra en ${esc(p.stores[0] || "la tienda")}`}</h3><p>${p.lines.length} de ${state.rows.length} productos encontrados${p.complete ? (snapshot.demo ? " · Precios de ejemplo: en modo demo no hay fichas de tienda." : " · Abre sus fichas para agregarlos en la tienda.") : " · Faltan opciones para completar tu lista."}</p></div><strong>${money(p.total)}</strong></div>${p.stores
       .map(
         (s) =>
           `<article class="weekly-row week-store-list"><h4><span>${esc(s)}</span><small>Subtotal ${money(p.lines.filter((l) => l.listing.retailer === s).reduce((sum, l) => sum + l.total, 0))}</small></h4>${p.lines
             .filter((l) => l.listing.retailer === s)
             .map(
               (l) =>
-                `<div class="week-buy-line">${l.listing.imageUrl ? `<img src="${esc(l.listing.imageUrl)}" alt="" loading="lazy">` : '<span class="weekly-photo-fallback">🛒</span>'}<div class="week-buy-info"><strong>${esc(l.listing.productName)}</strong><small>${l.packages} ${soldByWeight(l.listing) ? "kg estimados" : "paquete(s)"}${state.rows.find((row) => row.id === l.rowId)?.selected && state.rows.find((row) => row.id === l.rowId).selected !== l.listing.productUrl ? " · Revisa el cambio de marca o presentación" : ""}</small><a href="${esc(l.listing.productUrl)}" target="_blank" rel="noopener noreferrer">Ver en ${esc(s)} ↗</a></div><strong class="week-buy-price">${money(l.total)}</strong></div>`,
+                `<div class="week-buy-line">${l.listing.imageUrl ? `<img src="${esc(l.listing.imageUrl)}" alt="" loading="lazy">` : '<span class="weekly-photo-fallback" aria-hidden="true">🛒</span>'}<div class="week-buy-info"><strong>${esc(l.listing.productName)}</strong><small>${l.packages} ${soldByWeight(l.listing) ? "kg estimados" : `× ${presentation(l.listing)}`}${state.rows.find((row) => row.id === l.rowId)?.selected && state.rows.find((row) => row.id === l.rowId).selected !== l.listing.productUrl ? " · Revisa el cambio de marca o presentación" : ""}</small>${snapshot.demo ? "<small>Precio de ejemplo</small>" : `<a href="${esc(l.listing.productUrl)}" target="_blank" rel="noopener noreferrer">Ver en ${esc(s)} ↗</a>`}</div><strong class="week-buy-price">${money(l.total)}</strong></div>`,
             )
             .join("")}</article>`,
       )
       .join(
         "",
-      )}<div class="week-handoff-actions">${p.complete ? '<button class="primary full" id="week-record">Ya compré · registrar ahorro</button>' : ""}<button class="secondary full" id="week-export">Descargar enlaces</button></div><p class="week-handoff-note">Completa la compra en cada tienda. Confirma precio y disponibilidad antes de pagar.</p><div id="week-saved" role="status"></div>`;
+      )}<div class="week-handoff-actions">${p.complete ? '<button class="primary full" id="week-record">Ya compré · registrar compra</button>' : ""}<button class="secondary full" id="week-export">Descargar enlaces</button></div><p class="week-handoff-note">Completa la compra en cada tienda. Confirma precio y disponibilidad antes de pagar.</p><div id="week-saved" role="status"></div>`;
     target.querySelector("#week-export").onclick = () => {
       const blob = new Blob([weeklyExport(p)], {
           type: "text/plain;charset=utf-8",

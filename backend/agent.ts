@@ -90,7 +90,12 @@ export class DemoDraftAgent implements DraftAgent {
     signal: AbortSignal,
   ): Promise<Changes> {
     signal.throwIfAborted();
-    const text = canonical(message),
+    const text = canonical(message)
+        .replace(/^[¿?¡!\s]+|[¿?¡!.\s]+$/g, "")
+        .replace(
+          /^(?:(?:cuanto cuesta|cuanto cuestan|cual es el precio de|precio de|compara(?:r)?(?: el)? precio de)\s+(?:el |la |los |las |un |una )?)/,
+          "",
+        ),
       operations: Changes["operations"] = [];
     if (/\b(ignora|instrucciones|historial|anterior|borra todo)\b/.test(text))
       return {
@@ -139,7 +144,7 @@ export class DemoDraftAgent implements DraftAgent {
         return {
           operations: [],
           clarification:
-            "El demo admite lácteos, despensa, frutas, pollo, limpieza y productos básicos del hogar. Configura el agente IA para lenguaje libre.",
+            "En modo demo entiendo leche, huevos, arroz, queso, pollo, manzanas, papel de baño, aceite, tortillas, café, yogur y pasta. Prueba con alguno de esos.",
         };
       const defaults = demoDefaultAmount(name);
       const unitText = m[2];
