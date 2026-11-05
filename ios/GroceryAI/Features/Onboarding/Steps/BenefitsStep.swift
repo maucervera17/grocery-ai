@@ -63,11 +63,12 @@ struct BenefitsStep: View {
                 ) {
                     ReceiptView(
                         lines: [
-                            .init(label: "Bodega Aurrera", price: "$71.90", logoAssetName: "RetailerBodegaAurrera"),
-                            .init(label: "Chedraui", price: "$128.80", logoAssetName: "RetailerChedraui"),
+                            .init(label: "Bodega Aurrera", price: "$199.90", logoAssetName: "RetailerBodegaAurrera"),
+                            .init(label: "Chedraui", price: "$206.50", logoAssetName: "RetailerChedraui"),
                             .init(label: "Walmart", price: "$213", logoAssetName: "RetailerWalmart")
                         ],
-                        stamp: "Más barata"
+                        stamp: "Más barata",
+                        footerText: "Ejemplo con precios ilustrativos"
                     )
                 }
                 if visibleBeats >= 2 { divider(colors: colors) }

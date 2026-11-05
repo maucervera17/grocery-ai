@@ -46,12 +46,30 @@ struct DemoResultStep: View {
             onBack: onBack,
             layout: .centered,
             footer: {
-            GlassProminentButton("Comparar mi lista completa") {
+            GlassProminentButton(model.accessSkipped && model.demoPlan == nil ? "Continuar" : "Comparar mi lista completa") {
                 model.advance(from: .demoResult)
             }
             },
             content: {
-            if model.demoFailed {
+            if model.accessSkipped && model.demoPlan == nil {
+                VStack(spacing: AppSpacing.large) {
+                    Image(systemName: "lock")
+                        .font(.system(size: 40))
+                        .foregroundStyle(colors.textSecondary)
+                        .accessibilityHidden(true)
+                    VStack(spacing: AppSpacing.small) {
+                        Text("Comparar precios requiere acceso")
+                            .font(.headline)
+                            .foregroundStyle(colors.textPrimary)
+                            .multilineTextAlignment(.center)
+                        Text("Barasu está en acceso anticipado. Tu lista queda guardada; cuando tengas tu contraseña, agrégala en Ajustes para ver precios reales.")
+                            .font(.body)
+                            .foregroundStyle(colors.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            } else if model.demoFailed {
                 VStack(spacing: AppSpacing.large) {
                     Image(systemName: "wifi.exclamationmark")
                         .font(.system(size: 40))

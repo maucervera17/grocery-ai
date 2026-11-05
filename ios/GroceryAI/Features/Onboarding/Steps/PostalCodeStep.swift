@@ -2,6 +2,7 @@ import MapKit
 import SwiftUI
 
 struct PostalCodeStep: View {
+    @Binding var postalCode: String
     let onContinue: (String) -> Void
     let onSkip: () -> Void
     var onBack: (() -> Void)?
@@ -10,7 +11,6 @@ struct PostalCodeStep: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var locator = PostalCodeLocator()
-    @State private var postalCode = ""
     @State private var showsManualField = false
     @FocusState private var isFieldFocused: Bool
 
@@ -26,7 +26,13 @@ struct PostalCodeStep: View {
     ]
 
     private var hasCode: Bool {
-        postalCode.count == 5 && postalCode.allSatisfy(\.isNumber)
+        Self.isValid(postalCode)
+    }
+
+    /// Mexican postal codes run from 01000 to 99999.
+    static func isValid(_ code: String) -> Bool {
+        guard code.count == 5, code.allSatisfy(\.isASCII), let value = Int(code) else { return false }
+        return value >= 1000
     }
 
     var body: some View {
@@ -55,7 +61,7 @@ struct PostalCodeStep: View {
                     .disabled(locator.isLoading)
                 }
 
-                if !hasCode {
+                if !hasCode && !showsManualField {
                     Button("Escribir código postal") {
                         showsManualField = true
                         isFieldFocused = true
@@ -64,7 +70,9 @@ struct PostalCodeStep: View {
                     .foregroundStyle(colors.brandPrimary)
                     .frame(maxWidth: .infinity, minHeight: AppControlSize.minimumTapTarget)
                     .contentShape(.rect)
+                }
 
+                if !hasCode {
                     Button("Ahora no", action: onSkip)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(colors.textSecondary)
@@ -77,15 +85,32 @@ struct PostalCodeStep: View {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
                 mapHero(colors: colors)
 
-                if hasCode {
-                    Label("CP \(postalCode)", systemImage: "checkmark.circle.fill")
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(colors.statusSuccess)
+                if hasCode && !showsManualField {
+                    HStack(spacing: AppSpacing.medium) {
+                        Label("CP \(postalCode)", systemImage: "checkmark.circle.fill")
+                            .font(.callout.weight(.medium))
+                            .foregroundStyle(colors.statusSuccess)
+                        Spacer(minLength: 0)
+                        Button("Cambiar") {
+                            showsManualField = true
+                            isFieldFocused = true
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(colors.brandPrimary)
+                        .frame(minWidth: AppControlSize.minimumTapTarget, minHeight: AppControlSize.minimumTapTarget)
+                        .contentShape(.rect)
+                        .accessibilityLabel("Cambiar código postal")
+                    }
                 } else {
                     if let message = locator.errorMessage {
                         Text(message)
                             .font(.footnote)
                             .foregroundStyle(colors.textSecondary)
+                    }
+                    if postalCode.count == 5 && !hasCode {
+                        Label("Ese código postal no existe. Revisa los 5 dígitos.", systemImage: "exclamationmark.circle")
+                            .font(.footnote)
+                            .foregroundStyle(colors.statusError)
                     }
                     if showsManualField {
                         TextField("Código postal", text: $postalCode)

@@ -16,6 +16,7 @@ enum OnboardingStep: String, Hashable, Sendable {
     case planLoader
     case savingsResult
     case benefits
+    case access
     case importMethod
     case importReview
     case demoPick
@@ -28,8 +29,13 @@ extension OnboardingStep {
     static let progressOrder: [OnboardingStep] = [
         .intro, .householdSize, .frequency, .monthlySpend, .usualStores,
         .compareHabit, .insight, .goals, .painPoints, .listHabit,
-        .postalCode, .savingsResult, .benefits, .importMethod,
+        .postalCode, .savingsResult, .benefits, .access, .importMethod,
         .importReview, .demoPick, .demoResult
+    ]
+
+    static let questionSteps: [OnboardingStep] = [
+        .householdSize, .frequency, .monthlySpend, .usualStores,
+        .compareHabit, .goals, .painPoints, .listHabit
     ]
 
     var progressIndex: Int? {

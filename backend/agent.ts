@@ -20,6 +20,13 @@ function demoDefaultAmount(name: string): {
   if (/^(?:leche|aceite)/.test(name)) return { quantity: 1, unit: "L" };
   return { quantity: 1, unit: "kg" };
 }
+// The demo grammar matches accent-free text; show the Spanish spelling back.
+const demoDisplayNames: Record<string, string> = {
+  "papel de bano": "papel de baño",
+  "papel higienico": "papel higiénico",
+  cafe: "café",
+  "cafe molido": "café molido",
+};
 export const Operations = z
   .object({
     operations: z
@@ -167,7 +174,7 @@ export class DemoDraftAgent implements DraftAgent {
         };
       seen.add(name);
       const item = {
-        name,
+        name: demoDisplayNames[name] ?? name,
         quantity: m[1] ? Number(m[1].replace(",", ".")) : defaults.quantity,
         unit,
         notes: null,

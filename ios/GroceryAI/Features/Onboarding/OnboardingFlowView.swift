@@ -196,6 +196,7 @@ struct OnboardingFlowView: View {
 
         case .postalCode:
             PostalCodeStep(
+                postalCode: $model.answers.postalCode,
                 onContinue: { code in
                     model.answers.postalCode = code
                     OnboardingEvent.answer(step: .postalCode, value: code).log()
@@ -225,6 +226,9 @@ struct OnboardingFlowView: View {
                 onContinue: { model.advance(from: .benefits) },
                 onBack: model.goBack
             )
+
+        case .access:
+            AccessStep(model: model, onBack: model.goBack)
 
         case .importMethod:
             ImportMethodStep(model: model, onBack: model.goBack)

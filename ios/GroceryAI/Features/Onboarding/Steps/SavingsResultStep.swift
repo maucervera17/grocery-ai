@@ -8,12 +8,20 @@ struct SavingsResultStep: View {
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var revealProgress = 0.0
     @ScaledMetric private var figureSize: CGFloat = 56
 
     var body: some View {
         let colors = theme.colors(for: colorScheme)
+        let isAccessibilitySize = dynamicTypeSize.isAccessibilitySize
+        let headerLayout = isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: AppSpacing.small))
+            : AnyLayout(HStackLayout(spacing: AppSpacing.small))
+        let statsLayout = isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: AppSpacing.medium))
+            : AnyLayout(HStackLayout(spacing: 0))
 
         OnboardingScaffold(
             step: .savingsResult,
@@ -24,20 +32,23 @@ struct SavingsResultStep: View {
             content: {
             VStack(spacing: AppSpacing.section) {
                 VStack(spacing: AppSpacing.small) {
-                    HStack(spacing: AppSpacing.small) {
+                    headerLayout {
                         Text("Podrías ahorrar")
                             .font(.title3)
                             .foregroundStyle(colors.textSecondary)
                         StatusBadge("Estimado", systemImage: "info.circle", kind: .information)
+                            .fixedSize()
                     }
 
-                    Text(rangeText)
-                        .font(.system(size: figureSize, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(colors.textPrimary)
-                        .contentTransition(.numericText())
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
+                    if isAccessibilitySize {
+                        VStack(spacing: 0) {
+                            rangeFigure("\(DisplayPriceFormatter.string(cents: displayedLowCents)) a", colors: colors)
+                            rangeFigure(DisplayPriceFormatter.string(cents: displayedHighCents), colors: colors)
+                        }
+                        .accessibilityElement(children: .combine)
+                    } else {
+                        rangeFigure(rangeText, colors: colors)
+                    }
 
                     Text("al mes")
                         .font(.title3)
@@ -45,7 +56,7 @@ struct SavingsResultStep: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                HStack(spacing: 0) {
+                statsLayout {
                     statColumn(value: annualText, label: "al año", colors: colors)
                     hairline(colors: colors)
                     statColumn(
@@ -69,10 +80,28 @@ struct SavingsResultStep: View {
         .task { countUp() }
     }
 
+    private func rangeFigure(_ text: String, colors: AppThemeColors) -> some View {
+        Text(text)
+            .font(.system(size: figureSize, weight: .semibold, design: .rounded))
+            .monospacedDigit()
+            .foregroundStyle(colors.textPrimary)
+            .contentTransition(.numericText())
+            .minimumScaleFactor(0.5)
+            .lineLimit(1)
+    }
+
+    @ViewBuilder
     private func hairline(colors: AppThemeColors) -> some View {
-        Rectangle()
-            .fill(colors.borderSubtle)
-            .frame(width: 0.5, height: 36)
+        if dynamicTypeSize.isAccessibilitySize {
+            Rectangle()
+                .fill(colors.borderSubtle)
+                .frame(maxWidth: .infinity)
+                .frame(height: 0.5)
+        } else {
+            Rectangle()
+                .fill(colors.borderSubtle)
+                .frame(width: 0.5, height: 36)
+        }
     }
 
     private func statColumn(value: String, label: String, colors: AppThemeColors) -> some View {
@@ -85,8 +114,10 @@ struct SavingsResultStep: View {
             Text(label)
                 .font(.footnote)
                 .foregroundStyle(colors.textSecondary)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
     }
 
     private var displayedLowCents: Int {
@@ -102,7 +133,7 @@ struct SavingsResultStep: View {
     }
 
     private var annualText: String {
-        DisplayPriceFormatter.string(cents: estimate.annualHighCents)
+        "hasta \(DisplayPriceFormatter.string(cents: estimate.annualHighCents))"
     }
 
     private func countUp() {

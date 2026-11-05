@@ -12,6 +12,11 @@ test("remote deployment protects application and paid routes while exposing heal
   );
   try {
     assert.equal((await app.inject("/health")).statusCode, 200);
+    for (const url of ["/privacidad", "/privacidad.html"]) {
+      const privacy = await app.inject(url);
+      assert.equal(privacy.statusCode, 200);
+      assert.match(privacy.body, /Aviso de privacidad/);
+    }
     const denied = await app.inject("/");
     assert.equal(denied.statusCode, 401);
     assert.match(String(denied.headers["www-authenticate"]), /Basic/);

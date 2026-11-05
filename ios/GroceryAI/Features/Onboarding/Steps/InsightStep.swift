@@ -11,9 +11,15 @@ struct InsightStep: View {
 
     @State private var shown = false
 
+    private static let cityGaps: [(city: String, percent: String, gap: String)] = [
+        ("Ciudad de México", "4.3% más cara", "$34.80"),
+        ("Villahermosa", "6.3% más cara", "$49.30"),
+        ("Monterrey", "8.7% más cara", "$70.38")
+    ]
+
     private var headline: String {
         switch habit {
-        case .never: "La misma canasta puede costar $186 más"
+        case .never: "En tu misma ciudad, la misma canasta puede costar hasta $70 más"
         case .always: "Comparar vale la pena, pero toma tiempo"
         default: "Las ofertas cambian cada semana"
         }
@@ -40,31 +46,14 @@ struct InsightStep: View {
             GlassProminentButton("Continuar", action: onContinue)
             },
             content: {
-            VStack(spacing: AppSpacing.extraLarge) {
-                HStack(alignment: .top, spacing: AppSpacing.medium) {
-                    miniReceipt(
-                        store: "Bodega Aurrera",
-                        city: "Mérida",
-                        total: "$734",
-                        stamp: "Más barata",
-                        colors: colors
-                    )
-                    miniReceipt(
-                        store: "Walmart",
-                        city: "Naucalpan",
-                        total: "$920.50",
-                        extraHeight: 44,
-                        colors: colors
-                    )
-                    .padding(.top, AppSpacing.extraLarge)
-                }
-                .frame(maxWidth: .infinity)
-
-                Text("$186.50 de diferencia")
-                    .font(.title3.weight(.semibold))
-                    .fontDesign(.rounded)
-                    .monospacedDigit()
-                    .foregroundStyle(colors.textPrimary)
+            VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                ReceiptView(
+                    title: "Misma canasta, misma ciudad",
+                    lines: Self.cityGaps.map {
+                        ReceiptView.Line(label: $0.city, secondary: $0.percent, price: $0.gap)
+                    },
+                    footerText: "Diferencia entre la tienda más barata y la más cara de cada ciudad, con la misma canasta de 24 productos."
+                )
 
                 Text("Profeco, Quién es Quién en los Precios, sept. 2026.")
                     .font(.caption)
@@ -78,85 +67,6 @@ struct InsightStep: View {
                 shown = true
             } else {
                 withAnimation(.easeOut(duration: 0.35)) { shown = true }
-            }
-        }
-    }
-
-    private func miniReceipt(
-        store: String,
-        city: String,
-        total: String,
-        stamp: String? = nil,
-        extraHeight: CGFloat = 0,
-        colors: AppThemeColors
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(store)
-                    .font(.headline)
-                    .foregroundStyle(colors.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                Text(city)
-                    .font(.footnote)
-                    .foregroundStyle(colors.textSecondary)
-            }
-            .padding(.trailing, 0)
-
-            Text("24 productos")
-                .font(.footnote)
-                .foregroundStyle(colors.textSecondary)
-
-            Spacer(minLength: 0)
-
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Total")
-                    .font(.footnote)
-                    .foregroundStyle(colors.textSecondary)
-                Text(total)
-                    .font(.title2.weight(.semibold))
-                    .fontDesign(.rounded)
-                    .monospacedDigit()
-                    .foregroundStyle(colors.textPrimary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-            }
-            .accessibilityElement(children: .combine)
-        }
-        .frame(height: 168 + extraHeight)
-        .padding(AppSpacing.medium)
-        .padding(.bottom, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            ReceiptPaperShape()
-                .fill(
-                    colorScheme == .dark
-                        ? colors.surfaceElevated
-                        : colors.surfacePrimary
-                )
-                .shadow(
-                    color: colorScheme == .dark ? .clear : .black.opacity(0.08),
-                    radius: 10, y: 4
-                )
-        }
-        .clipShape(ReceiptPaperShape())
-        .overlay(alignment: .topTrailing) {
-            if let stamp {
-                Text(stamp)
-                    .font(.caption2.bold())
-                    .foregroundStyle(
-                        colorScheme == .dark
-                            ? colors.statusSuccess
-                            : Color(red: 0.082, green: 0.478, blue: 0.22)
-                    )
-                    .padding(.horizontal, AppSpacing.small)
-                    .padding(.vertical, AppSpacing.extraSmall)
-                    .background(colors.statusSuccess.opacity(0.14), in: .capsule)
-                    .overlay {
-                        Capsule()
-                            .stroke(colors.backgroundPrimary, lineWidth: 2)
-                    }
-                    .offset(x: AppSpacing.small, y: -AppSpacing.small)
             }
         }
     }

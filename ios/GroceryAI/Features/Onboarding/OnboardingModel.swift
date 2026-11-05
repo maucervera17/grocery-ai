@@ -9,6 +9,12 @@ final class OnboardingModel {
     var path: [OnboardingStep] = []
     var didViewPaywall = false
 
+    var isVerifyingAccess = false
+    var accessErrorMessage: String?
+    var hasVerifiedAccess = false
+    /// The user chose "No tengo contraseña": the demo can't call the API.
+    var accessSkipped = false
+
     var isImportingList = false
     var importErrorMessage: String?
 
@@ -25,6 +31,16 @@ final class OnboardingModel {
 
     var demoSoftCap: Duration = .seconds(12)
     var demoHardCap: Duration = .seconds(45)
+    /// Keeps "Comparando" on screen long enough to read when the API is fast.
+    var demoMinimumDuration: Duration = .milliseconds(1500)
+
+    var hasAccessPassword: @MainActor () -> Bool = { APIAccess.hasPassword }
+    var accessVerifier: @Sendable (String) async -> APIAccess.Verification = {
+        await APIAccess.verify(password: $0)
+    }
+    var accessSaver: @MainActor (String) throws -> Void = {
+        try APIAccess.savePassword($0)
+    }
 
     var notificationStatusProvider: @Sendable () async -> UNAuthorizationStatus = {
         await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
@@ -105,10 +121,11 @@ final class OnboardingModel {
         case .postalCode: .planLoader
         case .planLoader: .savingsResult
         case .savingsResult: .benefits
-        case .benefits: .importMethod
+        case .benefits: hasAccessPassword() ? .importMethod : .access
+        case .access: .importMethod
         case .importMethod: .importReview
         case .importReview: .demoPick
-        case .demoPick: .demoComparing
+        case .demoPick: accessSkipped ? .demoResult : .demoComparing
         case .demoComparing: .demoResult
         case .demoResult: .paywall
         case .paywall: nil
@@ -201,11 +218,84 @@ final class OnboardingModel {
     }
 
 
-    func useSuggestedList() {
+    func submitAccess(_ password: String) async {
+        let trimmed = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !isVerifyingAccess else { return }
+        isVerifyingAccess = true
+        accessErrorMessage = nil
+        let result = await accessVerifier(trimmed)
+        isVerifyingAccess = false
+        switch result {
+        case .valid:
+            do {
+                try accessSaver(trimmed)
+            } catch {
+                accessErrorMessage = "No pudimos guardar tu contraseña en este iPhone. Intenta de nuevo."
+                return
+            }
+            hasVerifiedAccess = true
+            accessSkipped = false
+            OnboardingEvent.accessVerified.log()
+            advance(from: .access)
+        case .invalid:
+            accessErrorMessage = "Esa contraseña no es válida. Revísala e intenta de nuevo."
+        case .unreachable:
+            accessErrorMessage = "No pudimos conectar con Barasu. Revisa tu internet e intenta de nuevo."
+        }
+    }
+
+    func skipAccess() {
+        accessSkipped = true
+        accessErrorMessage = nil
+        importErrorMessage = nil
         answers.importMethod = .suggested
         answers.importedItems = suggestedItems
-        OnboardingEvent.importMethod(.suggested).log()
+        OnboardingEvent.accessSkipped.log()
+        push(.importReview)
+    }
+
+    func useSuggestedList() {
+        applySuggestedList()
         advance(from: .importMethod)
+    }
+
+    /// Replaces a failed import with the suggested list without leaving the review step.
+    func applySuggestedList() {
+        answers.importMethod = .suggested
+        answers.importedItems = suggestedItems
+        importErrorMessage = nil
+        OnboardingEvent.importMethod(.suggested).log()
+    }
+
+    func showUnreadablePhoto() {
+        answers.importedItems = []
+        importErrorMessage = Self.unrecognizedListMessage(for: .camera)
+        if path.last != .importReview {
+            push(.importReview)
+        }
+    }
+
+    static func unrecognizedListMessage(for method: ImportMethod?) -> String {
+        switch method {
+        case .camera:
+            "No encontré productos en la foto. Prueba con otra foto con buena luz o pega tu lista como texto."
+        case .paste:
+            "No reconocí productos en el texto que pegaste. Pon un producto por línea o sepáralos con comas."
+        default:
+            "No reconocí productos en tu lista. Pon un producto por línea o sepáralos con comas."
+        }
+    }
+
+    static func importErrorMessage(for error: any Error, method: ImportMethod?) -> String {
+        if let apiError = error as? GroceryAPIError {
+            return apiError.isAccessProblem
+                ? "No tienes acceso al servidor de precios. Usa una lista sugerida y agrega tu contraseña después en Ajustes."
+                : "El servidor de Barasu no respondió. Intenta de nuevo en un momento."
+        }
+        if error is URLError {
+            return "No pudimos conectar con Barasu. Revisa tu internet e intenta de nuevo."
+        }
+        return unrecognizedListMessage(for: method)
     }
 
     func importList(from text: String) async {
@@ -224,9 +314,13 @@ final class OnboardingModel {
             )
             answers.importedItems = response.draftItems
             isImportingList = false
+            if response.draftItems.isEmpty {
+                importErrorMessage = Self.unrecognizedListMessage(for: answers.importMethod)
+            }
         } catch {
             isImportingList = false
-            importErrorMessage = "No pude leer tu lista. Intenta otra foto o pégala como texto."
+            answers.importedItems = []
+            importErrorMessage = Self.importErrorMessage(for: error, method: answers.importMethod)
         }
     }
 
@@ -252,6 +346,9 @@ final class OnboardingModel {
         let comparisonService = self.comparisonService
         let softCap = demoSoftCap
         let hardCap = demoHardCap
+        let minimumDuration = demoMinimumDuration
+        let clock = ContinuousClock()
+        let startedAt = clock.now
 
         demoTask = Task { [weak self] in
             let slowMessageTask = Task { @MainActor [weak self] in
@@ -276,6 +373,10 @@ final class OnboardingModel {
                 return first ?? nil
             }
 
+            let elapsed = startedAt.duration(to: clock.now)
+            if elapsed < minimumDuration {
+                try? await Task.sleep(for: minimumDuration - elapsed)
+            }
             slowMessageTask.cancel()
             guard let self, !Task.isCancelled else { return }
             isComparingDemo = false

@@ -5,6 +5,7 @@ packages:
     from: 3.4.0
 options:
   bundleIdPrefix: com.groceryai
+  developmentLanguage: es-MX
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true

@@ -20,7 +20,10 @@ struct DemoPickStep: View {
             subtitle: "Te mostramos dónde están más baratos ahora mismo.",
             onBack: onBack,
             footer: {
-            GlassProminentButton("Comparar precios", systemImage: "cart.badge.questionmark") {
+            GlassProminentButton(
+                model.accessSkipped ? "Continuar" : "Comparar precios",
+                systemImage: model.accessSkipped ? nil : "cart.badge.questionmark"
+            ) {
                 model.demoItems = model.answers.importedItems
                     .filter { selectedIDs.contains($0.id) }
                 model.advance(from: .demoPick)
@@ -57,7 +60,7 @@ struct DemoPickStep: View {
                 )
 
                 VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
-                    Text(product.name)
+                    Text(ProductNameFormatter.display(product.name))
                         .font(.body.weight(.medium))
                         .foregroundStyle(colors.textPrimary)
                     Text(product.quantityDescription)
@@ -82,7 +85,7 @@ struct DemoPickStep: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(product.name), \(product.quantityDescription)")
+        .accessibilityLabel("\(ProductNameFormatter.display(product.name)), \(product.quantityDescription)")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .sensoryFeedback(.selection, trigger: isSelected)
     }

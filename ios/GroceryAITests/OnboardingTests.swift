@@ -47,12 +47,18 @@ struct SavingsEstimatorTests {
 @MainActor
 struct OnboardingModelTests {
     private func makeModel(
-        comparison: any ComparisonServicing = MockComparisonService()
+        agent: any AgentServicing = MockAgentService(),
+        comparison: any ComparisonServicing = MockComparisonService(),
+        hasPassword: Bool = true
     ) -> OnboardingModel {
-        OnboardingModel(
-            agentService: MockAgentService(),
+        let model = OnboardingModel(
+            agentService: agent,
             comparisonService: comparison
         )
+        model.hasAccessPassword = { hasPassword }
+        model.accessSaver = { _ in }
+        model.demoMinimumDuration = .zero
+        return model
     }
 
     private func waitForLastStep(
@@ -102,6 +108,145 @@ struct OnboardingModelTests {
         #expect(model.path.last == .importReview)
         #expect(model.answers.importMethod == .suggested)
         #expect(!model.answers.importedItems.isEmpty)
+    }
+
+    @Test
+    func accessStepAppearsBeforeImportOnlyWithoutPassword() {
+        #expect(makeModel(hasPassword: false).step(after: .benefits) == .access)
+        #expect(makeModel(hasPassword: true).step(after: .benefits) == .importMethod)
+        #expect(makeModel().step(after: .access) == .importMethod)
+        #expect(OnboardingStep.access.showsBackButton)
+        let order = OnboardingStep.progressOrder
+        #expect(order.firstIndex(of: .access)! < order.firstIndex(of: .importMethod)!)
+        #expect(order.firstIndex(of: .access)! > order.firstIndex(of: .benefits)!)
+    }
+
+    @Test
+    func validAccessPasswordIsSavedAndAdvances() async {
+        let model = makeModel(hasPassword: false)
+        var saved: String?
+        model.accessVerifier = { $0 == "correcta" ? .valid : .invalid }
+        model.accessSaver = { saved = $0 }
+        model.push(.access)
+
+        await model.submitAccess("  correcta \n")
+
+        #expect(saved == "correcta")
+        #expect(model.hasVerifiedAccess)
+        #expect(model.accessErrorMessage == nil)
+        #expect(model.path.last == .importMethod)
+    }
+
+    @Test
+    func invalidOrUnreachableAccessShowsInlineErrorAndStays() async {
+        let model = makeModel(hasPassword: false)
+        var saved = false
+        model.accessSaver = { _ in saved = true }
+        model.push(.access)
+
+        model.accessVerifier = { _ in .invalid }
+        await model.submitAccess("mala")
+        #expect(model.accessErrorMessage?.contains("no es válida") == true)
+        #expect(model.path.last == .access)
+
+        model.accessVerifier = { _ in .unreachable }
+        await model.submitAccess("mala")
+        #expect(model.accessErrorMessage?.contains("conectar") == true)
+        #expect(model.path.last == .access)
+        #expect(!saved)
+        #expect(!model.hasVerifiedAccess)
+    }
+
+    @Test
+    func skippingAccessUsesSuggestedListAndSkipsTheComparison() {
+        let model = makeModel(hasPassword: false)
+        model.push(.access)
+
+        model.skipAccess()
+
+        #expect(model.accessSkipped)
+        #expect(model.path.last == .importReview)
+        #expect(model.answers.importMethod == .suggested)
+        #expect(!model.answers.importedItems.isEmpty)
+        #expect(model.step(after: .demoPick) == .demoResult)
+        #expect(model.demoPlan == nil)
+    }
+
+    @Test
+    func importErrorsExplainTheRealCause() {
+        let access = OnboardingModel.importErrorMessage(
+            for: GroceryAPIError(message: "x", isAccessProblem: true), method: .paste
+        )
+        #expect(access.contains("acceso"))
+        let network = OnboardingModel.importErrorMessage(for: URLError(.notConnectedToInternet), method: .paste)
+        #expect(network.contains("internet"))
+        let parse = OnboardingModel.importErrorMessage(for: AgentServiceError.noProductsFound, method: .paste)
+        #expect(parse.contains("pegaste"))
+        #expect(!parse.contains("foto"))
+        #expect(OnboardingModel.unrecognizedListMessage(for: .camera).contains("foto"))
+    }
+
+    @Test
+    func failedImportCanFallBackToSuggestedList() async {
+        let model = makeModel(agent: FailingAgentService())
+        model.answers.importMethod = .paste
+        model.push(.importMethod)
+
+        await model.importList(from: "leche")
+        #expect(model.path.last == .importReview)
+        #expect(model.importErrorMessage != nil)
+        #expect(model.answers.importedItems.isEmpty)
+
+        model.applySuggestedList()
+        #expect(model.importErrorMessage == nil)
+        #expect(model.answers.importMethod == .suggested)
+        #expect(!model.answers.importedItems.isEmpty)
+        #expect(model.path.last == .importReview)
+    }
+
+    @Test
+    func comparingScreenStaysForTheMinimumDuration() async {
+        let model = makeModel()
+        model.demoMinimumDuration = .milliseconds(400)
+        model.answers.importedItems = OnboardingModel.suggestedItems(for: .threeFour)
+        model.push(.demoComparing)
+        let clock = ContinuousClock()
+        let start = clock.now
+
+        model.runDemoComparison()
+
+        #expect(await waitForLastStep(.demoResult, in: model))
+        #expect(start.duration(to: clock.now) >= .milliseconds(400))
+    }
+
+    @Test
+    func introCountsTheRealQuestions() {
+        #expect(OnboardingStep.questionSteps.count == 8)
+    }
+
+    @Test
+    func postalCodeValidationRejectsImpossibleCodes() {
+        #expect(PostalCodeStep.isValid("06700"))
+        #expect(PostalCodeStep.isValid("01000"))
+        #expect(!PostalCodeStep.isValid("00000"))
+        #expect(!PostalCodeStep.isValid("00999"))
+        #expect(!PostalCodeStep.isValid("0670"))
+        #expect(!PostalCodeStep.isValid("０６７００"))
+    }
+
+    @Test
+    func pasteCounterCountsCommaSeparatedItems() {
+        #expect(ImportListTextSheet.itemCount(in: "Leche, huevos, arroz y papel de baño") == 4)
+        #expect(ImportListTextSheet.itemCount(in: "Leche 2 L\nHuevo 12 piezas\n\nArroz 1 kg") == 3)
+        #expect(ImportListTextSheet.itemCount(in: "Queso 1,5 kg") == 1)
+        #expect(ImportListTextSheet.itemCount(in: "   ") == 0)
+    }
+
+    @Test
+    func productNamesAreCapitalizedForDisplay() {
+        #expect(ProductNameFormatter.display("papel de baño") == "Papel de baño")
+        #expect(ProductNameFormatter.display("Leche") == "Leche")
+        #expect(ProductNameFormatter.display("") == "")
     }
 
     @Test
@@ -172,6 +317,12 @@ struct OnboardingModelTests {
     }
 }
 
+private struct FailingAgentService: AgentServicing {
+    func updateDraft(message: String, currentItems: [ProductRequest]) async throws -> AgentResponse {
+        throw AgentServiceError.noProductsFound
+    }
+}
+
 private struct SlowComparisonService: ComparisonServicing {
     let delay: Duration
 
@@ -211,6 +362,7 @@ struct PaywallContextTests {
             agentService: MockAgentService(),
             comparisonService: MockComparisonService()
         )
+        model.hasAccessPassword = { true }
         model.answers.householdSize = .threeFour
         model.answers.shoppingFrequency = .weekly
         model.answers.postalCode = "06700"

@@ -33,7 +33,7 @@ struct IntroStep: View {
                     Text("Armemos tu plan de ahorro")
                         .font(.largeTitle.weight(.semibold))
                         .foregroundStyle(colors.textPrimary)
-                    Text("10 preguntas rápidas, unos 2 minutos")
+                    Text("\(OnboardingStep.questionSteps.count) preguntas rápidas, unos 2 minutos")
                         .font(AppTypography.body)
                         .foregroundStyle(colors.textSecondary)
                 }

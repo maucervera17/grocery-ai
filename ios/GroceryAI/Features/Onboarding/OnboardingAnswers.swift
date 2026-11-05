@@ -220,7 +220,7 @@ enum ShoppingGoal: String, CaseIterable, Hashable, Sendable {
 
     var systemImage: String {
         switch self {
-        case .saveMoney: "pesosign.circle"
+        case .saveMoney: "dollarsign.circle"
         case .saveTime: "clock"
         case .forgetNothing: "checklist"
         case .organize: "tray.full"

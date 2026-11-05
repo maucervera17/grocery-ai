@@ -205,6 +205,8 @@ test("demo supports a representative household basket beyond the original three 
   );
   const items = applyChanges([], changes).items;
   assert.equal(items.length, 8);
+  assert.ok(items.some((item) => item.name === "papel de baño"));
+  assert.ok(items.some((item) => item.name === "café"));
 
   const result = await createSearch({ mode: "demo", fixtures })({
     action: "compare",
