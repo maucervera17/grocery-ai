@@ -17,7 +17,7 @@ struct DemoComparingStep: View {
 
             VStack(spacing: AppSpacing.small) {
                 Text("Comparando precios")
-                    .font(.title2.bold())
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(colors.textPrimary)
                 Text("Buscando el menor total en Walmart, Bodega Aurrera y Chedraui.")
                     .font(.body)

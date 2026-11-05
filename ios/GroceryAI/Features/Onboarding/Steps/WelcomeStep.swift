@@ -79,7 +79,7 @@ struct WelcomeStep: View {
 
             VStack(spacing: AppSpacing.small) {
                 Text("Tu súper, al mejor precio.")
-                    .font(AppTypography.screenTitle.bold())
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(colors.textPrimary)
                     .multilineTextAlignment(.center)
                 Text("Escribe tu lista y Barasu compara Walmart, Bodega Aurrera y Chedraui por ti.")

@@ -11,7 +11,6 @@ struct SavingsResultStep: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var revealProgress = 0.0
-    @ScaledMetric private var figureSize: CGFloat = 56
 
     var body: some View {
         let colors = theme.colors(for: colorScheme)
@@ -34,7 +33,7 @@ struct SavingsResultStep: View {
                 VStack(spacing: AppSpacing.small) {
                     headerLayout {
                         Text("Podrías ahorrar")
-                            .font(.title3)
+                            .font(AppTypography.body)
                             .foregroundStyle(colors.textSecondary)
                         StatusBadge("Estimado", systemImage: "info.circle", kind: .information)
                             .fixedSize()
@@ -51,7 +50,7 @@ struct SavingsResultStep: View {
                     }
 
                     Text("al mes")
-                        .font(.title3)
+                        .font(AppTypography.body)
                         .foregroundStyle(colors.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -81,20 +80,14 @@ struct SavingsResultStep: View {
     }
 
     private func rangeFigure(_ text: String, colors: AppThemeColors) -> some View {
-        // In accessibility sizes the figure uses the same style as every
-        // onboarding title instead of a 56 pt base that scales past them.
+        // Same size as every onboarding title (OnboardingScaffold).
         Text(text)
-            .font(
-                dynamicTypeSize.isAccessibilitySize
-                    ? .title.weight(.semibold)
-                    : .system(size: figureSize, weight: .semibold)
-            )
+            .font(.title.weight(.semibold))
             .fontDesign(.rounded)
             .monospacedDigit()
             .foregroundStyle(colors.textPrimary)
             .contentTransition(.numericText())
-            .minimumScaleFactor(0.5)
-            .lineLimit(1)
+            .multilineTextAlignment(.center)
     }
 
     @ViewBuilder
@@ -114,7 +107,7 @@ struct SavingsResultStep: View {
     private func statColumn(value: String, label: String, colors: AppThemeColors) -> some View {
         VStack(spacing: 2) {
             Text(value)
-                .font(.title3.weight(.semibold))
+                .font(.headline)
                 .fontDesign(.rounded)
                 .monospacedDigit()
                 .foregroundStyle(colors.textPrimary)

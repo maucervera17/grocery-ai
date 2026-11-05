@@ -33,7 +33,7 @@ struct PlanLoaderStep: View {
             AgentAvatarView()
 
             Text("Preparando tu plan")
-                .font(AppTypography.sectionTitle.bold())
+                .font(.title.weight(.semibold))
                 .foregroundStyle(colors.textPrimary)
 
             VStack(alignment: .leading, spacing: AppSpacing.medium) {

@@ -22,6 +22,7 @@ struct ReceiptView: View {
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         let colors = theme.colors(for: colorScheme)
@@ -112,7 +113,11 @@ struct ReceiptView: View {
     }
 
     private func lineRow(_ line: Line, colors: AppThemeColors) -> some View {
-        HStack(alignment: .center, spacing: AppSpacing.medium) {
+        // Accessibility sizes: price below the label so names never break mid-word.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.extraSmall))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: AppSpacing.medium))
+        return layout {
             if let logo = line.logoAssetName {
                 logoTile(logo)
             }
@@ -126,7 +131,9 @@ struct ReceiptView: View {
                         .foregroundStyle(colors.textSecondary)
                 }
             }
-            Spacer(minLength: AppSpacing.small)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer(minLength: AppSpacing.small)
+            }
             Text(line.price)
                 .font(.subheadline.weight(.semibold))
                 .fontDesign(.rounded)

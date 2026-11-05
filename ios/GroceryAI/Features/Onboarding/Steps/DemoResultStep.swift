@@ -54,7 +54,7 @@ struct DemoResultStep: View {
             if model.accessSkipped && model.demoPlan == nil {
                 VStack(spacing: AppSpacing.large) {
                     Image(systemName: "lock")
-                        .font(.system(size: 40))
+                        .font(.largeTitle)
                         .foregroundStyle(colors.textSecondary)
                         .accessibilityHidden(true)
                     VStack(spacing: AppSpacing.small) {
@@ -72,7 +72,7 @@ struct DemoResultStep: View {
             } else if model.demoFailed {
                 VStack(spacing: AppSpacing.large) {
                     Image(systemName: "wifi.exclamationmark")
-                        .font(.system(size: 40))
+                        .font(.largeTitle)
                         .foregroundStyle(colors.textSecondary)
                         .accessibilityHidden(true)
                     VStack(spacing: AppSpacing.small) {
@@ -139,10 +139,8 @@ struct DemoResultStep: View {
                     .fontDesign(.rounded)
                     .monospacedDigit()
                     .foregroundStyle(colors.textPrimary)
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
                 Text("en \(matchedCount) productos")
-                    .font(.title3)
+                    .font(AppTypography.body)
                     .foregroundStyle(colors.textSecondary)
             }
         } else {

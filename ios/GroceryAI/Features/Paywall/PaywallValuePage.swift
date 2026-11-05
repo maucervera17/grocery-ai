@@ -46,7 +46,7 @@ struct PaywallValuePage: View {
                         .accessibilityHidden(true)
 
                     Text("Tu plan Barasu está listo")
-                        .font(.largeTitle.weight(.semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundStyle(colors.textPrimary)
                         .multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
