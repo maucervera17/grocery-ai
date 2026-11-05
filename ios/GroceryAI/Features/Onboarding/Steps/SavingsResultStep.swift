@@ -81,8 +81,15 @@ struct SavingsResultStep: View {
     }
 
     private func rangeFigure(_ text: String, colors: AppThemeColors) -> some View {
+        // In accessibility sizes the figure uses the same style as every
+        // onboarding title instead of a 56 pt base that scales past them.
         Text(text)
-            .font(.system(size: figureSize, weight: .semibold, design: .rounded))
+            .font(
+                dynamicTypeSize.isAccessibilitySize
+                    ? .title.weight(.semibold)
+                    : .system(size: figureSize, weight: .semibold)
+            )
+            .fontDesign(.rounded)
             .monospacedDigit()
             .foregroundStyle(colors.textPrimary)
             .contentTransition(.numericText())
