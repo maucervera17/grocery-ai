@@ -24,6 +24,8 @@ export type Options = {
   agent?: DraftAgent;
   timeoutMs?: number;
   ttlMs?: number;
+  basket?: import("../contracts/schema.js").OnboardingBasketData;
+  basketFixtures?: RawListing[];
 };
 const DEFAULT_SEARCH_TIMEOUT_MS = 75_000;
 export function failure(

@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "description": "Canasta básica del onboarding. Propuesta editable: cambia productos, marcas, presentaciones o monthly_packages (paquetes al mes para un hogar de 3 a 4 personas). Barasu compara exactamente este producto en cada tienda.",
+  "household_reference": "threeFour",
+  "items": [
+    {
+      "id": "huevo",
+      "name": "Huevo blanco Bachoco 18 piezas",
+      "brand": "Bachoco",
+      "query": "huevo bachoco",
+      "quantity": 18,
+      "unit": "piece",
+      "category": "eggs",
+      "monthly_packages": 3
+    },
+    {
+      "id": "leche",
+      "name": "Leche entera Lala 1 L",
+      "brand": "Lala",
+      "query": "leche entera lala",
+      "quantity": 1,
+      "unit": "L",
+      "category": "dairy",
+      "monthly_packages": 16
+    },
+    {
+      "id": "arroz",
+      "name": "Arroz súper extra Verde Valle 1 kg",
+      "brand": "Verde Valle",
+      "query": "arroz verde valle",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "pantry",
+      "monthly_packages": 2
+    },
+    {
+      "id": "frijol",
+      "name": "Frijoles negros enteros La Costeña 560 g",
+      "brand": "La Costeña",
+      "query": "frijoles negros costena",
+      "quantity": 560,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 4
+    },
+    {
+      "id": "aceite",
+      "name": "Aceite Nutrioli 946 ml",
+      "brand": "Nutrioli",
+      "query": "aceite nutrioli",
+      "quantity": 946,
+      "unit": "ml",
+      "category": "pantry",
+      "monthly_packages": 1
+    },
+    {
+      "id": "azucar",
+      "name": "Azúcar estándar Zulka 1 kg",
+      "brand": "Zulka",
+      "query": "azucar zulka",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "pantry",
+      "monthly_packages": 2
+    },
+    {
+      "id": "espagueti",
+      "name": "Espagueti La Moderna 200 g",
+      "brand": "La Moderna",
+      "query": "espagueti moderna",
+      "quantity": 200,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 4
+    },
+    {
+      "id": "atun",
+      "name": "Atún en agua Dolores 140 g",
+      "brand": "Dolores",
+      "query": "atun agua dolores",
+      "quantity": 140,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 6
+    },
+    {
+      "id": "pan",
+      "name": "Pan blanco grande Bimbo 680 g",
+      "brand": "Bimbo",
+      "query": "pan blanco bimbo",
+      "quantity": 680,
+      "unit": "g",
+      "category": "bakery",
+      "monthly_packages": 4
+    },
+    {
+      "id": "cafe",
+      "name": "Café soluble Nescafé Clásico 120 g",
+      "brand": "Nescafé",
+      "query": "cafe soluble nescafe clasico",
+      "quantity": 120,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 1
+    },
+    {
+      "id": "papel",
+      "name": "Papel higiénico Pétalo 12 rollos",
+      "brand": "Pétalo",
+      "query": "papel higienico petalo",
+      "quantity": 12,
+      "unit": "piece",
+      "category": "household",
+      "monthly_packages": 1
+    },
+    {
+      "id": "detergente",
+      "name": "Detergente en polvo Ariel 2 kg",
+      "brand": "Ariel",
+      "query": "detergente polvo ariel",
+      "quantity": 2,
+      "unit": "kg",
+      "category": "household",
+      "monthly_packages": 1
+    },
+    {
+      "id": "lavatrastes",
+      "name": "Lavatrastes líquido Salvo 750 ml",
+      "brand": "Salvo",
+      "query": "lavatrastes salvo",
+      "quantity": 750,
+      "unit": "ml",
+      "category": "household",
+      "monthly_packages": 1
+    },
+    {
+      "id": "yoghurt",
+      "name": "Yoghurt bebible Yoplait fresa 1 kg",
+      "brand": "Yoplait",
+      "query": "yoghurt bebible yoplait fresa",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "dairy",
+      "monthly_packages": 4
+    },
+    {
+      "id": "panela",
+      "name": "Queso panela Lala 400 g",
+      "brand": "Lala",
+      "query": "queso panela lala",
+      "quantity": 400,
+      "unit": "g",
+      "category": "dairy",
+      "monthly_packages": 2
+    },
+    {
+      "id": "jamon",
+      "name": "Jamón de pavo Fud 250 g",
+      "brand": "Fud",
+      "query": "jamon pavo fud",
+      "quantity": 250,
+      "unit": "g",
+      "category": "meat",
+      "monthly_packages": 4
+    },
+    {
+      "id": "galletas",
+      "name": "Galletas Marías Gamesa 170 g",
+      "brand": "Gamesa",
+      "query": "galletas marias gamesa",
+      "quantity": 170,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 2
+    },
+    {
+      "id": "mayonesa",
+      "name": "Mayonesa McCormick 390 g",
+      "brand": "McCormick",
+      "query": "mayonesa mccormick",
+      "quantity": 390,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 1
+    },
+    {
+      "id": "pure",
+      "name": "Puré de tomate Del Fuerte 210 g",
+      "brand": "Del Fuerte",
+      "query": "pure tomate fuerte",
+      "quantity": 210,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 4
+    },
+    {
+      "id": "avena",
+      "name": "Avena Quaker 400 g",
+      "brand": "Quaker",
+      "query": "avena quaker",
+      "quantity": 400,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 1
+    }
+  ]
+}

@@ -80,3 +80,15 @@ Cuando una oferta seleccionada forma parte de un plan, `PlanLine.image_url` cons
 `comparison.unit_winners` identifica ganadores por dimensión cuando hay al menos dos fuentes comparables. No se declara ganador entre gramos y mililitros, ni entre tiendas si solo respondió una. Los sinónimos de categoría, plurales comunes y el error de marca Axxe/Axe se normalizan. Precio principal, variación seleccionada y existencias de otras variantes se interpretan por separado.
 
 Las llamadas reales a Firecrawl se espacian 6.5 s por endpoint; los límites 429 se informan explícitamente sin reintento inmediato. El servidor permite hasta 90 s por consulta y el cliente espera hasta 95 s. Las pruebas usan un transporte simulado sin esperas. El informe de consultas reales está en `docs/CATALOG_TEST_REPORT.md`.
+
+## Canasta del onboarding (`POST /v1/onboarding/basket`)
+
+Request: `{retailer_id: "walmart" | "bodega_aurrera" | "chedraui", postal_code?: string | null}`. Una llamada por tienda; iOS las lanza en paralelo y palomea cada tienda al responder.
+
+Response: `{retailer_id, retailer_name, data_mode, requested_postal_code, prices_checked_at, basket, items, errors}`. `basket` es `fixtures/onboarding-basket.json` (productos con marca, presentación y `monthly_packages` para un hogar de 3 a 4 personas). Cada línea de `items`: `{basket_item_id, status: "priced" | "unavailable", product_name, price_cents, product_url, checked_at, data_status: "demo" | "verified" | null}`.
+
+- Solo se acepta el mismo producto: misma marca/nombre (`matches`) y la misma presentación exacta. Si la tienda no lo tiene, `status: "unavailable"` y precios en null; nunca se sustituye ni se inventa.
+- Demo: lee `fixtures/onboarding-basket.listings.json` (ofertas marcadas `(demo)`).
+- Live: solo lee la caché (`ListingRepository.search`) con observaciones de hasta 7 días. **Nunca llama a Firecrawl**: una canasta de ~20 productos × 3 tiendas por usuario no cabe en el plan gratuito. Sin caché, responde con `unavailable` y `CACHE_NOT_CONFIGURED`/`CACHE_FAILED`. El CP se devuelve como contexto; los precios son publicados, no verificados para ese CP.
+- Siguiente paso (no implementado): job semanal que cotice la canasta por zona y la guarde en Supabase.
+- Requiere Basic auth cuando `BARASU_ACCESS_PASSWORD` está configurada.
