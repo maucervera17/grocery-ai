@@ -41,7 +41,7 @@ struct PostalCodeStep: View {
         OnboardingScaffold(
             step: .postalCode,
             title: "¿Cuál es tu código postal?",
-            subtitle: "Lo usamos para tus comparaciones de precios. Solo guardamos tu código postal",
+            subtitle: "Lo guardamos para tus búsquedas. Por ahora comparamos precios publicados en línea, no los de una sucursal.",
             onBack: onBack,
             layout: .centered,
             footer: {

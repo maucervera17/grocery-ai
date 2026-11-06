@@ -19,20 +19,30 @@ const basketFixtures: RawListing[] = JSON.parse(
 ).map((r: unknown) => ScrapedListing.parse(r));
 const signal = () => AbortSignal.timeout(5000);
 
-test("la canasta del onboarding tiene 15 a 25 productos con marca y presentación", () => {
-  assert.ok(basket.items.length >= 15 && basket.items.length <= 25);
+test("la canasta del onboarding tiene 40 a 50 productos con marca y presentación", () => {
+  assert.ok(basket.items.length >= 40 && basket.items.length <= 50);
   for (const item of basket.items) {
     assert.ok(item.brand.length > 0);
     assert.ok(item.quantity > 0);
   }
 });
 
-test("cada producto de la canasta existe en los fixtures demo de las tres tiendas", () => {
+test("cada producto de la canasta existe en los fixtures demo de al menos dos tiendas", () => {
   for (const item of basket.items) {
-    for (const id of ["walmart", "bodega_aurrera", "chedraui"] as const) {
-      assert.ok(basketFixtures.some((r) => isSameProduct(r, item, id)), `${item.id} en ${id}`);
-    }
+    const stores = (["walmart", "bodega_aurrera", "chedraui"] as const).filter(
+      (id) => basketFixtures.some((r) => isSameProduct(r, item, id)),
+    );
+    assert.ok(stores.length >= 2, item.id);
   }
+});
+
+test("el demo trae algunos faltantes para probar \"No disponible\"", async () => {
+  const quote = await quoteBasket(
+    { retailer_id: "chedraui" },
+    { mode: "demo", basket, basketFixtures },
+    signal(),
+  );
+  assert.equal(quote.items.find((i) => i.basket_item_id === "agua")?.status, "unavailable");
 });
 
 test("demo cotiza Walmart con el mismo producto y marca lo que falta", async () => {
@@ -107,7 +117,10 @@ test("POST /v1/onboarding/basket valida y responde el contrato", async () => {
   const ok = await app.inject({ method: "POST", url: "/v1/onboarding/basket", payload: { retailer_id: "bodega_aurrera", postal_code: "06700" } });
   assert.equal(ok.statusCode, 200);
   const body = BasketQuoteResponse.parse(ok.json());
-  assert.ok(body.items.every((i) => i.status === "priced"));
+  assert.deepEqual(
+    body.items.filter((i) => i.status !== "priced").map((i) => i.basket_item_id),
+    ["queso-amarillo"],
+  );
   await app.close();
 });
 

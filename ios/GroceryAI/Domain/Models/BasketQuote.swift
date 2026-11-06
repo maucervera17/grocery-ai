@@ -19,6 +19,7 @@ struct BasketItem: Hashable, Sendable, Identifiable {
     let brand: String
     let categoryID: ProductCategory
     let monthlyPackages: Double
+    var soldPerKilo = false
 }
 
 struct BasketQuote: Hashable, Sendable {

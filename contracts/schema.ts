@@ -266,7 +266,7 @@ export const OnboardingBasket = z
     items: z
       .array(BasketItem)
       .min(1)
-      .max(30)
+      .max(60)
       .refine((a) => new Set(a.map((i) => i.id)).size === a.length, "Duplicate basket IDs"),
   })
   .strict();

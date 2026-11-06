@@ -156,7 +156,7 @@ struct BasketResultStep: View {
                         Text(row.item.name)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(colors.textPrimary)
-                        Text("\(Self.packages(row.monthlyPackages)) al mes")
+                        Text("\(Self.packages(row.monthlyPackages, perKilo: row.item.soldPerKilo)) al mes")
                             .font(.footnote)
                             .foregroundStyle(colors.textSecondary)
                         ForEach(stores) { store in
@@ -189,9 +189,9 @@ struct BasketResultStep: View {
         var parts: [String] = []
         let kind = estimate.isDemo ? "Precios de demostración" : "Precios publicados en línea"
         if let date = estimate.pricesCheckedAt {
-            parts.append("\(kind) del \(Self.dateFormatter.string(from: date)). Confirma en tienda.")
+            parts.append("\(kind) del \(Self.dateFormatter.string(from: date)). Pueden variar en tu sucursal; confirma en tienda.")
         } else {
-            parts.append("\(kind). Confirma en tienda.")
+            parts.append("\(kind). Pueden variar en tu sucursal; confirma en tienda.")
         }
         if estimate.comparableItemCount < estimate.rows.count {
             parts.append("Solo sumamos los \(estimate.comparableItemCount) productos que encontramos en las tiendas comparadas; nunca estimamos un precio que no vimos.")
@@ -247,9 +247,10 @@ struct BasketResultStep: View {
         return formatter.string(from: NSNumber(value: (Double(cents) / 100).rounded())) ?? "$\(cents / 100)"
     }
 
-    static func packages(_ value: Double) -> String {
+    static func packages(_ value: Double, perKilo: Bool = false) -> String {
         let rounded = (value * 2).rounded() / 2
         let text = rounded == rounded.rounded() ? String(Int(rounded)) : String(format: "%.1f", rounded)
+        if perKilo { return "\(text) kg" }
         return rounded == 1 ? "1 paquete" : "\(text) paquetes"
     }
 

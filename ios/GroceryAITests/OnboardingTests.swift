@@ -317,6 +317,12 @@ struct BasketEstimateTests {
         #expect(adjusted?.base == 550_000)
         #expect((adjusted?.savings ?? 0) > 0)
     }
+
+    @Test func perKiloItemsShowKilosPerMonth() {
+        #expect(BasketResultStep.packages(3, perKilo: true) == "3 kg")
+        #expect(BasketResultStep.packages(1.5, perKilo: true) == "1.5 kg")
+        #expect(BasketResultStep.packages(1) == "1 paquete")
+    }
 }
 
 @MainActor

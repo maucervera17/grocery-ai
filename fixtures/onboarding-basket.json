@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "description": "Canasta básica del onboarding. Propuesta editable: cambia productos, marcas, presentaciones o monthly_packages (paquetes al mes para un hogar de 3 a 4 personas). Barasu compara exactamente este producto en cada tienda.",
+  "version": 2,
+  "description": "Canasta básica del onboarding. Propuesta editable: cambia productos, marcas, presentaciones o monthly_packages. monthly_packages = paquetes (o kg en frutas, verduras y carnes a granel) que compra al mes un hogar de 3 a 4 personas; la app lo multiplica por 0.8 (2 personas) o 1.3 (5 o más). Criterio de calibración: que un hogar de 3 a 4 personas quede cerca de los ~$6,000 al mes de gasto en el súper que reporta INEGI (ENIGH) para un hogar promedio, cubriendo despensa, frescos, carne, lácteos, bebidas, limpieza e higiene personal. Barasu compara exactamente este producto en cada tienda.",
   "household_reference": "threeFour",
   "items": [
     {
@@ -202,6 +202,306 @@
       "unit": "kg",
       "category": "pantry",
       "monthly_packages": 2
+    },
+    {
+      "id": "pechuga",
+      "name": "Pechuga de pollo sin hueso Bachoco 1 kg",
+      "brand": "Bachoco",
+      "query": "pechuga pollo bachoco",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "meat",
+      "monthly_packages": 3
+    },
+    {
+      "id": "carne-molida",
+      "name": "Carne molida de res SuKarne 1 kg",
+      "brand": "SuKarne",
+      "query": "carne molida res sukarne",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "meat",
+      "monthly_packages": 3
+    },
+    {
+      "id": "bistec",
+      "name": "Bistec de res SuKarne 1 kg",
+      "brand": "SuKarne",
+      "query": "bistec res sukarne",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "meat",
+      "monthly_packages": 1.5
+    },
+    {
+      "id": "salchicha",
+      "name": "Salchicha de pavo Fud 500 g",
+      "brand": "Fud",
+      "query": "salchicha pavo fud",
+      "quantity": 500,
+      "unit": "g",
+      "category": "meat",
+      "monthly_packages": 3
+    },
+    {
+      "id": "tortillas",
+      "name": "Tortillas de harina Tía Rosa 10 piezas",
+      "brand": "Tía Rosa",
+      "query": "tortillas harina tia rosa",
+      "quantity": 10,
+      "unit": "piece",
+      "category": "bakery",
+      "monthly_packages": 4
+    },
+    {
+      "id": "jitomate",
+      "name": "Jitomate saladet a granel 1 kg",
+      "brand": "A granel",
+      "query": "jitomate saladet",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 4
+    },
+    {
+      "id": "cebolla",
+      "name": "Cebolla blanca a granel 1 kg",
+      "brand": "A granel",
+      "query": "cebolla blanca",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 2
+    },
+    {
+      "id": "papa",
+      "name": "Papa blanca a granel 1 kg",
+      "brand": "A granel",
+      "query": "papa blanca",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 3
+    },
+    {
+      "id": "platano",
+      "name": "Plátano tabasco a granel 1 kg",
+      "brand": "A granel",
+      "query": "platano tabasco",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 4
+    },
+    {
+      "id": "manzana",
+      "name": "Manzana Red Delicious a granel 1 kg",
+      "brand": "A granel",
+      "query": "manzana red delicious",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 3
+    },
+    {
+      "id": "limon",
+      "name": "Limón sin semilla a granel 1 kg",
+      "brand": "A granel",
+      "query": "limon sin semilla",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 2
+    },
+    {
+      "id": "aguacate",
+      "name": "Aguacate Hass a granel 1 kg",
+      "brand": "A granel",
+      "query": "aguacate hass",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 2
+    },
+    {
+      "id": "zanahoria",
+      "name": "Zanahoria a granel 1 kg",
+      "brand": "A granel",
+      "query": "zanahoria",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "produce",
+      "monthly_packages": 2
+    },
+    {
+      "id": "crema",
+      "name": "Crema Lala 450 ml",
+      "brand": "Lala",
+      "query": "crema lala",
+      "quantity": 450,
+      "unit": "ml",
+      "category": "dairy",
+      "monthly_packages": 3
+    },
+    {
+      "id": "mantequilla",
+      "name": "Mantequilla sin sal Gloria 90 g",
+      "brand": "Gloria",
+      "query": "mantequilla gloria",
+      "quantity": 90,
+      "unit": "g",
+      "category": "dairy",
+      "monthly_packages": 2
+    },
+    {
+      "id": "queso-amarillo",
+      "name": "Queso amarillo Kraft Singles 12 piezas",
+      "brand": "Kraft",
+      "query": "queso amarillo kraft",
+      "quantity": 12,
+      "unit": "piece",
+      "category": "dairy",
+      "monthly_packages": 2
+    },
+    {
+      "id": "shampoo",
+      "name": "Shampoo Sedal 620 ml",
+      "brand": "Sedal",
+      "query": "shampoo sedal",
+      "quantity": 620,
+      "unit": "ml",
+      "category": "personal_care",
+      "monthly_packages": 1
+    },
+    {
+      "id": "jabon",
+      "name": "Jabón de tocador Escudo 3 piezas",
+      "brand": "Escudo",
+      "query": "jabon tocador escudo",
+      "quantity": 3,
+      "unit": "piece",
+      "category": "personal_care",
+      "monthly_packages": 1
+    },
+    {
+      "id": "pasta-dental",
+      "name": "Pasta dental Colgate Triple Acción 150 ml",
+      "brand": "Colgate",
+      "query": "pasta dental colgate",
+      "quantity": 150,
+      "unit": "ml",
+      "category": "personal_care",
+      "monthly_packages": 2
+    },
+    {
+      "id": "desodorante",
+      "name": "Desodorante en barra Rexona 45 g",
+      "brand": "Rexona",
+      "query": "desodorante rexona",
+      "quantity": 45,
+      "unit": "g",
+      "category": "personal_care",
+      "monthly_packages": 2
+    },
+    {
+      "id": "cloro",
+      "name": "Cloro Cloralex 950 ml",
+      "brand": "Cloralex",
+      "query": "cloro cloralex",
+      "quantity": 950,
+      "unit": "ml",
+      "category": "household",
+      "monthly_packages": 2
+    },
+    {
+      "id": "suavizante",
+      "name": "Suavizante Suavitel 850 ml",
+      "brand": "Suavitel",
+      "query": "suavizante suavitel",
+      "quantity": 850,
+      "unit": "ml",
+      "category": "household",
+      "monthly_packages": 1
+    },
+    {
+      "id": "multiusos",
+      "name": "Limpiador multiusos Fabuloso 1 L",
+      "brand": "Fabuloso",
+      "query": "limpiador fabuloso",
+      "quantity": 1,
+      "unit": "L",
+      "category": "household",
+      "monthly_packages": 1
+    },
+    {
+      "id": "refresco",
+      "name": "Refresco Coca-Cola 3 L",
+      "brand": "Coca-Cola",
+      "query": "refresco coca cola",
+      "quantity": 3,
+      "unit": "L",
+      "category": "beverages",
+      "monthly_packages": 4
+    },
+    {
+      "id": "agua",
+      "name": "Agua natural Ciel 10 L",
+      "brand": "Ciel",
+      "query": "agua natural ciel",
+      "quantity": 10,
+      "unit": "L",
+      "category": "beverages",
+      "monthly_packages": 3
+    },
+    {
+      "id": "cereal",
+      "name": "Cereal Corn Flakes Kellogg's 500 g",
+      "brand": "Kellogg's",
+      "query": "cereal corn flakes",
+      "quantity": 500,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 2
+    },
+    {
+      "id": "papas",
+      "name": "Papas fritas Sabritas Original 160 g",
+      "brand": "Sabritas",
+      "query": "papas sabritas original",
+      "quantity": 160,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 2
+    },
+    {
+      "id": "consome",
+      "name": "Consomé de pollo Knorr Suiza 200 g",
+      "brand": "Knorr",
+      "query": "consome pollo knorr",
+      "quantity": 200,
+      "unit": "g",
+      "category": "pantry",
+      "monthly_packages": 1
+    },
+    {
+      "id": "salsa",
+      "name": "Salsa picante Valentina 370 ml",
+      "brand": "Valentina",
+      "query": "salsa valentina",
+      "quantity": 370,
+      "unit": "ml",
+      "category": "pantry",
+      "monthly_packages": 1
+    },
+    {
+      "id": "sal",
+      "name": "Sal de mesa La Fina 1 kg",
+      "brand": "La Fina",
+      "query": "sal fina",
+      "quantity": 1,
+      "unit": "kg",
+      "category": "pantry",
+      "monthly_packages": 1
     }
   ]
 }
