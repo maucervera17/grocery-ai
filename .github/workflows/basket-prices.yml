@@ -1,0 +1,47 @@
+name: Onboarding basket prices
+# Keeps the onboarding basket cache fresh (the app reads prices up to 7 days
+# old). Two runs a week: the second one only fills items that are missing or
+# older than 4 days, so it retries failures without scraping everything again.
+on:
+  schedule:
+    - cron: "0 11 * * 1,4" # lunes y jueves, 05:00 en CDMX
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Volver a consultar todos los productos"
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: basket-prices
+  cancel-in-progress: false
+jobs:
+  precompute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_URL: https://vlfqqniorpfveuxhqnpt.supabase.co
+    steps:
+      - name: Skip when the repository has no price secrets
+        id: secrets
+        run: |
+          if [ -z "$FIRECRAWL_API_KEY" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Faltan los secretos FIRECRAWL_API_KEY o SUPABASE_SERVICE_ROLE_KEY; no se consulta nada."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.secrets.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.secrets.outputs.ready == 'true'
+        run: npm run basket:precompute -- ${{ inputs.force && '--force' || '' }}
