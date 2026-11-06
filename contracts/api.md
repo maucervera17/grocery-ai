@@ -89,6 +89,6 @@ Response: `{retailer_id, retailer_name, data_mode, requested_postal_code, prices
 
 - Solo se acepta el mismo producto: misma marca/nombre (`matches`) y la misma presentación exacta. Si la tienda no lo tiene, `status: "unavailable"` y precios en null; nunca se sustituye ni se inventa.
 - Demo: lee `fixtures/onboarding-basket.listings.json` (ofertas marcadas `(demo)`).
-- Live: solo lee la caché (`ListingRepository.search`) con observaciones de hasta 7 días. **Nunca llama a Firecrawl**: una canasta de ~20 productos × 3 tiendas por usuario no cabe en el plan gratuito. Sin caché, responde con `unavailable` y `CACHE_NOT_CONFIGURED`/`CACHE_FAILED`. El CP se devuelve como contexto; los precios son publicados, no verificados para ese CP.
+- Live: solo lee la caché (`ListingRepository.search`) con observaciones de hasta 7 días. **Nunca llama a Firecrawl**: una canasta de ~50 productos × 3 tiendas por usuario no cabe en el plan gratuito. Sin caché, responde con `unavailable` y `CACHE_NOT_CONFIGURED`/`CACHE_FAILED`. El CP se devuelve como contexto; los precios son publicados, no verificados para ese CP.
 - La caché la llena `npm run basket:precompute` (workflow `.github/workflows/basket-prices.yml`, lunes y jueves). Ver «Precálculo de la canasta» en `docs/BACKEND_SUPABASE_INTEGRATION.md`.
 - Requiere Basic auth cuando `BARASU_ACCESS_PASSWORD` está configurada.
