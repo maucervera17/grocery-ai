@@ -273,3 +273,30 @@ test("mixed presentations have separate unit winners, never a grams-versus-milli
   assert.equal(result.comparison!.unit_winners![0].basis, "ml");
   assert.match(result.reply, /A tiene el menor/);
 });
+test("demo mode compares example prices without a configured AI agent", async () => {
+  const fixtures = JSON.parse(
+    (await import("node:fs")).readFileSync("fixtures/listings.json", "utf8"),
+  ) as RawListing[];
+  const result = SearchResponse.parse(
+    await createSearch({ mode: "demo", fixtures })({
+      action: "product_prices",
+      message: "¿Cuánto cuesta la leche?",
+      items: [],
+      location: null,
+      price_scope: "published",
+    }),
+  );
+  assert.equal(result.comparison!.data_mode, "demo");
+  assert.equal(result.comparison!.offers.length, 2);
+  assert.ok(
+    result.comparison!.offers.every(
+      (o) => Date.now() - Date.parse(o.listing.checkedAt) < 60000,
+    ),
+  );
+  assert.match(result.reply, /^DEMO/);
+});
+test("live mode without an AI agent reports it without technical setup copy", async () => {
+  const result = await createSearch({ mode: "live", fixtures: [] })(question);
+  assert.equal(result.status, "error");
+  assert.doesNotMatch(result.reply, /configur/i);
+});

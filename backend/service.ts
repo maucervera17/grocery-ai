@@ -48,14 +48,14 @@ export function createSearch(options: Options) {
         (options.mode === "demo" ? new DemoDraftAgent() : undefined);
       if (!agent)
         return {
-          reply: "Configura el agente de IA.",
+          reply: "El asistente no está disponible por ahora. Intenta más tarde.",
           status: "error",
           draft_items: input.items,
           plan: null,
           errors: [
             failure(
               "AGENT_NOT_CONFIGURED",
-              "Configura ANTHROPIC_API_KEY y CLAUDE_MODEL, o AI_GATEWAY_API_KEY y AGENT_MODEL.",
+              "El asistente no está disponible por ahora. Intenta más tarde.",
             ),
           ],
         };
