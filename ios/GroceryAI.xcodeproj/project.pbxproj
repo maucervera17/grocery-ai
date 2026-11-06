@@ -61,6 +61,7 @@
 		4D9D857778B5C443F2F77A4F /* BasketQuoteClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79E6ADCD29A405AAB63C5896 /* BasketQuoteClient.swift */; };
 		4EAA202862BCC869E5E78E5A /* AppThemeEnvironmentKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2358928C749175E452F2BC5B /* AppThemeEnvironmentKey.swift */; };
 		4F2B8DD6BBB507F842DF9CEA /* VoiceToolError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23D4160535294289A2C70801 /* VoiceToolError.swift */; };
+		5191C4DFADA295F3401337AD /* NearbyStoresFinder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C542DC5809F28E9655A2360 /* NearbyStoresFinder.swift */; };
 		544B7C46389073E4D5339DEA /* OnboardingAnswers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E7301067FA007C3FB75BD5 /* OnboardingAnswers.swift */; };
 		5451E83375E2746B1779F2EB /* FrequentProductCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38690442536412CA0D311D22 /* FrequentProductCard.swift */; };
 		570E979E01FC34E436E76630 /* MockFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F0310330630475B36E591E /* MockFixtures.swift */; };
@@ -277,6 +278,7 @@
 		9839F2F0B77D736E670E16C7 /* PaywallFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallFlowView.swift; sourceTree = "<group>"; };
 		9AFDC2BDCED9ABF2D6E740EE /* ProductEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductEditorView.swift; sourceTree = "<group>"; };
 		9C26AD5DFB9E5BFAF812F0AE /* PaywallPlanCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallPlanCard.swift; sourceTree = "<group>"; };
+		9C542DC5809F28E9655A2360 /* NearbyStoresFinder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyStoresFinder.swift; sourceTree = "<group>"; };
 		9DE352E569D8C1527F19469F /* VoiceSearchParameters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchParameters.swift; sourceTree = "<group>"; };
 		9EC31C6CE489866FADFF29B7 /* SuggestionChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionChip.swift; sourceTree = "<group>"; };
 		9EFAF189AF94E0424F60119D /* MatchStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchStatusIndicator.swift; sourceTree = "<group>"; };
@@ -454,6 +456,7 @@
 			isa = PBXGroup;
 			children = (
 				A93F77F65268E826CD80DDB2 /* LocationRequestView.swift */,
+				9C542DC5809F28E9655A2360 /* NearbyStoresFinder.swift */,
 				A0AFD5D819BB49818FEAAAEC /* PostalCodeLocator.swift */,
 			);
 			path = Location;
@@ -919,6 +922,7 @@
 				8618F041F670DFC4CEA3F400 /* MockComparisonService.swift in Sources */,
 				570E979E01FC34E436E76630 /* MockFixtures.swift in Sources */,
 				BDD6A53FC856A2597DB528C1 /* MockOrderFixtures.swift in Sources */,
+				5191C4DFADA295F3401337AD /* NearbyStoresFinder.swift in Sources */,
 				544B7C46389073E4D5339DEA /* OnboardingAnswers.swift in Sources */,
 				D296904D3C195882E467140D /* OnboardingEvent.swift in Sources */,
 				D441190A417F8A4AEA168956 /* OnboardingFlowView.swift in Sources */,
