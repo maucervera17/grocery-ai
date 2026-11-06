@@ -11,19 +11,27 @@ struct PostalCodeStep: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var locator = PostalCodeLocator()
+    @State private var nearby = NearbyStoresFinder()
+    @State private var mapPosition: MapCameraPosition = .region(Self.genericRegion)
     @State private var showsManualField = false
     @FocusState private var isFieldFocused: Bool
 
-    private let region = MKCoordinateRegion(
+    private static let genericRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 19.415, longitude: -99.165),
         span: MKCoordinateSpan(latitudeDelta: 0.03, longitudeDelta: 0.03)
     )
 
-    private let storePins: [(String, CLLocationCoordinate2D)] = [
-        ("RetailerWalmart", CLLocationCoordinate2D(latitude: 19.4195, longitude: -99.1710)),
-        ("RetailerBodegaAurrera", CLLocationCoordinate2D(latitude: 19.4105, longitude: -99.1590)),
-        ("RetailerChedraui", CLLocationCoordinate2D(latitude: 19.4090, longitude: -99.1740))
-    ]
+    private var postalCodeCenter: CLLocationCoordinate2D? {
+        if case .loaded(let latitude, let longitude, _) = nearby.state {
+            return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        }
+        return nil
+    }
+
+    private var nearbyStores: [NearbyStore] {
+        if case .loaded(_, _, let stores) = nearby.state { return stores }
+        return []
+    }
 
     private var hasCode: Bool {
         Self.isValid(postalCode)
@@ -83,7 +91,10 @@ struct PostalCodeStep: View {
             },
             content: {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
-                mapHero(colors: colors)
+                if nearby.state != .failed {
+                    mapHero(colors: colors)
+                }
+                nearbyStatus(colors: colors)
 
                 if hasCode && !showsManualField {
                     HStack(spacing: AppSpacing.medium) {
@@ -143,15 +154,44 @@ struct PostalCodeStep: View {
                 showsManualField = false
             }
         }
-        .onDisappear { locator.cancel() }
+        .onChange(of: postalCode, initial: true) {
+            if hasCode {
+                nearby.find(postalCode: postalCode)
+            } else {
+                nearby.reset()
+                mapPosition = .region(Self.genericRegion)
+            }
+        }
+        .onChange(of: nearby.state) {
+            if case .loaded(let latitude, let longitude, let stores) = nearby.state {
+                let farthest = stores.map(\.distance).max() ?? NearbyStoresFinder.searchRadius / 2
+                let span = max(farthest * 2.6, 1_500)
+                withAnimation {
+                    mapPosition = .region(MKCoordinateRegion(
+                        center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
+                        latitudinalMeters: span,
+                        longitudinalMeters: span
+                    ))
+                }
+            }
+        }
+        .onDisappear {
+            locator.cancel()
+            nearby.reset()
+        }
     }
 
     @ViewBuilder
     private func mapHero(colors: AppThemeColors) -> some View {
-        Map(initialPosition: .region(region)) {
-            ForEach(Array(storePins.enumerated()), id: \.offset) { _, pin in
-                Annotation("", coordinate: pin.1) {
-                    Image(pin.0)
+        Map(position: $mapPosition) {
+            if let center = postalCodeCenter {
+                Annotation("", coordinate: center) {
+                    centerDot(colors: colors)
+                }
+            }
+            ForEach(nearbyStores) { branch in
+                Annotation("", coordinate: branch.coordinate) {
+                    Image(branch.store.logoAssetName ?? "")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 34, height: 24)
@@ -168,16 +208,6 @@ struct PostalCodeStep: View {
         .allowsHitTesting(false)
         .frame(height: 240)
         .clipShape(.rect(cornerRadius: 28, style: .continuous))
-        .overlay(alignment: .center) {
-            Circle()
-                .fill(colors.brandPrimary)
-                .frame(width: 16, height: 16)
-                .overlay {
-                    Circle()
-                        .stroke(.white, lineWidth: 3)
-                }
-                .accessibilityHidden(true)
-        }
         .mask(alignment: .bottom) {
             LinearGradient(
                 colors: [.black, .black.opacity(0)],
@@ -186,5 +216,39 @@ struct PostalCodeStep: View {
             )
         }
         .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func nearbyStatus(colors: AppThemeColors) -> some View {
+        switch nearby.state {
+        case .idle:
+            EmptyView()
+        case .loading:
+            HStack(spacing: AppSpacing.small) {
+                ProgressView()
+                Text("Buscando sucursales cerca de tu CP…")
+            }
+            .font(.footnote)
+            .foregroundStyle(colors.textSecondary)
+            .accessibilityElement(children: .combine)
+        case .loaded(_, _, let stores):
+            Label(NearbyStoresFinder.summary(for: stores), systemImage: "mappin.and.ellipse")
+                .font(.footnote)
+                .foregroundStyle(colors.textSecondary)
+        case .failed:
+            Label("No pudimos ubicar tu CP en el mapa. Igual comparamos precios en línea.", systemImage: "map")
+                .font(.footnote)
+                .foregroundStyle(colors.textSecondary)
+        }
+    }
+
+    private func centerDot(colors: AppThemeColors) -> some View {
+        Circle()
+            .fill(colors.brandPrimary)
+            .frame(width: 16, height: 16)
+            .overlay {
+                Circle()
+                    .stroke(.white, lineWidth: 3)
+            }
     }
 }

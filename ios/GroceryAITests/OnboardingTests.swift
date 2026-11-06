@@ -392,3 +392,30 @@ struct PaywallContextTests {
         #expect(context.basketSavingsMonthlyCents == nil)
     }
 }
+
+struct NearbyStoresTests {
+    @Test func placeNamesMatchOnlyTheQuotedChains() {
+        #expect(NearbyStoresFinder.store(forPlaceName: "Walmart Supercenter Universidad") == .walmart)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Walmart Express Narvarte") == nil)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Sam's Club Universidad") == nil)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Mi Bodega Aurrera") == .bodegaAurrera)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Bodega Aurrera Express") == .bodegaAurrera)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Chedraui Selecto") == .chedraui)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Soriana Híper") == nil)
+        #expect(NearbyStoresFinder.store(forPlaceName: "Costco") == nil)
+    }
+
+    @Test func summaryListsTheNearestBranchOfEachChain() {
+        func branch(_ store: StoreChoice, _ id: String, _ distance: Double) -> NearbyStore {
+            NearbyStore(id: id, store: store, name: store.title, latitude: 0, longitude: 0, distance: distance)
+        }
+        let nearest = NearbyStoresFinder.nearestPerChain([
+            branch(.walmart, "a", 2_300), branch(.chedraui, "b", 1_240), branch(.walmart, "c", 760), branch(.bodegaAurrera, "d", 320)
+        ])
+        #expect(nearest.map(\.id) == ["d", "c", "b"])
+        #expect(NearbyStoresFinder.summary(for: nearest)
+            == "3 sucursales cerca de tu CP: Bodega Aurrera a 300 m, Walmart a 800 m y Chedraui a 1.2 km.")
+        #expect(NearbyStoresFinder.summary(for: [branch(.chedraui, "b", 1_240)]) == "1 sucursal cerca de tu CP: Chedraui a 1.2 km.")
+        #expect(NearbyStoresFinder.summary(for: []).hasPrefix("No encontramos"))
+    }
+}
