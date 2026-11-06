@@ -19,7 +19,7 @@ struct BasketResultStep: View {
     }
 
     private var title: String {
-        if model.accessSkipped { return "Tu canasta está lista" }
+        if model.accessSkipped { return "Sin contraseña no vemos precios" }
         guard let estimate, !model.basketFailed else { return "No pudimos consultar los precios" }
         if let base = model.displayedFigures.base, let store = estimate.baseStore {
             return "Unos \(Self.pesos(base)) al mes en \(store.title)"
@@ -68,13 +68,17 @@ struct BasketResultStep: View {
 
         VStack(alignment: .leading, spacing: AppSpacing.large) {
             if model.accessSkipped {
-                bodyText("Para consultar precios reales necesitas tu contraseña de acceso. Sin ella no te mostramos cifras: no inventamos precios.")
+                bodyText("Para cotizar tu canasta necesitas tu contraseña de acceso. Sin ella no te mostramos cifras: no inventamos precios. Puedes agregarla después en Ajustes.")
                 bodyText("Te dejamos una lista sugerida para que pruebes Barasu.")
             } else if let estimate, !model.basketFailed {
                 summary(estimate)
                 if estimate.baseStore != nil, estimate.baseIsSupported {
-                    Button(answers.spendAdjustment == nil ? "¿Gastas más o menos?" : "Ajustado a lo que gastas · Cambiar") {
+                    Button {
                         isShowingSpendOptions = true
+                    } label: {
+                        Text(answers.spendAdjustment == nil ? "¿Gastas más o menos?" : "Ajustado a lo que gastas · Cambiar")
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(colors.brandPrimary)
@@ -96,7 +100,10 @@ struct BasketResultStep: View {
         let chosen = StoreChoice.joinedTitles(estimate.comparisonStores)
 
         if let base = figures.base, let store = estimate.baseStore {
-            bodyText("\(householdSentence) gasta unos \(Self.pesos(base)) al mes en \(store.title), unos \(Self.pesos(estimate.perTripCents(base))) por compra.")
+            let perTrip = Self.pesos(estimate.perTripCents(base))
+            bodyText(answers.spendAdjustment == nil
+                ? "\(householdSentence) gasta unos \(Self.pesos(base)) al mes en \(store.title) en estos \(estimate.rows.count) básicos, unos \(perTrip) por compra."
+                : "Con lo que nos dijiste, gastas unos \(Self.pesos(base)) al mes en \(store.title), unos \(perTrip) por compra.")
         } else if let notice = estimate.baseStore?.unsupportedNotice {
             bodyText(notice)
         }
@@ -142,7 +149,7 @@ struct BasketResultStep: View {
         let colors = theme.colors(for: colorScheme)
         let stores = estimate.storeTotals
 
-        return DisclosureGroup("Ver los \(estimate.rows.count) productos de la canasta") {
+        return DisclosureGroup {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 ForEach(estimate.rows) { row in
                     VStack(alignment: .leading, spacing: AppSpacing.extraSmall) {
@@ -168,6 +175,10 @@ struct BasketResultStep: View {
                 }
             }
             .padding(.top, AppSpacing.medium)
+        } label: {
+            Text("Ver los \(estimate.rows.count) productos de la canasta")
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .font(.subheadline.weight(.semibold))
         .tint(colors.brandPrimary)
@@ -221,7 +232,9 @@ struct BasketResultStep: View {
             }
         }
         .font(.callout)
+        .multilineTextAlignment(.leading)
         .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, AppSpacing.medium)
         .accessibilityElement(children: .combine)
     }

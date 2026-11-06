@@ -52,7 +52,7 @@ struct PaywallValuePage: View {
                 ReceiptView(
                     title: "Tu plan",
                     lines: receiptLines,
-                    totalLabel: "Ahorro estimado",
+                    totalLabel: savingsText == nil ? nil : "Ahorro estimado",
                     totalPrice: savingsText
                 )
 
@@ -70,11 +70,11 @@ struct PaywallValuePage: View {
         }
     }
 
-    private var savingsText: String {
+    private var savingsText: String? {
         guard let cents = context.basketSavingsMonthlyCents, cents > 0 else {
-            return "—"
+            return nil
         }
-        return "\(DisplayPriceFormatter.string(cents: cents))/mes"
+        return "\(BasketResultStep.pesos(cents))/mes"
     }
 }
 

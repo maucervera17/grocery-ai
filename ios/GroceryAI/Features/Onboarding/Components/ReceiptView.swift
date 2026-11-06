@@ -39,11 +39,16 @@ struct ReceiptView: View {
                     }
                 }
                 if let totalPrice {
-                    HStack {
+                    let totalLayout = dynamicTypeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.extraSmall))
+                        : AnyLayout(HStackLayout())
+                    totalLayout {
                         Text(totalLabel ?? "Total")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(colors.textPrimary)
-                        Spacer()
+                        if !dynamicTypeSize.isAccessibilitySize {
+                            Spacer()
+                        }
                         Text(totalPrice)
                             .font(.title3.weight(.semibold))
                             .fontDesign(.rounded)
@@ -139,7 +144,7 @@ struct ReceiptView: View {
                 .fontDesign(.rounded)
                 .monospacedDigit()
                 .foregroundStyle(line.priceIsSuccess ? stampColor : colors.textPrimary)
-                .fixedSize()
+                .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
         }
         .accessibilityElement(children: .combine)
     }

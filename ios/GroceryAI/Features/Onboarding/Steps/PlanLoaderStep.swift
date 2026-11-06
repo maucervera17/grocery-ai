@@ -7,6 +7,7 @@ struct PlanLoaderStep: View {
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .callout) private var statusIconWidth: CGFloat = 22
 
     private enum LineState { case done, loading, failed }
 
@@ -51,17 +52,20 @@ struct PlanLoaderStep: View {
                 VStack(alignment: .leading, spacing: AppSpacing.medium) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                         HStack(spacing: AppSpacing.medium) {
-                            switch line.state {
-                            case .done:
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(colors.statusSuccess)
-                            case .loading:
-                                ProgressView()
-                                    .controlSize(.small)
-                            case .failed:
-                                Image(systemName: "exclamationmark.circle")
-                                    .foregroundStyle(colors.textSecondary)
+                            Group {
+                                switch line.state {
+                                case .done:
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(colors.statusSuccess)
+                                case .loading:
+                                    ProgressView()
+                                        .controlSize(.small)
+                                case .failed:
+                                    Image(systemName: "exclamationmark.circle")
+                                        .foregroundStyle(colors.textSecondary)
+                                }
                             }
+                            .frame(width: statusIconWidth)
                             Text(line.text)
                                 .font(.callout)
                                 .foregroundStyle(line.state == .loading ? colors.textSecondary : colors.textPrimary)
