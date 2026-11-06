@@ -63,6 +63,33 @@ const mapped = (items: Item[], rows = fixtures) =>
     ]),
   );
 
+test("demo draft accepts one product per line with the amount after the name", async () => {
+  const app = buildApp({ mode: "demo", fixtures });
+  try {
+    const draft = await app.inject({
+      method: "POST",
+      url: "/v1/chat/search",
+      payload: {
+        action: "update_draft",
+        message: "Leche 2 L\nHuevo 12 piezas\nArroz 1 kg\nPapel de baño",
+        items: [],
+      },
+    });
+    const d = SearchResponse.parse(draft.json());
+    assert.deepEqual(
+      d.draft_items.map((i) => [i.quantity, i.unit]),
+      [
+        [2, "L"],
+        [12, "piece"],
+        [1, "kg"],
+        [1, "package"],
+      ],
+    );
+  } finally {
+    await app.close();
+  }
+});
+
 test("HTTP acceptance: conversational draft -> three products -> two-store plan", async () => {
   const app = buildApp({ mode: "demo", fixtures });
   try {
@@ -205,6 +232,8 @@ test("demo supports a representative household basket beyond the original three 
   );
   const items = applyChanges([], changes).items;
   assert.equal(items.length, 8);
+  assert.ok(items.some((item) => item.name === "papel de baño"));
+  assert.ok(items.some((item) => item.name === "café"));
 
   const result = await createSearch({ mode: "demo", fixtures })({
     action: "compare",

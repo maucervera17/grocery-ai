@@ -20,6 +20,13 @@ function demoDefaultAmount(name: string): {
   if (/^(?:leche|aceite)/.test(name)) return { quantity: 1, unit: "L" };
   return { quantity: 1, unit: "kg" };
 }
+// The demo grammar matches accent-free text; show the Spanish spelling back.
+const demoDisplayNames: Record<string, string> = {
+  "papel de bano": "papel de baño",
+  "papel higienico": "papel higiénico",
+  cafe: "café",
+  "cafe molido": "café molido",
+};
 export const Operations = z
   .object({
     operations: z
@@ -90,7 +97,7 @@ export class DemoDraftAgent implements DraftAgent {
     signal: AbortSignal,
   ): Promise<Changes> {
     signal.throwIfAborted();
-    const text = canonical(message),
+    const text = canonical(message.replace(/\s*[\r\n\u2028\u2029]+\s*/g, "; ")),
       operations: Changes["operations"] = [];
     if (/\b(ignora|instrucciones|historial|anterior|borra todo)\b/.test(text))
       return {
@@ -120,9 +127,15 @@ export class DemoDraftAgent implements DraftAgent {
       : text.replace(/^(agrega|anade|quiero|necesito)\s+/, "");
     const seen = new Set<string>();
     for (const part of input.split(/,\s*(?!\d)|;|\n|\s+y\s+/)) {
+      const trailingAmount =
+        /^(\D+?)\s+(\d+(?:[.,]\d+)?\s*(?:kilogramos?|kilos?|kg|gramos?|g|litros?|l|mililitros?|ml|piezas?|pz|docenas?|paquetes?)?)$/.exec(
+          part.trim(),
+        );
       const m =
         /^(?:(\d+(?:[.,]\d+)?)\s*)?(?:(kilogramos?|kilos?|kg|gramos?|g|litros?|l|mililitros?|ml|piezas?|pz|docenas?|paquetes?)\b\s*(?:de\s+)?)?(.+)$/.exec(
-          part.trim(),
+          trailingAmount
+            ? `${trailingAmount[2]} ${trailingAmount[1]}`
+            : part.trim(),
         );
       if (!m)
         return {
@@ -167,7 +180,7 @@ export class DemoDraftAgent implements DraftAgent {
         };
       seen.add(name);
       const item = {
-        name,
+        name: demoDisplayNames[name] ?? name,
         quantity: m[1] ? Number(m[1].replace(",", ".")) : defaults.quantity,
         unit,
         notes: null,

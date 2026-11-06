@@ -75,18 +75,47 @@ struct OnboardingScaffold<Footer: View, Content: View>: View {
                 .padding(.horizontal, AppSpacing.extraLarge)
                 .padding(.vertical, AppSpacing.medium)
                 .frame(maxWidth: .infinity)
-                .background(alignment: .top) {
+                .background {
+                    // Opaque behind the controls so scrolled options never show
+                    // through a disabled button; a short fade sits just above.
                     if Footer.self != EmptyView.self {
-                        BottomContentFade()
-                            .frame(height: AppControlSize.bottomContentFadeExtension)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
+                        colors.backgroundPrimary
+                            .ignoresSafeArea(edges: .bottom)
+                            .overlay(alignment: .top) {
+                                BottomContentFade()
+                                    .frame(height: AppSpacing.section)
+                                    .offset(y: -AppSpacing.section)
+                            }
                     }
                 }
+        }
+        .overlay(alignment: .leading) {
+            if let onBack, step.showsBackButton {
+                edgeSwipeBack(onBack)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
             OnboardingEvent.stepViewed(step).log()
         }
+    }
+
+    /// Hiding the navigation bar disables the system swipe-back, so a thin
+    /// leading-edge strip restores it for steps that show the back button.
+    private func edgeSwipeBack(_ onBack: @escaping () -> Void) -> some View {
+        Color.clear
+            .frame(width: AppSpacing.large)
+            .contentShape(.rect)
+            .gesture(
+                DragGesture(minimumDistance: AppSpacing.small)
+                    .onEnded { value in
+                        let horizontal = value.translation.width
+                        if horizontal > 60, abs(value.translation.height) < horizontal {
+                            onBack()
+                        }
+                    }
+            )
+            .accessibilityHidden(true)
     }
 
     private var frameAlignment: Alignment {

@@ -7,6 +7,7 @@ struct QuestionStep<Value: Hashable>: View {
         var systemImage: String?
         var retailerID: RetailerID?
         var logoAssetName: String?
+        var detail: String?
 
         var id: Value { value }
     }
@@ -24,8 +25,10 @@ struct QuestionStep<Value: Hashable>: View {
 
     var body: some View {
         scaffold {
-            GlassProminentButton("Continuar", action: onContinue)
-                .disabled(!hasSelection)
+            if allowsMultipleSelection {
+                GlassProminentButton("Continuar", action: onContinue)
+                    .disabled(!hasSelection)
+            }
         }
     }
 
@@ -46,6 +49,7 @@ struct QuestionStep<Value: Hashable>: View {
                             systemImage: option.systemImage,
                             retailerID: option.retailerID,
                             logoAssetName: option.logoAssetName,
+                            detail: option.detail,
                             isSelected: isSelected(option.value)
                         ) {
                             select(option.value)

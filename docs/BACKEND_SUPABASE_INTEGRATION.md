@@ -93,6 +93,16 @@ Las migraciones 001–004 se aplicaron al proyecto remoto mediante SQL Editor. *
 
 Para una base local de desarrollo, sigue `database/README.md` y `supabase/config.toml`. Para comprobar la integración sin escribir en Supabase remoto, usa las pruebas unitarias y los fixtures; para comprobar el proyecto real, revisa primero el efecto de `npm run smoke:db` indicado arriba.
 
+## Precálculo de la canasta del onboarding
+
+`POST /v1/onboarding/basket` nunca consulta Firecrawl: en live solo lee precios guardados de hasta 7 días. `npm run basket:precompute` (`scripts/precompute-basket.ts` → `backend/basket-precompute.ts`) llena esa caché: por cada producto de `fixtures/onboarding-basket.json` lee la caché y, si a alguna de las 3 tiendas le falta el mismo producto (`isSameProduct`) con menos de 4 días, consulta las 3 tiendas con `FirecrawlScraper` y guarda todo con `grocery_upsert_listings`. Las consultas son sin CP (precios publicados), igual que la lectura del onboarding. Se detiene si Firecrawl responde sin créditos o sin autorización y termina con un resumen de cuántos productos quedaron con precio por tienda.
+
+- `npm run basket:precompute -- --dry-run` imprime el máximo de consultas sin hacer ninguna: por producto, 1 búsqueda y hasta 2 páginas por tienda (50 productos → 150 búsquedas y 300 páginas). El límite de `RequestWindow` (10 por minuto por endpoint) hace que una corrida completa tarde unos 30–45 minutos.
+- `--force` vuelve a consultar todos los productos aunque tengan precio reciente.
+- Necesita `FIRECRAWL_API_KEY`, `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`, igual que el backend live.
+- `.github/workflows/basket-prices.yml` lo corre lunes y jueves (05:00 CDMX) y a mano desde Actions. El jueves solo rellena lo que falló o caducó. Necesita los secretos de repositorio `FIRECRAWL_API_KEY` y `SUPABASE_SERVICE_ROLE_KEY`; si no existen, el workflow termina sin consultar nada.
+- Precios por CP no están incluidos: verificar entrega por CP usa acciones de navegador por página, es más lento y multiplicaría el costo por cada zona.
+
 ## Integración iOS y límites actuales
 
 `ios/GroceryAI/Data/API/GroceryAPIClient.swift` contiene `APIConfiguration.baseURL` con la URL HTTPS de Render y el cliente tipado. iOS pide al usuario la contraseña de demo en Agente → Ajustes → Backend, la guarda en el llavero del dispositivo y la usa para las peticiones al backend. El cliente iOS actual implementa `update_draft` y `compare`; el contrato backend también tiene `product_prices`, pero no presupongas que la UI nativa ya lo llama. La foto de cada línea de plan está en `image_url` opcional. La geolocalización iOS usa CoreLocation/CLGeocoder y envía CP, no coordenadas al backend.

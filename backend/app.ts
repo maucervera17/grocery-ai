@@ -3,7 +3,8 @@ import { registerVoice, type VoiceOptions } from "./voice.js";
 import { readFile } from "node:fs/promises";
 import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify from "fastify";
-import { SearchRequest, SearchResponse } from "../contracts/schema.js";
+import { BasketQuoteRequest, BasketQuoteResponse, SearchRequest, SearchResponse } from "../contracts/schema.js";
+import { quoteBasket } from "./onboarding-basket.js";
 import { createSearch, failure, type Options } from "./service.js";
 export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, accessPassword?: string, publicWebOrigin?: string) {
   const app = Fastify({
@@ -21,7 +22,7 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
     };
     app.addHook("onRequest", async (request, reply) => {
       const path = request.url.split("?")[0];
-      if (path === "/health") return;
+      if (["/health", "/privacidad", "/privacidad.html", "/brand-light.svg", "/brand-dark.svg"].includes(path)) return;
       const header = request.headers.authorization;
       const match = /^Basic ([A-Za-z0-9+/=]+)$/.exec(header ?? "");
       let valid = false;
@@ -75,6 +76,8 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
   });
   for (const [route, file, type] of [
     ["/", "index.html", "text/html; charset=utf-8"],
+    ["/privacidad", "privacidad.html", "text/html; charset=utf-8"],
+    ["/privacidad.html", "privacidad.html", "text/html; charset=utf-8"],
     ["/style.css", "style.css", "text/css"],
     ["/design-system.css", "design-system.css", "text/css"],
     ["/brand-light.svg", "brand-light.svg", "image/svg+xml"],
@@ -168,6 +171,25 @@ export function buildApp(options: Options, voiceOptions: VoiceOptions = {}, acce
           ),
         );
     return SearchResponse.parse(await search(input.data));
+  });
+  app.post("/v1/onboarding/basket", async (req, reply) => {
+    const input = BasketQuoteRequest.safeParse(req.body);
+    if (!input.success || !options.basket)
+      return reply.code(input.success ? 503 : 400).send({
+        error: input.success ? "BASKET_NOT_CONFIGURED" : "INVALID_REQUEST",
+      });
+    return BasketQuoteResponse.parse(
+      await quoteBasket(
+        input.data,
+        {
+          mode: options.mode,
+          basket: options.basket,
+          basketFixtures: options.basketFixtures ?? [],
+          repository: options.repository,
+        },
+        AbortSignal.timeout(10_000),
+      ),
+    );
   });
   return app;
 }

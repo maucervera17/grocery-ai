@@ -21,8 +21,7 @@ struct PaywallPlansPage: View {
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
-
-    private static let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         let colors = theme.colors(for: colorScheme)
@@ -48,6 +47,10 @@ struct PaywallPlansPage: View {
                 }
                 .disabled(isBusy)
 
+                if dynamicTypeSize.isAccessibilitySize {
+                    cancellationNote(colors: colors)
+                }
+
                 summaryReceipt(colors: colors)
 
                 legalLinks(colors: colors)
@@ -57,15 +60,11 @@ struct PaywallPlansPage: View {
                 GlassProminentButton(callToActionTitle, isLoading: isPurchasing, action: purchase)
                     .disabled(isRestoring)
 
-                Label(
-                    selectedPlanID == .annual
-                        ? "Sin pago hoy · Cancela en Ajustes cuando quieras"
-                        : "Cancela en Ajustes cuando quieras",
-                    systemImage: "checkmark.shield"
-                )
-                .font(.footnote)
-                .foregroundStyle(colors.textSecondary)
-                .frame(maxWidth: .infinity)
+                // In accessibility sizes the note moves into the scroll view so the
+                // pinned footer stays short and never covers the billed price.
+                if !dynamicTypeSize.isAccessibilitySize {
+                    cancellationNote(colors: colors)
+                }
             }
         }
         .alert(
@@ -123,22 +122,48 @@ struct PaywallPlansPage: View {
         isAlertPresented = true
     }
 
-    private func legalLinks(colors: AppThemeColors) -> some View {
-        HStack(spacing: AppSpacing.small) {
-            Button("Restaurar compras", action: restore)
-                .disabled(isBusy)
-            Text("·")
-            Link("Términos", destination: Self.termsURL)
-            Text("·")
-            Button("Privacidad") {
-                present(.privacyUnavailable)
-            }
-        }
+    private func cancellationNote(colors: AppThemeColors) -> some View {
+        Label(
+            selectedPlanID == .annual
+                ? "Sin pago hoy · Cancela en Ajustes cuando quieras"
+                : "Cancela en Ajustes cuando quieras",
+            systemImage: "checkmark.shield"
+        )
         .font(.footnote)
         .foregroundStyle(colors.textSecondary)
-        .tint(colors.textSecondary)
-        .frame(maxWidth: .infinity, minHeight: AppControlSize.minimumTapTarget)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func legalLinks(colors: AppThemeColors) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: AppSpacing.small) {
+                legalLinkButtons(separator: true, colors: colors)
+            }
+            VStack(spacing: 0) {
+                legalLinkButtons(separator: false, colors: colors)
+            }
+        }
+        .font(.subheadline.weight(.medium))
+        .tint(colors.brandPrimary)
+        .frame(maxWidth: .infinity)
         .padding(.bottom, AppSpacing.section)
+    }
+
+    @ViewBuilder
+    private func legalLinkButtons(separator: Bool, colors: AppThemeColors) -> some View {
+        Button("Restaurar compras", action: restore)
+            .disabled(isBusy)
+            .frame(minHeight: AppControlSize.minimumTapTarget)
+        if separator {
+            Text("·").foregroundStyle(colors.textSecondary).accessibilityHidden(true)
+        }
+        Link("Términos", destination: LegalLinks.terms)
+            .frame(minHeight: AppControlSize.minimumTapTarget)
+        if separator {
+            Text("·").foregroundStyle(colors.textSecondary).accessibilityHidden(true)
+        }
+        Link("Privacidad", destination: LegalLinks.privacy)
+            .frame(minHeight: AppControlSize.minimumTapTarget)
     }
 
     private func renewalDisclosure(for plan: SubscriptionPlan) -> String {
@@ -164,7 +189,8 @@ struct PaywallPlansPage: View {
         guard plan.id == .annual else {
             return nil
         }
-        return Int((Double(plan.priceCents) / 12).rounded())
+        // Whole pesos, like every other price on the paywall.
+        return Int((Double(plan.priceCents) / 1_200).rounded()) * 100
     }
 
     private func purchase() {

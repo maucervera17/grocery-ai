@@ -16,17 +16,13 @@ struct PaywallValuePage: View {
             lines.append(.init(label: "Súper", price: frequency))
         }
         if let postalCode = context.postalCode {
-            lines.append(.init(label: "Cerca de", price: "CP \(postalCode)"))
+            lines.append(.init(label: "Tu CP", price: postalCode))
         }
         if context.listItemCount > 0 {
             lines.append(.init(label: "Tu lista", price: "\(context.listItemCount) productos"))
         }
-        if let demoSavings = context.demoSavingsCents, demoSavings > 0 {
-            lines.append(.init(
-                label: "Tu prueba",
-                price: "−\(DisplayPriceFormatter.string(cents: demoSavings))",
-                priceIsSuccess: true
-            ))
+        if let stores = context.storesLabel {
+            lines.append(.init(label: "Comparas", price: stores))
         }
         return lines
     }
@@ -46,7 +42,7 @@ struct PaywallValuePage: View {
                         .accessibilityHidden(true)
 
                     Text("Tu plan Barasu está listo")
-                        .font(.largeTitle.weight(.semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundStyle(colors.textPrimary)
                         .multilineTextAlignment(.center)
                         .accessibilityAddTraits(.isHeader)
@@ -56,7 +52,7 @@ struct PaywallValuePage: View {
                 ReceiptView(
                     title: "Tu plan",
                     lines: receiptLines,
-                    totalLabel: "Ahorro estimado",
+                    totalLabel: savingsText == nil ? nil : "Ahorro estimado",
                     totalPrice: savingsText
                 )
 
@@ -74,11 +70,11 @@ struct PaywallValuePage: View {
         }
     }
 
-    private var savingsText: String {
-        guard let cents = context.estimatedMonthlySavingsHighCents, cents > 0 else {
-            return "—"
+    private var savingsText: String? {
+        guard let cents = context.basketSavingsMonthlyCents, cents > 0 else {
+            return nil
         }
-        return "hasta \(DisplayPriceFormatter.string(cents: cents))/mes"
+        return "\(BasketResultStep.pesos(cents))/mes"
     }
 }
 

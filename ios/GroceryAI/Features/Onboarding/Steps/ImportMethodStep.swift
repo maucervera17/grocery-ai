@@ -16,15 +16,11 @@ struct ImportMethodStep: View {
 
     private let recognizer = ListTextRecognizer()
 
-    private var recommended: ImportMethod {
-        ImportMethod(listHabit: model.answers.listHabit)
-    }
-
     var body: some View {
         OnboardingScaffold(
             step: .importMethod,
             title: "Trae tu lista del súper",
-            subtitle: "La usaremos para tu prueba. Puedes editarla después.",
+            subtitle: "Es opcional. La dejamos lista para comparar cuando entres. Puedes editarla después.",
             onBack: onBack,
             footer: {
             VStack(spacing: AppSpacing.small) {
@@ -45,7 +41,6 @@ struct ImportMethodStep: View {
                     OnboardingOptionRow(
                         title: method.title,
                         systemImage: method.systemImage,
-                        badge: method == recommended ? "Recomendado" : nil,
                         isSelected: model.answers.importMethod == method
                     ) {
                         model.answers.importMethod = method
@@ -93,7 +88,9 @@ struct ImportMethodStep: View {
 
     private func continueWithSelection() {
         guard let method = model.answers.importMethod else { return }
-        OnboardingEvent.importMethod(method).log()
+        if method != .suggested {
+            OnboardingEvent.importMethod(method).log()
+        }
         switch method {
         case .camera:
             if CameraImagePicker.isAvailable {
@@ -128,14 +125,12 @@ struct ImportMethodStep: View {
             do {
                 let text = try await recognizer.recognizeText(in: image)
                 if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    model.importErrorMessage = "No pude leer tu lista. Intenta otra foto o pégala como texto."
-                    model.push(.importReview)
+                    model.showUnreadablePhoto()
                 } else {
                     await model.importList(from: text)
                 }
             } catch {
-                model.importErrorMessage = "No pude leer tu lista. Intenta otra foto o pégala como texto."
-                model.push(.importReview)
+                model.showUnreadablePhoto()
             }
         }
     }

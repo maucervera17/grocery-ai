@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "retailer_id": {
+      "type": "string",
+      "enum": [
+        "walmart",
+        "bodega_aurrera",
+        "chedraui"
+      ]
+    },
+    "retailer_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "data_mode": {
+      "type": "string",
+      "enum": [
+        "demo",
+        "live"
+      ]
+    },
+    "requested_postal_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "prices_checked_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "basket": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
+        },
+        "description": {
+          "type": "string"
+        },
+        "household_reference": {
+          "type": "string",
+          "const": "threeFour"
+        },
+        "items": {
+          "minItems": 1,
+          "maxItems": 60,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9-]{1,40}$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "brand": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "query": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              },
+              "quantity": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 100000,
+                "multipleOf": 0.001
+              },
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "g",
+                  "kg",
+                  "ml",
+                  "L",
+                  "piece",
+                  "package",
+                  "dozen"
+                ]
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "produce",
+                  "dairy",
+                  "eggs",
+                  "meat",
+                  "bakery",
+                  "pantry",
+                  "beverages",
+                  "frozen",
+                  "household",
+                  "personal_care",
+                  "other"
+                ]
+              },
+              "monthly_packages": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "brand",
+              "query",
+              "quantity",
+              "unit",
+              "category",
+              "monthly_packages"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "version",
+        "description",
+        "household_reference",
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "basket_item_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "priced",
+              "unavailable"
+            ]
+          },
+          "product_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price_cents": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^https?:\\/\\/"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "verified",
+                  "demo"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "basket_item_id",
+          "status",
+          "product_name",
+          "price_cents",
+          "product_url",
+          "checked_at",
+          "data_status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "client_item_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "client_item_id",
+          "retryable"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "retailer_id",
+    "retailer_name",
+    "data_mode",
+    "requested_postal_code",
+    "prices_checked_at",
+    "basket",
+    "items",
+    "errors"
+  ],
+  "additionalProperties": false
+}

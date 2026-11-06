@@ -3,6 +3,7 @@
   "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist/vercel-web",
   "rewrites": [
+    { "source": "/privacidad", "destination": "/privacidad.html" },
     { "source": "/health", "destination": "https://barasu-api.onrender.com/health" },
     { "source": "/v1/:path*", "destination": "https://barasu-api.onrender.com/v1/:path*" }
   ]

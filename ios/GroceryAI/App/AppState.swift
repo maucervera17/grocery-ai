@@ -10,6 +10,8 @@ final class AppState {
     var messages: [ChatMessage] = []
     var orders: [CompletedOrder] = []
     var postalCode = ""
+    /// Onboarding answers used to personalize comparisons and the agent.
+    var shoppingProfile = ShoppingProfile()
     var loadingState: ChatLoadingState = .idle
     var comparisonPlan: ComparisonPlan?
 
@@ -224,22 +226,38 @@ final class AppState {
         persist()
     }
 
-    func completeOnboarding(items: [ProductRequest], postalCode: String) {
+    func completeOnboarding(
+        items: [ProductRequest],
+        postalCode: String,
+        profile: ShoppingProfile = ShoppingProfile()
+    ) {
         if !items.isEmpty {
             draft.replaceItems(with: items)
         }
         if !postalCode.isEmpty {
             self.postalCode = postalCode
         }
+        if !profile.isEmpty {
+            shoppingProfile = profile
+        }
         comparisonPlan = nil
         messages.append(ChatMessage(
             role: .agent,
-            text: "Tu lista está lista. Toca Comparar precios cuando quieras.",
+            text: Self.onboardingWelcome(for: profile),
             kind: .draftUpdate
         ))
         loadingState = .idle
         selectedTab = .agent
         persist()
+    }
+
+    static func onboardingWelcome(for profile: ShoppingProfile) -> String {
+        let stores = profile.comparisonStores.compactMap { StoreChoice(rawValue: $0) }
+        guard !stores.isEmpty else {
+            return "Tu lista está lista. Toca Comparar precios cuando quieras."
+        }
+        let joined = StoreChoice.joinedTitles(stores)
+        return "Tu lista está lista. Comparo tus productos en \(joined). Toca Comparar precios cuando quieras."
     }
 
     func startNewList() {
@@ -371,6 +389,9 @@ final class AppState {
             messages = storedMessages
         }
         postalCode = record.postalCode
+        if let storedProfile = try? decoder.decode(ShoppingProfile.self, from: record.profileData) {
+            shoppingProfile = storedProfile
+        }
     }
 
     private func persist() {
@@ -380,6 +401,7 @@ final class AppState {
         record.ordersData = (try? encoder.encode(orders)) ?? Data()
         record.messagesData = (try? encoder.encode(messages)) ?? Data()
         record.postalCode = postalCode
+        record.profileData = (try? encoder.encode(shoppingProfile)) ?? Data()
         try? modelContext.save()
     }
 
