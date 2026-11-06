@@ -27,27 +27,31 @@ test("la canasta del onboarding tiene 15 a 25 productos con marca y presentació
   }
 });
 
-test("cada producto de la canasta existe en los fixtures demo de al menos dos tiendas", () => {
+test("cada producto de la canasta existe en los fixtures demo de las tres tiendas", () => {
   for (const item of basket.items) {
-    const stores = (["walmart", "bodega_aurrera", "chedraui"] as const).filter(
-      (id) => basketFixtures.some((r) => isSameProduct(r, item, id)),
-    );
-    assert.ok(stores.length >= 2, item.id);
+    for (const id of ["walmart", "bodega_aurrera", "chedraui"] as const) {
+      assert.ok(basketFixtures.some((r) => isSameProduct(r, item, id)), `${item.id} en ${id}`);
+    }
   }
 });
 
 test("demo cotiza Walmart con el mismo producto y marca lo que falta", async () => {
+  const harina = basket.items.find((i) => i.id === "harina")!;
   const quote = await quoteBasket(
     { retailer_id: "walmart", postal_code: "06700" },
-    { mode: "demo", basket, basketFixtures },
+    {
+      mode: "demo",
+      basket,
+      basketFixtures: basketFixtures.filter((r) => !isSameProduct(r, harina, "walmart")),
+    },
     signal(),
   );
   BasketQuoteResponse.parse(quote);
   assert.equal(quote.retailer_name, "Walmart");
   assert.equal(quote.requested_postal_code, "06700");
-  const avena = quote.items.find((i) => i.basket_item_id === "avena");
-  assert.equal(avena?.status, "unavailable");
-  assert.equal(avena?.price_cents, null);
+  const missing = quote.items.find((i) => i.basket_item_id === "harina");
+  assert.equal(missing?.status, "unavailable");
+  assert.equal(missing?.price_cents, null);
   const huevo = quote.items.find((i) => i.basket_item_id === "huevo");
   assert.equal(huevo?.status, "priced");
   assert.equal(huevo?.data_status, "demo");

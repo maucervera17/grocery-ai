@@ -144,13 +144,13 @@
       "monthly_packages": 4
     },
     {
-      "id": "panela",
-      "name": "Queso panela Lala 400 g",
-      "brand": "Lala",
-      "query": "queso panela lala",
-      "quantity": 400,
+      "id": "jalapenos",
+      "name": "Chiles jalapeños en rajas La Costeña 220 g",
+      "brand": "La Costeña",
+      "query": "chiles jalapenos costena",
+      "quantity": 220,
       "unit": "g",
-      "category": "dairy",
+      "category": "pantry",
       "monthly_packages": 2
     },
     {
@@ -194,14 +194,14 @@
       "monthly_packages": 4
     },
     {
-      "id": "avena",
-      "name": "Avena Quaker 400 g",
-      "brand": "Quaker",
-      "query": "avena quaker",
-      "quantity": 400,
-      "unit": "g",
+      "id": "harina",
+      "name": "Harina de maíz Maseca 1 kg",
+      "brand": "Maseca",
+      "query": "harina maiz maseca",
+      "quantity": 1,
+      "unit": "kg",
       "category": "pantry",
-      "monthly_packages": 1
+      "monthly_packages": 2
     }
   ]
 }
