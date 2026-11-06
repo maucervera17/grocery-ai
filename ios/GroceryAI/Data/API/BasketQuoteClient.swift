@@ -11,6 +11,8 @@ extension GroceryAPIClient: BasketQuoting {
         let name: String
         let brand: String
         let category: ProductCategory
+        let quantity: Double
+        let unit: String
         let monthly_packages: Double
     }
 
@@ -72,7 +74,8 @@ extension GroceryAPIClient: BasketQuoting {
                     name: $0.name,
                     brand: $0.brand,
                     categoryID: $0.category,
-                    monthlyPackages: $0.monthly_packages
+                    monthlyPackages: $0.monthly_packages,
+                    soldPerKilo: $0.unit == "kg" && $0.quantity == 1 && [.produce, .meat].contains($0.category)
                 )
             },
             lines: wire.items.map {

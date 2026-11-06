@@ -136,6 +136,7 @@ struct ReceiptView: View {
                         .foregroundStyle(colors.textSecondary)
                 }
             }
+            .layoutPriority(1)
             if !dynamicTypeSize.isAccessibilitySize {
                 Spacer(minLength: AppSpacing.small)
             }
@@ -144,7 +145,8 @@ struct ReceiptView: View {
                 .fontDesign(.rounded)
                 .monospacedDigit()
                 .foregroundStyle(line.priceIsSuccess ? stampColor : colors.textPrimary)
-                .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize && line.price.count <= 12, vertical: true)
         }
         .accessibilityElement(children: .combine)
     }

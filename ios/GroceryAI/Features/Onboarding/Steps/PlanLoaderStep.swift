@@ -23,7 +23,7 @@ struct PlanLoaderStep: View {
         ]
         for store in model.quotedStores {
             switch model.quoteStatuses[store] {
-            case .done: result.append(("Precios de \(store.title)", .done))
+            case .done: result.append(("Precios en línea de \(store.title)", .done))
             case .failed: result.append(("No pudimos consultar \(store.title)", .failed))
             default: result.append(("Consultando \(store.title)", .loading))
             }

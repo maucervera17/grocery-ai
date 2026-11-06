@@ -16,7 +16,7 @@ struct PaywallValuePage: View {
             lines.append(.init(label: "Súper", price: frequency))
         }
         if let postalCode = context.postalCode {
-            lines.append(.init(label: "Cerca de", price: "CP \(postalCode)"))
+            lines.append(.init(label: "Tu CP", price: postalCode))
         }
         if context.listItemCount > 0 {
             lines.append(.init(label: "Tu lista", price: "\(context.listItemCount) productos"))

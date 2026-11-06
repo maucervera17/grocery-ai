@@ -56,7 +56,7 @@
         },
         "items": {
           "minItems": 1,
-          "maxItems": 30,
+          "maxItems": 60,
           "type": "array",
           "items": {
             "type": "object",
