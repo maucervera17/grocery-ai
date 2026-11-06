@@ -1,14 +1,13 @@
 import Foundation
 
 struct PaywallContext: Hashable, Sendable {
-    var estimatedMonthlySavingsHighCents: Int?
-    var demoSavingsCents: Int?
-    var demoProductCount: Int = 0
-    var cadencePhrase: String?
+    /// Monthly savings of the quoted onboarding basket; the only savings figure.
+    var basketSavingsMonthlyCents: Int?
     var prioritizedBenefits: [PaywallBenefit] = PaywallBenefit.allCases
     var householdLabel: String?
     var frequencyLabel: String?
     var postalCode: String?
+    var storesLabel: String?
     var listItemCount: Int = 0
 
     var orderedBenefits: [PaywallBenefit] {
@@ -45,10 +44,9 @@ struct PaywallDates: Sendable {
 
 extension PaywallContext {
     static let preview = PaywallContext(
-        estimatedMonthlySavingsHighCents: 54_000,
-        demoSavingsCents: 990,
-        demoProductCount: 2,
-        cadencePhrase: "tu próxima compra semanal",
-        prioritizedBenefits: [.dictate, .compare]
+        basketSavingsMonthlyCents: 26_300,
+        householdLabel: "3 a 4 personas",
+        frequencyLabel: "Cada semana",
+        storesLabel: "Walmart, Bodega Aurrera y Chedraui"
     )
 }

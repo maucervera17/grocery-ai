@@ -20,7 +20,7 @@ struct OnboardingFlowView: View {
         if Self.debugOnboardingStep != nil {
             model = OnboardingModel(
                 agentService: MockAgentService(),
-                comparisonService: MockComparisonService()
+                basketService: MockBasketService()
             )
             model.seedSampleAnswers()
             model.notificationStatusProvider = { .notDetermined }
@@ -53,23 +53,20 @@ struct OnboardingFlowView: View {
                 model.advance(from: .welcome)
             }
 
-        case .intro:
-            IntroStep(
-                onContinue: { model.advance(from: .intro) },
-                onBack: model.goBack
-            )
-
         case .householdSize:
             QuestionStep(
                 step: step,
                 title: "¿Para cuántas personas compras?",
-                subtitle: "Lo usamos para estimar tu ahorro.",
+                subtitle: "Así calculamos cuánto lleva tu canasta.",
                 options: HouseholdSize.allCases.map {
                     .init(value: $0, title: $0.title, systemImage: $0.systemImage)
                 },
                 hasSelection: model.answers.householdSize != nil,
                 isSelected: { model.answers.householdSize == $0 },
-                onSelect: { model.select($0) },
+                onSelect: {
+                    model.select($0)
+                    model.autoAdvance(from: step)
+                },
                 onContinue: { model.advance(from: step) },
                 onBack: model.goBack
             )
@@ -78,118 +75,40 @@ struct OnboardingFlowView: View {
             QuestionStep(
                 step: step,
                 title: "¿Cada cuánto haces el súper?",
-                subtitle: "Lo usamos para ajustar los recordatorios.",
+                subtitle: "Con esto calculamos tu gasto al mes.",
                 options: ShoppingFrequency.allCases.map {
                     .init(value: $0, title: $0.title, systemImage: $0.systemImage)
                 },
                 hasSelection: model.answers.shoppingFrequency != nil,
                 isSelected: { model.answers.shoppingFrequency == $0 },
-                onSelect: { model.select($0) },
-                onContinue: { model.advance(from: step) },
-                onBack: model.goBack
-            )
-
-        case .monthlySpend:
-            QuestionStep(
-                step: step,
-                title: "¿Cuánto gastas al mes en el súper?",
-                subtitle: "Un hogar en México gasta en promedio unos $6,000 al mes en alimentos y bebidas (INEGI).",
-                options: SpendRange.allCases.map {
-                    .init(value: $0, title: $0.title, systemImage: $0.systemImage)
+                onSelect: {
+                    model.select($0)
+                    model.autoAdvance(from: step)
                 },
-                hasSelection: model.answers.monthlySpend != nil,
-                isSelected: { model.answers.monthlySpend == $0 },
-                onSelect: { model.select($0) },
                 onContinue: { model.advance(from: step) },
                 onBack: model.goBack
             )
 
-        case .usualStores:
+        case .usualStore:
             QuestionStep(
                 step: step,
                 title: "¿Dónde compras normalmente?",
-                subtitle: "Puedes elegir varias. Lo usamos para personalizar tu comparación.",
+                subtitle: "Elige una. Es la base para calcular cuánto gastas.",
                 options: StoreChoice.allCases.map {
                     .init(
                         value: $0,
                         title: $0.title,
-                        systemImage: $0 == .mercado ? "basket" : $0 == .other ? "ellipsis.circle" : nil,
-                        logoAssetName: $0.logoAssetName
+                        systemImage: $0.systemImage,
+                        logoAssetName: $0.logoAssetName,
+                        detail: $0.isSupportedByBarasu ? nil : "Aún no tenemos sus precios"
                     )
                 },
-                allowsMultipleSelection: true,
-                hasSelection: !model.answers.usualStores.isEmpty,
-                isSelected: { model.answers.usualStores.contains($0) },
-                onSelect: { model.toggle($0) },
-                onContinue: { model.advance(from: step) },
-                onBack: model.goBack
-            )
-
-        case .compareHabit:
-            QuestionStep(
-                step: step,
-                title: "¿Comparas precios antes de comprar?",
-                subtitle: "Lo usamos para personalizar tu experiencia.",
-                options: CompareHabit.allCases.map {
-                    .init(value: $0, title: $0.title, systemImage: $0.systemImage)
+                hasSelection: model.answers.usualStore != nil,
+                isSelected: { model.answers.usualStore == $0 },
+                onSelect: {
+                    model.selectUsualStore($0)
+                    model.autoAdvance(from: step)
                 },
-                hasSelection: model.answers.comparesToday != nil,
-                isSelected: { model.answers.comparesToday == $0 },
-                onSelect: { model.select($0) },
-                onContinue: { model.advance(from: step) },
-                onBack: model.goBack
-            )
-
-        case .insight:
-            InsightStep(
-                habit: model.answers.comparesToday,
-                onContinue: { model.advance(from: .insight) },
-                onBack: model.goBack
-            )
-
-        case .goals:
-            QuestionStep(
-                step: step,
-                title: "¿Qué es lo más importante para ti?",
-                subtitle: "Elige hasta 2. Ordenamos los beneficios con tu respuesta.",
-                options: ShoppingGoal.allCases.map {
-                    .init(value: $0, title: $0.title, systemImage: $0.systemImage)
-                },
-                allowsMultipleSelection: true,
-                hasSelection: !model.answers.goals.isEmpty,
-                isSelected: { model.answers.goals.contains($0) },
-                onSelect: { model.toggle($0) },
-                onContinue: { model.advance(from: step) },
-                onBack: model.goBack
-            )
-
-        case .painPoints:
-            QuestionStep(
-                step: step,
-                title: "¿Qué es lo más difícil del súper?",
-                subtitle: "Puedes elegir varias.",
-                options: PainPoint.allCases.map {
-                    .init(value: $0, title: $0.title, systemImage: $0.systemImage)
-                },
-                allowsMultipleSelection: true,
-                hasSelection: !model.answers.painPoints.isEmpty,
-                isSelected: { model.answers.painPoints.contains($0) },
-                onSelect: { model.toggle($0) },
-                onContinue: { model.advance(from: step) },
-                onBack: model.goBack
-            )
-
-        case .listHabit:
-            QuestionStep(
-                step: step,
-                title: "¿Cómo haces tu lista hoy?",
-                subtitle: "Te recomendaremos la forma más fácil de traerla.",
-                options: ListHabit.allCases.map {
-                    .init(value: $0, title: $0.title, systemImage: $0.systemImage)
-                },
-                hasSelection: model.answers.listHabit != nil,
-                isSelected: { model.answers.listHabit == $0 },
-                onSelect: { model.select($0) },
                 onContinue: { model.advance(from: step) },
                 onBack: model.goBack
             )
@@ -206,26 +125,19 @@ struct OnboardingFlowView: View {
                 onBack: model.goBack
             )
 
+        case .comparisonStores:
+            ComparisonStoresStep(model: model, onBack: model.goBack)
+
         case .planLoader:
-            PlanLoaderStep(
-                answers: model.answers,
-                onFinished: { model.advance(from: .planLoader) },
-                warmUp: model.warmUpBackend
-            )
+            PlanLoaderStep(model: model)
 
-        case .savingsResult:
-            SavingsResultStep(
-                answers: model.answers,
-                estimate: model.savingsEstimate,
-                onContinue: { model.advance(from: .savingsResult) }
-            )
-
-        case .benefits:
-            BenefitsStep(
-                answers: model.answers,
-                onContinue: { model.advance(from: .benefits) },
-                onBack: model.goBack
-            )
+        case .basketResult:
+            BasketResultStep(model: model) {
+                if model.accessSkipped {
+                    model.applySuggestedList()
+                }
+                model.advance(from: .basketResult)
+            }
 
         case .access:
             AccessStep(model: model, onBack: model.goBack)
@@ -235,15 +147,6 @@ struct OnboardingFlowView: View {
 
         case .importReview:
             ImportReviewStep(model: model, onBack: model.goBack)
-
-        case .demoPick:
-            DemoPickStep(model: model, onBack: model.goBack)
-
-        case .demoComparing:
-            DemoComparingStep(model: model)
-
-        case .demoResult:
-            DemoResultStep(model: model)
 
         case .paywall:
             #if DEBUG

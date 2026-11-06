@@ -16,15 +16,11 @@ struct ImportMethodStep: View {
 
     private let recognizer = ListTextRecognizer()
 
-    private var recommended: ImportMethod {
-        ImportMethod(listHabit: model.answers.listHabit)
-    }
-
     var body: some View {
         OnboardingScaffold(
             step: .importMethod,
             title: "Trae tu lista del súper",
-            subtitle: "La usaremos para tu prueba. Puedes editarla después.",
+            subtitle: "Es opcional. La dejamos lista para comparar cuando entres. Puedes editarla después.",
             onBack: onBack,
             footer: {
             VStack(spacing: AppSpacing.small) {
@@ -45,7 +41,6 @@ struct ImportMethodStep: View {
                     OnboardingOptionRow(
                         title: method.title,
                         systemImage: method.systemImage,
-                        badge: method == recommended ? "Recomendado" : nil,
                         isSelected: model.answers.importMethod == method
                     ) {
                         model.answers.importMethod = method

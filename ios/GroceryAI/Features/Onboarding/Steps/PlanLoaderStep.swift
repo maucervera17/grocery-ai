@@ -1,87 +1,86 @@
 import SwiftUI
 
+/// Real loader: each store line is checked when its basket quote arrives.
 struct PlanLoaderStep: View {
-    let answers: OnboardingAnswers
-    let onFinished: () -> Void
-    var warmUp: () -> Void = {}
+    let model: OnboardingModel
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @State private var completedLines = 0
+    private enum LineState { case done, loading, failed }
 
-    private var lines: [String] {
-        var result: [String] = []
-        let household = answers.householdSize?.householdPhrase ?? "Tu hogar"
-        let cadence = answers.shoppingFrequency?.cadencePhrase
-        result.append(cadence.map { "\(household), súper \($0)" } ?? household)
-        if answers.postalCode.isEmpty {
-            result.append("Revisando tiendas disponibles")
-        } else {
-            result.append("Revisando tiendas cerca de \(answers.postalCode)")
+    private var lines: [(text: String, state: LineState)] {
+        let answers = model.answers
+        var household = answers.householdSize?.householdPhrase ?? "Tu hogar"
+        if let cadence = answers.shoppingFrequency?.cadencePhrase {
+            household += ", súper \(cadence)"
         }
-        result.append("Comparando Walmart, Bodega Aurrera y Chedraui")
-        result.append("Calculando tu ahorro")
+        var result: [(String, LineState)] = [
+            (household, .done),
+            ("Armando tu canasta básica con marcas", .done)
+        ]
+        for store in model.quotedStores {
+            switch model.quoteStatuses[store] {
+            case .done: result.append(("Precios de \(store.title)", .done))
+            case .failed: result.append(("No pudimos consultar \(store.title)", .failed))
+            default: result.append(("Consultando \(store.title)", .loading))
+            }
+        }
         return result
     }
 
     var body: some View {
         let colors = theme.colors(for: colorScheme)
 
-        VStack(spacing: AppSpacing.extraLarge) {
-            AgentAvatarView()
+        ScrollView {
+            VStack(spacing: AppSpacing.extraLarge) {
+                AgentAvatarView()
 
-            Text("Preparando tu plan")
-                .font(.title.weight(.semibold))
-                .foregroundStyle(colors.textPrimary)
+                VStack(spacing: AppSpacing.small) {
+                    Text("Preparando tu plan")
+                        .font(.title.weight(.semibold))
+                        .foregroundStyle(colors.textPrimary)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Consultamos la misma canasta en cada tienda.")
+                        .font(AppTypography.body)
+                        .foregroundStyle(colors.textSecondary)
+                }
+                .multilineTextAlignment(.center)
 
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
-                    HStack(spacing: AppSpacing.medium) {
-                        if index < completedLines {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(colors.statusSuccess)
-                        } else if index == completedLines {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: "circle")
-                                .foregroundStyle(colors.borderSubtle)
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        HStack(spacing: AppSpacing.medium) {
+                            switch line.state {
+                            case .done:
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(colors.statusSuccess)
+                            case .loading:
+                                ProgressView()
+                                    .controlSize(.small)
+                            case .failed:
+                                Image(systemName: "exclamationmark.circle")
+                                    .foregroundStyle(colors.textSecondary)
+                            }
+                            Text(line.text)
+                                .font(.callout)
+                                .foregroundStyle(line.state == .loading ? colors.textSecondary : colors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
                         }
-                        Text(line)
-                            .font(.callout)
-                            .foregroundStyle(
-                                index <= completedLines ? colors.textPrimary : colors.textSecondary
-                            )
-                        Spacer()
+                        .frame(minHeight: AppControlSize.minimumTapTarget)
+                        .accessibilityElement(children: .combine)
                     }
-                    .frame(minHeight: AppControlSize.minimumTapTarget)
                 }
+                .frame(maxWidth: 360)
+                .animation(reduceMotion ? nil : .smooth, value: model.quoteStatuses)
             }
-            .frame(maxWidth: 320)
+            .padding(AppSpacing.extraLarge)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .scrollBounceBehavior(.basedOnSize)
         .background(colors.backgroundPrimary)
-        .task { runSequence() }
-        .onAppear {
-            OnboardingEvent.stepViewed(.planLoader).log()
-            warmUp()
-        }
-    }
-
-    private func runSequence() {
-        Task { @MainActor in
-            let interval = reduceMotion ? 0.35 : 0.8
-            for index in lines.indices {
-                try? await Task.sleep(for: .seconds(interval))
-                withAnimation(reduceMotion ? nil : .smooth) {
-                    completedLines = index + 1
-                }
-            }
-            try? await Task.sleep(for: .seconds(0.4))
-            guard !Task.isCancelled else { return }
-            onFinished()
-        }
+        .task { model.runBasketQuote() }
+        .onAppear { OnboardingEvent.stepViewed(.planLoader).log() }
     }
 }

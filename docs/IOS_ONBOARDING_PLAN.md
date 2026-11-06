@@ -1,6 +1,6 @@
 # Barasu iOS — Onboarding plan
 
-Status: **implemented** (`ios/GroceryAI/Features/Onboarding`, `Features/Paywall`). See §6 for the final decisions, which override earlier sections where they differ. Scope: iOS app (`ios/GroceryAI`). UI copy is es-MX, the same as the rest of the app. Visual rules come from [IOS_DESIGN_SYSTEM.md](IOS_DESIGN_SYSTEM.md). This plan does not add any new tokens.
+Status: **implemented, v2 redesign** (`ios/GroceryAI/Features/Onboarding`, `Features/Paywall`). §2 and §6 describe the current flow and override §4 where they differ; §4 is kept as the v1 rationale (tag `onboarding-v1-antes-de-cambios`). Scope: iOS app (`ios/GroceryAI`). UI copy is es-MX, the same as the rest of the app. Visual rules come from [IOS_DESIGN_SYSTEM.md](IOS_DESIGN_SYSTEM.md). This plan does not add any new tokens.
 
 ---
 
@@ -54,25 +54,26 @@ Show it as a range ("entre $240 y $540 al mes"), plus the annual high figure. Al
 
 ---
 
-## 2. Flow overview
+## 2. Flow overview (v2)
 
-About **22 screens, roughly 2½ minutes**, in six acts. A thin progress bar runs across Acts 1–4. The paywall does not show progress.
+About **11 screens** plus the paywall. Single-choice questions advance on tap.
 
 ```
-Act 0  Hook                 1  Bienvenida (live product loop)
-Act 1  Quiz                 2  Intro  →  3–11 Questions  →  12 Código postal
-Act 2  Result & benefit     13 Loader  →  14 Tu ahorro estimado  →  15 Así lo logras
-Act 3  Import               16 Trae tu lista  →  17 Revisa tu lista
-Act 4  Pruébalo             18 Elige 1–2 productos  →  19 Comparando  →  20 Resultado
-Act 5  Convert              21 Recordatorios (notif. primer)  →  22a/b/c Paywall
-Exit                        App opens on Agente with the imported list as the draft
+1  Bienvenida + "Así funciona"
+2  ¿Para cuántas personas compras?           (single, auto-advance)
+3  ¿Cada cuánto haces el súper?              (single, adds "Cada 3 semanas")
+4  ¿Dónde compras normalmente?               (single: base store)
+5  ¿Cuál es tu código postal?
+6  ¿En cuáles te gustaría comprar?           (multi; base preselected; Soriana/La Comer "Próximamente")
+7  Contraseña de acceso                      (only without Keychain password)
+8  Preparando tu plan                        (real: one basket quote per store, checked on arrival)
+9  Resultado de la canasta en pesos          (+ "¿Gastas más o menos?", product detail, date, "Confirma en tienda")
+10 Trae tu lista (optional) → 11 Revisa tu lista
+12 Paywall (one savings figure: the basket's)
+Exit: Agente with the list as draft and the shopping profile saved in AppState
 ```
 
-**Why this order:**
-1. The **result comes before the features.** The user first learns *what they get* (their estimate), then *how* (three capabilities).
-2. **Import comes right before the demo**, so the demo runs on *their* products. This is the "aha" moment.
-3. The **paywall comes straight after the demo result**, which is peak motivation (Superwall: trigger right after the aha).
-4. **Continuity after the paywall:** the imported list is already waiting in the Agente tab as the draft. Whether or not they pay, the setup work isn't lost.
+Removed in v2: Intro, ¿Comparas precios?, Insight (now a footnote on the result), goals, pain points, ¿Cómo haces tu lista? (import methods keep a fixed order), monthly spend (now an adjustment on the result), Beneficios, demo pick and the 2-product demo.
 
 ---
 
@@ -373,13 +374,17 @@ ios/GroceryAI/Data/Mock/MockSubscriptionService.swift
 | D3 | Trial length | 7 days on annual only. Monthly has no trial. |
 | D4 | Free tier | **None**, because the paywall is hard. With no StoreKit yet, `PlaceholderSubscriptionService` grants Pro locally when the user taps purchase. |
 | D5 | Chains in copy | Walmart, Bodega Aurrera and Chedraui (the app's `RetailerID` set). |
-| D6 | Demo backend | Live `compare` call. After 12 s it shows "Sigue buscando precios…". At a 45 s hard cap the call is treated as failed, and the honest failure variant appears. **There is no fixture or prefetched fallback**, so prices are never invented. Screen 13 only warms up `GET /health`. "Comparando" stays on screen for at least 1.5 s so a fast response is still readable. |
-| D7 | Access password on a fresh install | **Asked inside onboarding.** The API needs a per-tester Basic-auth password (early access), and Agent settings sit behind the hard paywall, so a new step `.access` ("Ingresa tu contraseña de acceso") sits between Beneficios and Trae tu lista, before the first API call. It is skipped when Keychain already has a password. "Continuar" checks the password with `GET /v1/voice/status` (200 = valid, 401 = invalid; it spends no search or voice credits), then saves it with `APIAccess.savePassword`. Invalid password or no network shows an inline error and stays on the step. **"No tengo contraseña"** continues with the suggested list; "Probemos con 2 productos" then skips the comparison and the result screen says honestly that comparing prices needs access and can be added later in Ajustes. No prices are shown. |
+| D6 | Basket backend (v2) | `POST /v1/onboarding/basket`, one call per store, launched in parallel from the loader. Demo reads `fixtures/onboarding-basket.listings.json`; live reads **only** cached prices up to 7 days old (no Firecrawl per user). Each loader line stays at least 0.9 s; 25 s cap per store. Missing products are "No disponible en esta tienda"; prices are never invented. |
+| D7 | Access password on a fresh install | **Asked inside onboarding.** The API needs a per-tester Basic-auth password (early access), and Agent settings sit behind the hard paywall, so a new step `.access` ("Ingresa tu contraseña de acceso") sits right after "¿En cuáles te gustaría comprar?", before the first API call (the basket quote). It is skipped when Keychain already has a password. "Continuar" checks the password with `GET /v1/voice/status` (200 = valid, 401 = invalid; it spends no search or voice credits), then saves it with `APIAccess.savePassword`. Invalid password or no network shows an inline error and stays on the step. **"No tengo contraseña"** skips the loader; the result screen says honestly that prices need access and shows no figures, then continues to the suggested list and the paywall. |
+| D9 | Base store vs. comparison stores | Two questions. Base (single) is the reference for "gastas unos $X al mes en <tienda>". Comparison (multi) are the stores quoted. A supported base is preselected. Costco is not offered (membership/wholesale). Mercado/Otro are base-only. Unsupported base (Soriana, La Comer, Mercado, Otro): the result says "Aún no tenemos precios de …" and claims no savings against it. |
+| D10 | Basket | `fixtures/onboarding-basket.json`: 20 branded products with exact size, `monthly_packages` for a 3–4 person home. Owner-editable. Exact match only (same retailer, name and size); no substitutions. Household scales packages (solo 0.5×, 2 people 0.8×, 3–4 1×, 5+ 1.3×). The basket is a monthly quantity, so monthly cost = per-trip cost × trips per month holds by construction; frequency sets the trips (cada 3 semanas ≈ 1.43) and the per-trip cost shown on the result. |
+| D11 | Savings | Pesos only, never a percentage. Savings = base store total − cheapest price per product among the chosen stores, counting only products priced in the base store and in at least one chosen store. Paywall shows that single number. "¿Gastas más o menos?" rescales both totals to the reported spend, keeping the quoted ratio. The 4–9 % generic estimator is removed. |
+| D12 | Next step (not implemented) | Weekly job that precomputes the basket per zone into Supabase so live has fresh cache without per-user scrapes. |
 | D8 | Privacy policy | `web/privacidad.html` (es-MX, based on what the code does), served by Vercel at `/privacidad.html` (and `/privacidad` through a rewrite) and by the local Fastify server without auth. iOS links it from the paywall and from Ajustes → Legal through `LegalLinks.privacy`. |
 
 Import errors (H3): access, network and "no products recognized" have different copy per import method, and the review step offers "Usar una lista sugerida" next to "Intentar de nuevo".
 
-Extra: in DEBUG builds, Configuración → Depuración → "Reiniciar onboarding" resets the onboarding flag and Pro status. Also DEBUG-only: launch arguments `-onboardingStep <case>`, `-paywallPage <page>` and `-onboardingDemoFail` open screens directly for screenshots.
+Extra: in DEBUG builds, Configuración → Depuración → "Reiniciar onboarding" resets the onboarding flag and Pro status. Also DEBUG-only: launch arguments `-onboardingStep <case>`, `-paywallPage <page>` and `-onboardingUnsupportedBase` open screens directly for screenshots.
 
 ---
 

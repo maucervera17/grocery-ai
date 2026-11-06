@@ -21,12 +21,8 @@ struct PaywallValuePage: View {
         if context.listItemCount > 0 {
             lines.append(.init(label: "Tu lista", price: "\(context.listItemCount) productos"))
         }
-        if let demoSavings = context.demoSavingsCents, demoSavings > 0 {
-            lines.append(.init(
-                label: "Tu prueba",
-                price: "−\(DisplayPriceFormatter.string(cents: demoSavings))",
-                priceIsSuccess: true
-            ))
+        if let stores = context.storesLabel {
+            lines.append(.init(label: "Comparas", price: stores))
         }
         return lines
     }
@@ -75,10 +71,10 @@ struct PaywallValuePage: View {
     }
 
     private var savingsText: String {
-        guard let cents = context.estimatedMonthlySavingsHighCents, cents > 0 else {
+        guard let cents = context.basketSavingsMonthlyCents, cents > 0 else {
             return "—"
         }
-        return "hasta \(DisplayPriceFormatter.string(cents: cents))/mes"
+        return "\(DisplayPriceFormatter.string(cents: cents))/mes"
     }
 }
 

@@ -2,40 +2,27 @@ import Foundation
 
 enum OnboardingStep: String, Hashable, Sendable {
     case welcome
-    case intro
     case householdSize
     case frequency
-    case monthlySpend
-    case usualStores
-    case compareHabit
-    case insight
-    case goals
-    case painPoints
-    case listHabit
+    case usualStore
     case postalCode
-    case planLoader
-    case savingsResult
-    case benefits
+    case comparisonStores
     case access
+    case planLoader
+    case basketResult
     case importMethod
     case importReview
-    case demoPick
-    case demoComparing
-    case demoResult
     case paywall
 }
 
 extension OnboardingStep {
     static let progressOrder: [OnboardingStep] = [
-        .intro, .householdSize, .frequency, .monthlySpend, .usualStores,
-        .compareHabit, .insight, .goals, .painPoints, .listHabit,
-        .postalCode, .savingsResult, .benefits, .access, .importMethod,
-        .importReview, .demoPick, .demoResult
+        .householdSize, .frequency, .usualStore, .postalCode,
+        .comparisonStores, .access, .basketResult, .importMethod, .importReview
     ]
 
     static let questionSteps: [OnboardingStep] = [
-        .householdSize, .frequency, .monthlySpend, .usualStores,
-        .compareHabit, .goals, .painPoints, .listHabit
+        .householdSize, .frequency, .usualStore, .postalCode, .comparisonStores
     ]
 
     var progressIndex: Int? {
@@ -54,7 +41,7 @@ extension OnboardingStep {
 
     var showsBackButton: Bool {
         switch self {
-        case .welcome, .planLoader, .savingsResult, .demoComparing, .demoResult, .paywall:
+        case .welcome, .planLoader, .paywall:
             false
         default:
             true

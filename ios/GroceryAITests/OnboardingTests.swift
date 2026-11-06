@@ -2,62 +2,21 @@ import Testing
 import UserNotifications
 @testable import GroceryAI
 
-struct SavingsEstimatorTests {
-    @Test
-    func estimatesEachSpendRange() {
-        let cases: [(SpendRange, Int, Int)] = [
-            (.under2000, 4_000, 9_000),
-            (.between2000and4000, 12_000, 27_000),
-            (.between4000and7000, 22_000, 50_000),
-            (.between7000and10000, 34_000, 77_000),
-            (.over10000, 48_000, 108_000)
-        ]
-
-        for (range, expectedLow, expectedHigh) in cases {
-            let estimate = SavingsEstimator.estimate(spend: range, householdSize: .threeFour)
-            #expect(estimate.lowCents == expectedLow, "\(range) low")
-            #expect(estimate.highCents == expectedHigh, "\(range) high")
-        }
-    }
-
-    @Test
-    func unsureFallsBackToHouseholdScaledReference() {
-        let solo = SavingsEstimator.estimate(spend: .unsure, householdSize: .solo)
-        #expect(solo.lowCents == 12_000)
-        #expect(solo.highCents == 27_000)
-
-        let family = SavingsEstimator.estimate(spend: .unsure, householdSize: .threeFour)
-        #expect(family.lowCents == 24_000)
-        #expect(family.highCents == 54_000)
-        #expect(family.annualHighCents == 648_000)
-
-        let missingSpend = SavingsEstimator.estimate(spend: nil, householdSize: .threeFour)
-        #expect(missingSpend == family)
-    }
-
-    @Test
-    func roundsToNearestTenPesos() {
-        // $5,500 * 9% = $495 -> $500; $5,500 * 4% = $220 -> $220
-        let estimate = SavingsEstimator.estimate(spend: .between4000and7000, householdSize: .two)
-        #expect(estimate.lowCents % 1_000 == 0)
-        #expect(estimate.highCents % 1_000 == 0)
-    }
-}
-
 @MainActor
 struct OnboardingModelTests {
     private func makeModel(
         agent: any AgentServicing = MockAgentService(),
-        comparison: any ComparisonServicing = MockComparisonService(),
+        basket: any BasketQuoting = MockBasketService(delay: .zero),
         hasPassword: Bool = true
     ) -> OnboardingModel {
         let model = OnboardingModel(
             agentService: agent,
-            comparisonService: comparison
+            basketService: basket
         )
         model.hasAccessPassword = { hasPassword }
         model.accessSaver = { _ in }
-        model.demoMinimumDuration = .zero
+        model.minimumLineDuration = .zero
+        model.autoAdvanceDelay = .zero
         return model
     }
 
@@ -71,20 +30,6 @@ struct OnboardingModelTests {
         return model.path.last == step
     }
 
-    @Test
-    func quizAdvancesThroughEveryQuestion() {
-        let model = makeModel()
-        let expected: [OnboardingStep] = [
-            .intro, .householdSize, .frequency, .monthlySpend, .usualStores,
-            .compareHabit, .insight, .goals, .painPoints, .listHabit, .postalCode
-        ]
-        var current: OnboardingStep = .welcome
-        for step in expected {
-            model.advance(from: current)
-            #expect(model.path.last == step)
-            current = step
-        }
-    }
 
     @Test
     func skippingPostalCodeLeavesItEmptyAndContinues() {
@@ -94,7 +39,7 @@ struct OnboardingModelTests {
         model.skipPostalCode()
 
         #expect(model.answers.postalCode.isEmpty)
-        #expect(model.path.last == .planLoader)
+        #expect(model.path.last == .comparisonStores)
     }
 
     @Test
@@ -110,16 +55,6 @@ struct OnboardingModelTests {
         #expect(!model.answers.importedItems.isEmpty)
     }
 
-    @Test
-    func accessStepAppearsBeforeImportOnlyWithoutPassword() {
-        #expect(makeModel(hasPassword: false).step(after: .benefits) == .access)
-        #expect(makeModel(hasPassword: true).step(after: .benefits) == .importMethod)
-        #expect(makeModel().step(after: .access) == .importMethod)
-        #expect(OnboardingStep.access.showsBackButton)
-        let order = OnboardingStep.progressOrder
-        #expect(order.firstIndex(of: .access)! < order.firstIndex(of: .importMethod)!)
-        #expect(order.firstIndex(of: .access)! > order.firstIndex(of: .benefits)!)
-    }
 
     @Test
     func validAccessPasswordIsSavedAndAdvances() async {
@@ -134,7 +69,7 @@ struct OnboardingModelTests {
         #expect(saved == "correcta")
         #expect(model.hasVerifiedAccess)
         #expect(model.accessErrorMessage == nil)
-        #expect(model.path.last == .importMethod)
+        #expect(model.path.last == .planLoader)
     }
 
     @Test
@@ -157,20 +92,6 @@ struct OnboardingModelTests {
         #expect(!model.hasVerifiedAccess)
     }
 
-    @Test
-    func skippingAccessUsesSuggestedListAndSkipsTheComparison() {
-        let model = makeModel(hasPassword: false)
-        model.push(.access)
-
-        model.skipAccess()
-
-        #expect(model.accessSkipped)
-        #expect(model.path.last == .importReview)
-        #expect(model.answers.importMethod == .suggested)
-        #expect(!model.answers.importedItems.isEmpty)
-        #expect(model.step(after: .demoPick) == .demoResult)
-        #expect(model.demoPlan == nil)
-    }
 
     @Test
     func importErrorsExplainTheRealCause() {
@@ -204,25 +125,7 @@ struct OnboardingModelTests {
         #expect(model.path.last == .importReview)
     }
 
-    @Test
-    func comparingScreenStaysForTheMinimumDuration() async {
-        let model = makeModel()
-        model.demoMinimumDuration = .milliseconds(400)
-        model.answers.importedItems = OnboardingModel.suggestedItems(for: .threeFour)
-        model.push(.demoComparing)
-        let clock = ContinuousClock()
-        let start = clock.now
 
-        model.runDemoComparison()
-
-        #expect(await waitForLastStep(.demoResult, in: model))
-        #expect(start.duration(to: clock.now) >= .milliseconds(400))
-    }
-
-    @Test
-    func introCountsTheRealQuestions() {
-        #expect(OnboardingStep.questionSteps.count == 8)
-    }
 
     @Test
     func postalCodeValidationRejectsImpossibleCodes() {
@@ -249,89 +152,195 @@ struct OnboardingModelTests {
         #expect(ProductNameFormatter.display("") == "")
     }
 
+
+
+
+
     @Test
-    func demoResultAdvancesToPaywall() {
+    func flowFollowsTheApprovedOrder() {
         let model = makeModel()
-        model.push(.demoResult)
-
-        model.advance(from: .demoResult)
-
-        #expect(model.path.last == .paywall)
+        #expect(model.step(after: .welcome) == .householdSize)
+        #expect(model.step(after: .householdSize) == .frequency)
+        #expect(model.step(after: .frequency) == .usualStore)
+        #expect(model.step(after: .usualStore) == .postalCode)
+        #expect(model.step(after: .postalCode) == .comparisonStores)
+        #expect(model.step(after: .comparisonStores) == .planLoader)
+        #expect(model.step(after: .planLoader) == .basketResult)
+        #expect(model.step(after: .basketResult) == .importMethod)
+        #expect(model.step(after: .importMethod) == .importReview)
+        #expect(model.step(after: .importReview) == .paywall)
     }
 
     @Test
-    func importMethodPreselectionFollowsListHabit() {
-        #expect(ImportMethod(listHabit: .paper) == .camera)
-        #expect(ImportMethod(listHabit: .notes) == .paste)
-        #expect(ImportMethod(listHabit: .whatsapp) == .paste)
-        #expect(ImportMethod(listHabit: .reminders) == .paste)
-        #expect(ImportMethod(listHabit: .memory) == .dictate)
-        #expect(ImportMethod(listHabit: .noList) == .suggested)
-        #expect(ImportMethod(listHabit: nil) == .suggested)
+    func accessAppearsRightBeforeTheFirstQuoteOnlyWithoutPassword() {
+        let model = makeModel(hasPassword: false)
+        #expect(model.step(after: .comparisonStores) == .access)
+        #expect(model.step(after: .access) == .planLoader)
     }
 
     @Test
-    func listHabitSelectionSetsRecommendedImportMethod() {
+    func skippingAccessShowsHonestResultAndSuggestedList() {
+        let model = makeModel(hasPassword: false)
+        model.path = [.access]
+        model.skipAccess()
+        #expect(model.path.last == .basketResult)
+        #expect(model.step(after: .basketResult) == .importReview)
+        #expect(!model.answers.importedItems.isEmpty)
+    }
+
+    @Test
+    func singleChoiceAdvancesOnTap() async {
         let model = makeModel()
-        model.select(.paper)
-        #expect(model.answers.importMethod == .camera)
+        model.path = [.frequency]
+        model.select(.everyThreeWeeks)
+        model.autoAdvance(from: .frequency)
+        #expect(await waitForLastStep(.usualStore, in: model))
     }
 
     @Test
-    func demoTimeoutProducesFailureState() async {
-        let model = makeModel(comparison: SlowComparisonService(delay: .seconds(5)))
-        model.demoSoftCap = .milliseconds(10)
-        model.demoHardCap = .milliseconds(50)
-        model.notificationStatusProvider = { .authorized }
-        model.answers.importedItems = OnboardingModel.suggestedItems(for: .threeFour)
-        model.push(.demoComparing)
-
-        model.runDemoComparison()
-
-        #expect(await waitForLastStep(.demoResult, in: model))
-        #expect(model.demoFailed)
-        #expect(model.demoPlan == nil)
-
-        model.advance(from: .demoResult)
-        #expect(await waitForLastStep(.paywall, in: model))
-    }
-
-    @Test
-    func demoSuccessDeliversPlan() async {
+    func usualStoreIsSingleAndPreselectedForComparison() {
         let model = makeModel()
-        model.demoSoftCap = .milliseconds(50)
-        model.demoHardCap = .seconds(5)
-        model.notificationStatusProvider = { .authorized }
-        model.answers.postalCode = "06700"
-        model.answers.importedItems = OnboardingModel.suggestedItems(for: .threeFour)
-        model.push(.demoComparing)
+        model.selectUsualStore(.walmart)
+        model.selectUsualStore(.chedraui)
+        #expect(model.answers.usualStore == .chedraui)
+        #expect(model.answers.comparisonStores == [.chedraui])
+        model.selectUsualStore(.soriana)
+        #expect(model.answers.comparisonStores.isEmpty)
+        model.toggleComparisonStore(.laComer)
+        #expect(model.answers.comparisonStores.isEmpty)
+    }
 
-        model.runDemoComparison()
+    @Test
+    func comingSoonAndBaseOnlyStoresCannotBeCompared() {
+        #expect(!StoreChoice.supported.contains(.soriana))
+        #expect(StoreChoice.comingSoon == [.soriana, .laComer])
+        #expect(!StoreChoice.allCases.map(\.rawValue).contains("costco"))
+        #expect(StoreChoice.mercado.unsupportedNotice != nil)
+        #expect(StoreChoice.walmart.unsupportedNotice == nil)
+    }
 
-        #expect(await waitForLastStep(.demoResult, in: model))
-        #expect(!model.demoFailed)
-        #expect(model.demoPlan != nil)
+    @Test
+    func everyThreeWeeksIsAboutOnePointFourTripsAMonth() {
+        #expect(ShoppingFrequency.everyThreeWeeks.tripsPerMonth == 1.43)
+        #expect(ShoppingFrequency.allCases.contains(.everyThreeWeeks))
+    }
 
-        model.advance(from: .demoResult)
-        #expect(await waitForLastStep(.paywall, in: model))
+    @Test
+    func basketQuoteChecksEachStoreAndBuildsTheEstimate() async {
+        let model = makeModel()
+        model.answers.householdSize = .threeFour
+        model.answers.shoppingFrequency = .weekly
+        model.selectUsualStore(.walmart)
+        model.toggleComparisonStore(.chedraui)
+        model.path = [.planLoader]
+        model.runBasketQuote()
+        #expect(await waitForLastStep(.basketResult, in: model))
+        #expect(model.quoteStatuses[.walmart] == .done)
+        #expect(model.quoteStatuses[.chedraui] == .done)
+        #expect(model.quoteStatuses[.bodegaAurrera] == nil)
+        let estimate = try? #require(model.basketEstimate)
+        // Avena is not sold in the mock Walmart, so only 3 items compare.
+        #expect(estimate?.comparableItemCount == 3)
+        #expect(estimate?.baseMonthlyCents == 7_900 * 3 + 2_850 * 16 + 4_200 * 2)
+        #expect(estimate?.chosenMonthlyCents == 7_650 * 3 + 2_650 * 16 + 3_990 * 2)
+        #expect(model.makePaywallContext().basketSavingsMonthlyCents == estimate?.savingsMonthlyCents)
+    }
+
+    @Test
+    func failedStoreIsMarkedAndNeverPriced() async {
+        let model = makeModel(basket: MockBasketService(delay: .zero, failingRetailers: [.walmart]))
+        model.selectUsualStore(.walmart)
+        model.toggleComparisonStore(.bodegaAurrera)
+        model.path = [.planLoader]
+        model.runBasketQuote()
+        #expect(await waitForLastStep(.basketResult, in: model))
+        #expect(model.quoteStatuses[.walmart] == .failed)
+        #expect(model.basketEstimate?.baseMonthlyCents == nil)
+        #expect(model.basketEstimate?.savingsMonthlyCents == nil)
+    }
+}
+
+@MainActor
+struct BasketEstimateTests {
+    private func quotes(_ retailers: [RetailerID]) async -> [BasketQuote] {
+        var result: [BasketQuote] = []
+        for retailer in retailers {
+            if let quote = try? await MockBasketService(delay: .zero).quoteBasket(retailer: retailer, postalCode: nil) {
+                result.append(quote)
+            }
+        }
+        return result
+    }
+
+    @Test
+    func householdScalesQuantities() async {
+        let quoted = await quotes([.chedraui])
+        let family = BasketEstimate.make(quotes: quoted, baseStore: .chedraui, comparisonStores: [.chedraui], householdSize: .threeFour, frequency: .weekly)
+        let solo = BasketEstimate.make(quotes: quoted, baseStore: .chedraui, comparisonStores: [.chedraui], householdSize: .solo, frequency: .weekly)
+        #expect((solo?.baseMonthlyCents ?? 0) * 2 == family?.baseMonthlyCents)
+        #expect(family?.savingsMonthlyCents == 0)
+    }
+
+    @Test
+    func unsupportedBaseNeverClaimsSavings() async {
+        let quoted = await quotes([.bodegaAurrera, .chedraui])
+        let estimate = BasketEstimate.make(quotes: quoted, baseStore: .soriana, comparisonStores: [.bodegaAurrera, .chedraui], householdSize: .threeFour, frequency: .weekly)
+        #expect(estimate?.baseMonthlyCents == nil)
+        #expect(estimate?.savingsMonthlyCents == nil)
+        #expect(estimate?.chosenMonthlyCents != nil)
+        #expect(estimate?.storeTotals.count == 2)
+    }
+
+    @Test
+    func missingProductIsShownAsUnavailable() async {
+        let quoted = await quotes([.walmart, .chedraui])
+        let estimate = BasketEstimate.make(quotes: quoted, baseStore: .walmart, comparisonStores: [.walmart, .chedraui], householdSize: .threeFour, frequency: .weekly)
+        let avena = estimate?.rows.first { $0.id == "avena" }
+        #expect(avena?.prices[.walmart] == .some(nil))
+        #expect(estimate?.storeTotals.first { $0.retailerID == .walmart }?.missingItemNames == ["Avena Quaker 400 g"])
+    }
+
+    @Test
+    func monthlyCostIsPerTripCostTimesTrips() async {
+        let quoted = await quotes([.chedraui])
+        let estimate = BasketEstimate.make(quotes: quoted, baseStore: .chedraui, comparisonStores: [.chedraui], householdSize: .threeFour, frequency: .everyThreeWeeks)
+        let monthly = estimate?.baseMonthlyCents ?? 0
+        let perTrip = estimate?.perTripCents(monthly) ?? 0
+        #expect(abs(Double(perTrip) * 1.43 - Double(monthly)) < 1.43)
+    }
+
+    @Test
+    func spendAdjustmentKeepsTheQuotedRatio() async {
+        let quoted = await quotes([.walmart, .chedraui])
+        let estimate = BasketEstimate.make(quotes: quoted, baseStore: .walmart, comparisonStores: [.walmart, .chedraui], householdSize: .threeFour, frequency: .weekly)
+        let adjusted = estimate?.adjusted(toMonthlySpendCents: 550_000)
+        #expect(adjusted?.base == 550_000)
+        #expect((adjusted?.savings ?? 0) > 0)
+    }
+}
+
+@MainActor
+struct OnboardingProfileTests {
+    @Test
+    func completeOnboardingKeepsTheProfileForTheAgent() {
+        let appState = AppState(agentService: MockAgentService(), comparisonService: MockComparisonService())
+        var answers = OnboardingAnswers()
+        answers.householdSize = .two
+        answers.shoppingFrequency = .everyThreeWeeks
+        answers.usualStore = .soriana
+        answers.comparisonStores = [.chedraui, .walmart]
+        answers.postalCode = "06700"
+        appState.completeOnboarding(items: [], postalCode: "06700", profile: answers.profile)
+        #expect(appState.shoppingProfile.usualStore == "soriana")
+        #expect(appState.shoppingProfile.comparisonStores == ["walmart", "chedraui"])
+        #expect(appState.shoppingProfile.shoppingFrequency == "everyThreeWeeks")
+        #expect(appState.messages.last?.text.contains("Walmart y Chedraui") == true)
     }
 }
 
 private struct FailingAgentService: AgentServicing {
     func updateDraft(message: String, currentItems: [ProductRequest]) async throws -> AgentResponse {
         throw AgentServiceError.noProductsFound
-    }
-}
-
-private struct SlowComparisonService: ComparisonServicing {
-    let delay: Duration
-
-    func compare(
-        items: [ProductRequest],
-        postalCode: String
-    ) async throws -> ComparisonPlan {
-        try await Task.sleep(for: delay)
-        return MockFixtures.comparisonPlan
     }
 }
 
@@ -360,7 +369,7 @@ struct PaywallContextTests {
     func modelFillsPaywallContextFromAnswers() {
         let model = OnboardingModel(
             agentService: MockAgentService(),
-            comparisonService: MockComparisonService()
+            basketService: MockBasketService(delay: .zero)
         )
         model.hasAccessPassword = { true }
         model.answers.householdSize = .threeFour
@@ -374,6 +383,6 @@ struct PaywallContextTests {
         #expect(context.frequencyLabel == model.answers.shoppingFrequency?.title)
         #expect(context.postalCode == "06700")
         #expect(context.listItemCount == MockFixtures.draft.items.count)
-        #expect(context.estimatedMonthlySavingsHighCents == model.savingsEstimate.highCents)
+        #expect(context.basketSavingsMonthlyCents == nil)
     }
 }

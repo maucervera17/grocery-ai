@@ -46,8 +46,11 @@ struct WelcomeStep: View {
 
             GeometryReader { proxy in
                 ScrollView {
-                    conversation(width: proxy.size.width)
-                        .allowsHitTesting(false)
+                    VStack(alignment: .leading, spacing: AppSpacing.section) {
+                        conversation(width: proxy.size.width)
+                            .allowsHitTesting(false)
+                        howItWorks
+                    }
                         .frame(maxWidth: .infinity, alignment: .top)
                         .padding(.horizontal, AppSpacing.extraLarge)
                         .padding(.bottom, AppSpacing.extraLarge)
@@ -65,6 +68,45 @@ struct WelcomeStep: View {
         .navigationBarBackButtonHidden(true)
         .task { playOnce() }
         .onAppear { OnboardingEvent.stepViewed(.welcome).log() }
+    }
+
+    private static let howItWorksSteps: [(String, String)] = [
+        ("Cuéntanos de tu súper", "5 preguntas, menos de un minuto"),
+        ("Cotizamos una canasta real", "Los mismos productos en cada tienda"),
+        ("Ves cuánto pagarías", "En pesos, con la fecha de los precios")
+    ]
+
+    private var howItWorks: some View {
+        let colors = theme.colors(for: colorScheme)
+
+        return VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            Text("Así funciona")
+                .font(.headline)
+                .foregroundStyle(colors.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(Array(Self.howItWorksSteps.enumerated()), id: \.offset) { index, item in
+                HStack(alignment: .top, spacing: AppSpacing.medium) {
+                    Text("\(index + 1)")
+                        .font(.subheadline.weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(colors.brandOnPrimary)
+                        .frame(width: 28, height: 28)
+                        .background(colors.brandPrimary, in: .circle)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.0)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(colors.textPrimary)
+                        Text(item.1)
+                            .font(.footnote)
+                            .foregroundStyle(colors.textSecondary)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var header: some View {

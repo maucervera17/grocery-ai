@@ -18,21 +18,27 @@ final class OnboardingModel {
     var isImportingList = false
     var importErrorMessage: String?
 
-    var demoItems: [ProductRequest] = []
-    var isComparingDemo = false
-    var showsDemoSlowMessage = false
-    var demoPlan: ComparisonPlan?
-    var demoFailed = false
-    private(set) var demoOutcomeDelivered = false
+    enum QuoteStatus: Equatable, Sendable {
+        case loading
+        case done
+        case failed
+    }
+
+    var quoteStatuses: [StoreChoice: QuoteStatus] = [:]
+    var basketQuotes: [BasketQuote] = []
+    var basketEstimate: BasketEstimate?
+    var basketFailed = false
+    private(set) var basketDelivered = false
 
     private let agentService: any AgentServicing
-    private let comparisonService: any ComparisonServicing
-    private var demoTask: Task<Void, Never>?
+    private let basketService: any BasketQuoting
+    private var basketTask: Task<Void, Never>?
 
-    var demoSoftCap: Duration = .seconds(12)
-    var demoHardCap: Duration = .seconds(45)
-    /// Keeps "Comparando" on screen long enough to read when the API is fast.
-    var demoMinimumDuration: Duration = .milliseconds(1500)
+    /// Each store line stays on screen at least this long so it can be read.
+    var minimumLineDuration: Duration = .milliseconds(900)
+    var basketHardCap: Duration = .seconds(25)
+    /// Single-choice questions advance on tap after this pause.
+    var autoAdvanceDelay: Duration = .milliseconds(250)
 
     var hasAccessPassword: @MainActor () -> Bool = { APIAccess.hasPassword }
     var accessVerifier: @Sendable (String) async -> APIAccess.Verification = {
@@ -68,10 +74,10 @@ final class OnboardingModel {
 
     init(
         agentService: any AgentServicing = GroceryAPIClient(),
-        comparisonService: any ComparisonServicing = GroceryAPIClient()
+        basketService: any BasketQuoting = GroceryAPIClient()
     ) {
         self.agentService = agentService
-        self.comparisonService = comparisonService
+        self.basketService = basketService
     }
 
     var suggestedItems: [ProductRequest] {
@@ -98,36 +104,19 @@ final class OnboardingModel {
         }
     }
 
-    var savingsEstimate: SavingsEstimator.Estimate {
-        SavingsEstimator.estimate(
-            spend: answers.monthlySpend,
-            householdSize: answers.householdSize
-        )
-    }
-
     func step(after step: OnboardingStep) -> OnboardingStep? {
         switch step {
-        case .welcome: .intro
-        case .intro: .householdSize
+        case .welcome: .householdSize
         case .householdSize: .frequency
-        case .frequency: .monthlySpend
-        case .monthlySpend: .usualStores
-        case .usualStores: .compareHabit
-        case .compareHabit: .insight
-        case .insight: .goals
-        case .goals: .painPoints
-        case .painPoints: .listHabit
-        case .listHabit: .postalCode
-        case .postalCode: .planLoader
-        case .planLoader: .savingsResult
-        case .savingsResult: .benefits
-        case .benefits: hasAccessPassword() ? .importMethod : .access
-        case .access: .importMethod
+        case .frequency: .usualStore
+        case .usualStore: .postalCode
+        case .postalCode: .comparisonStores
+        case .comparisonStores: hasAccessPassword() ? .planLoader : .access
+        case .access: accessSkipped ? .basketResult : .planLoader
+        case .planLoader: .basketResult
+        case .basketResult: accessSkipped ? .importReview : .importMethod
         case .importMethod: .importReview
-        case .importReview: .demoPick
-        case .demoPick: accessSkipped ? .demoResult : .demoComparing
-        case .demoComparing: .demoResult
-        case .demoResult: .paywall
+        case .importReview: .paywall
         case .paywall: nil
         }
     }
@@ -162,45 +151,47 @@ final class OnboardingModel {
         OnboardingEvent.answer(step: .frequency, value: value.rawValue).log()
     }
 
-    func select(_ value: SpendRange) {
-        answers.monthlySpend = value
-        OnboardingEvent.answer(step: .monthlySpend, value: value.rawValue).log()
+    func selectUsualStore(_ value: StoreChoice) {
+        if let previous = answers.usualStore, previous != value {
+            answers.comparisonStores.remove(previous)
+        }
+        answers.usualStore = value
+        if value.isSupportedByBarasu {
+            answers.comparisonStores.insert(value)
+        }
+        OnboardingEvent.answer(step: .usualStore, value: value.rawValue).log()
     }
 
-    func toggle(_ value: StoreChoice) {
-        if answers.usualStores.contains(value) {
-            answers.usualStores.remove(value)
+    func toggleComparisonStore(_ value: StoreChoice) {
+        guard value.isSupportedByBarasu else { return }
+        if answers.comparisonStores.contains(value) {
+            answers.comparisonStores.remove(value)
         } else {
-            answers.usualStores.insert(value)
+            answers.comparisonStores.insert(value)
         }
     }
 
-    func select(_ value: CompareHabit) {
-        answers.comparesToday = value
-        OnboardingEvent.answer(step: .compareHabit, value: value.rawValue).log()
+    func continueFromComparisonStores() {
+        guard !answers.comparisonStores.isEmpty else { return }
+        OnboardingEvent.answer(
+            step: .comparisonStores,
+            value: answers.orderedComparisonStores.map(\.rawValue).joined(separator: ",")
+        ).log()
+        resetBasketQuote()
+        advance(from: .comparisonStores)
     }
 
-    func toggle(_ value: ShoppingGoal) {
-        if let index = answers.goals.firstIndex(of: value) {
-            answers.goals.remove(at: index)
-        } else if answers.goals.count < 2 {
-            answers.goals.append(value)
+    /// Advances after a single-choice tap, leaving the selection visible briefly.
+    func autoAdvance(from step: OnboardingStep) {
+        let delay = autoAdvanceDelay
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let self, self.currentStep == step else { return }
+            self.advance(from: step)
         }
     }
 
-    func toggle(_ value: PainPoint) {
-        if answers.painPoints.contains(value) {
-            answers.painPoints.remove(value)
-        } else {
-            answers.painPoints.insert(value)
-        }
-    }
-
-    func select(_ value: ListHabit) {
-        answers.listHabit = value
-        answers.importMethod = ImportMethod(listHabit: value)
-        OnboardingEvent.answer(step: .listHabit, value: value.rawValue).log()
-    }
+    var currentStep: OnboardingStep { path.last ?? .welcome }
 
     func skipPostalCode() {
         answers.postalCode = ""
@@ -251,7 +242,7 @@ final class OnboardingModel {
         answers.importMethod = .suggested
         answers.importedItems = suggestedItems
         OnboardingEvent.accessSkipped.log()
-        push(.importReview)
+        advance(from: .access)
     }
 
     func useSuggestedList() {
@@ -334,65 +325,113 @@ final class OnboardingModel {
     }
 
 
-    func runDemoComparison() {
-        guard !isComparingDemo, !demoOutcomeDelivered else { return }
-        isComparingDemo = true
-        showsDemoSlowMessage = false
+    /// Supported stores to quote: the chosen ones plus a supported base store.
+    var quotedStores: [StoreChoice] {
+        var stores = Set(answers.comparisonStores)
+        if let base = answers.usualStore, base.isSupportedByBarasu {
+            stores.insert(base)
+        }
+        return StoreChoice.supported.filter { stores.contains($0) }
+    }
 
-        let items = demoItems.isEmpty
-            ? Array(answers.importedItems.prefix(2))
-            : demoItems
-        let postalCode = answers.postalCode
-        let comparisonService = self.comparisonService
-        let softCap = demoSoftCap
-        let hardCap = demoHardCap
-        let minimumDuration = demoMinimumDuration
-        let clock = ContinuousClock()
-        let startedAt = clock.now
+    var displayedFigures: (base: Int?, chosen: Int?, savings: Int?) {
+        basketEstimate?.adjusted(toMonthlySpendCents: answers.spendAdjustment?.midpointCents)
+            ?? (nil, nil, nil)
+    }
 
-        demoTask = Task { [weak self] in
-            let slowMessageTask = Task { @MainActor [weak self] in
-                try? await Task.sleep(for: softCap)
-                guard !Task.isCancelled else { return }
-                self?.showsDemoSlowMessage = true
-            }
+    func resetBasketQuote() {
+        basketTask?.cancel()
+        basketTask = nil
+        basketDelivered = false
+        basketQuotes = []
+        basketEstimate = nil
+        basketFailed = false
+        quoteStatuses = [:]
+    }
 
-            let plan = await withTaskGroup(of: ComparisonPlan?.self) { group in
-                group.addTask {
-                    try? await comparisonService.compare(
-                        items: items,
-                        postalCode: postalCode
-                    )
+    func retryBasketQuote() {
+        resetBasketQuote()
+        while let last = path.last, last == .basketResult || last == .planLoader {
+            path.removeLast()
+        }
+        push(.planLoader)
+    }
+
+    func runBasketQuote() {
+        guard basketTask == nil, !basketDelivered else { return }
+        let stores = quotedStores
+        quoteStatuses = Dictionary(uniqueKeysWithValues: stores.map { ($0, QuoteStatus.loading) })
+        basketQuotes = []
+        let service = basketService
+        let postalCode = answers.postalCode.isEmpty ? nil : answers.postalCode
+        let minimum = minimumLineDuration
+        let hardCap = basketHardCap
+
+        basketTask = Task { [weak self] in
+            let clock = ContinuousClock()
+            let startedAt = clock.now
+            await withTaskGroup(of: (StoreChoice, BasketQuote?).self) { group in
+                for store in stores {
+                    guard let retailer = store.retailerID else { continue }
+                    group.addTask {
+                        let quote = await withTaskGroup(of: BasketQuote?.self) { inner in
+                            inner.addTask {
+                                try? await service.quoteBasket(retailer: retailer, postalCode: postalCode)
+                            }
+                            inner.addTask {
+                                try? await Task.sleep(for: hardCap)
+                                return nil
+                            }
+                            let first = await inner.next() ?? nil
+                            inner.cancelAll()
+                            return first
+                        }
+                        return (store, quote)
+                    }
                 }
-                group.addTask {
-                    try? await Task.sleep(for: hardCap)
-                    return nil
+                var revealed = 0
+                for await (store, quote) in group {
+                    revealed += 1
+                    let due = startedAt.advanced(by: minimum * revealed)
+                    if clock.now < due {
+                        try? await clock.sleep(until: due)
+                    }
+                    guard !Task.isCancelled else { return }
+                    if let quote {
+                        self?.basketQuotes.append(quote)
+                        self?.quoteStatuses[store] = .done
+                    } else {
+                        self?.quoteStatuses[store] = .failed
+                    }
                 }
-                let first = await group.next() ?? nil
-                group.cancelAll()
-                return first ?? nil
             }
-
-            let elapsed = startedAt.duration(to: clock.now)
-            if elapsed < minimumDuration {
-                try? await Task.sleep(for: minimumDuration - elapsed)
-            }
-            slowMessageTask.cancel()
-            guard let self, !Task.isCancelled else { return }
-            isComparingDemo = false
-            demoOutcomeDelivered = true
-            if let plan {
-                demoPlan = plan
-                demoFailed = false
-                OnboardingEvent.demoFinished(savingsCents: plan.estimatedSavingsCents ?? 0).log()
-            } else {
-                demoFailed = true
-                OnboardingEvent.demoFailed.log()
-            }
-            advance(from: .demoComparing)
+            guard !Task.isCancelled else { return }
+            try? await Task.sleep(for: minimum / 2)
+            guard !Task.isCancelled else { return }
+            self?.finishBasketQuote()
         }
     }
 
+    private func finishBasketQuote() {
+        basketTask = nil
+        basketDelivered = true
+        basketEstimate = BasketEstimate.make(
+            quotes: basketQuotes,
+            baseStore: answers.usualStore,
+            comparisonStores: answers.orderedComparisonStores,
+            householdSize: answers.householdSize,
+            frequency: answers.shoppingFrequency
+        )
+        basketFailed = (basketEstimate?.comparableItemCount ?? 0) == 0
+        if basketFailed {
+            OnboardingEvent.basketFailed.log()
+        } else {
+            OnboardingEvent.basketQuoted(savingsCents: basketEstimate?.savingsMonthlyCents ?? 0).log()
+        }
+        if currentStep == .planLoader {
+            advance(from: .planLoader)
+        }
+    }
 
     func requestNotificationAuthorizationIfNeeded() async {
         guard await notificationStatusProvider() == .notDetermined else { return }
@@ -400,44 +439,15 @@ final class OnboardingModel {
     }
 
 
-    var prioritizedPaywallBenefits: [PaywallBenefit] {
-        var ordered: [PaywallBenefit] = []
-        func add(_ benefit: PaywallBenefit) {
-            if !ordered.contains(benefit) { ordered.append(benefit) }
-        }
-
-        for goal in answers.goals {
-            switch goal {
-            case .saveMoney: add(.compare)
-            case .saveTime: add(.dictate)
-            case .forgetNothing, .organize: add(.history)
-            }
-        }
-        for pain in PainPoint.allCases where answers.painPoints.contains(pain) {
-            switch pain {
-            case .overspend, .dontKnowCheapest: add(.compare)
-            case .listTakesTime: add(.dictate)
-            case .forgetThings, .repeatList: add(.history)
-            }
-        }
-        add(.compare)
-        add(.dictate)
-        add(.history)
-        return ordered
-    }
-
     func makePaywallContext() -> PaywallContext {
         PaywallContext(
-            estimatedMonthlySavingsHighCents: savingsEstimate.highCents,
-            demoSavingsCents: demoPlan?.estimatedSavingsCents,
-            demoProductCount: demoPlan.map {
-                $0.stores.reduce(0) { $0 + $1.items.count }
-            } ?? min(2, answers.importedItems.count),
-            cadencePhrase: answers.shoppingFrequency?.cadencePhrase,
-            prioritizedBenefits: prioritizedPaywallBenefits,
+            basketSavingsMonthlyCents: displayedFigures.savings,
             householdLabel: answers.householdSize?.title,
             frequencyLabel: answers.shoppingFrequency?.title,
             postalCode: answers.postalCode.isEmpty ? nil : answers.postalCode,
+            storesLabel: answers.orderedComparisonStores.isEmpty
+                ? nil
+                : StoreChoice.joinedTitles(answers.orderedComparisonStores),
             listItemCount: answers.importedItems.count
         )
     }
@@ -458,7 +468,8 @@ final class OnboardingModel {
         }
         appState.completeOnboarding(
             items: answers.importedItems,
-            postalCode: answers.postalCode
+            postalCode: answers.postalCode,
+            profile: answers.profile
         )
         OnboardingEvent.finished.log()
         onFinished()
@@ -468,21 +479,14 @@ final class OnboardingModel {
     func seedSampleAnswers() {
         answers.householdSize = .threeFour
         answers.shoppingFrequency = .weekly
-        answers.monthlySpend = .between4000and7000
-        answers.usualStores = [.walmart, .chedraui]
-        answers.comparesToday = .sometimes
-        answers.goals = [.saveMoney, .forgetNothing]
-        answers.painPoints = [.dontKnowCheapest, .forgetThings]
-        answers.listHabit = .notes
+        answers.usualStore = .walmart
+        answers.comparisonStores = [.walmart, .bodegaAurrera, .chedraui]
         answers.postalCode = "06700"
         answers.importMethod = .paste
         answers.importedItems = MockFixtures.draft.items
-        demoItems = MockFixtures.draft.items
-        demoPlan = MockFixtures.comparisonPlan
-        demoOutcomeDelivered = true
-        if ProcessInfo.processInfo.arguments.contains("-onboardingDemoFail") {
-            demoPlan = nil
-            demoFailed = true
+        if ProcessInfo.processInfo.arguments.contains("-onboardingUnsupportedBase") {
+            answers.usualStore = .soriana
+            answers.comparisonStores = [.bodegaAurrera, .chedraui]
         }
     }
     #endif
