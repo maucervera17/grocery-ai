@@ -10,6 +10,8 @@ Las variables privadas se introducen en Render; sus valores nunca se guardan en 
 
 La excepción pública es para un prototipo. Los cupos de ubicación y voz se reinician al reiniciar el proceso. La contraseña compartida tampoco identifica a cada usuario. Antes de escalar se necesitan identidad individual y supervisión de costos. El plan gratuito de Render puede suspenderse por inactividad y tarda en iniciar de nuevo; las consultas live pueden consumir créditos de proveedores. El aviso `.env not found` es normal en Render: las claves privadas se cargan desde **Environment**, no desde un archivo del repositorio.
 
+La búsqueda pública (`POST /v1/chat/search` desde el origen web) tiene tope por cliente (20 al día, 4 por minuto) y tope global (400 al día, 30 por minuto). El header `Origin` no es autenticación: cualquier script puede enviarlo, así que el tope global es el que limita el gasto en Firecrawl y en el modelo. Se ajustan en Render con `PUBLIC_SEARCH_PER_CLIENT_DAILY`, `PUBLIC_SEARCH_PER_CLIENT_MINUTE`, `PUBLIC_SEARCH_DAILY` y `PUBLIC_SEARCH_MINUTE`. Los contadores viven en memoria y se reinician con el proceso.
+
 Prueba tras desplegar:
 
 1. `GET https://<servicio>.onrender.com/health` debe devolver `status: ok`, `mode: live` y adaptadores configurados.
