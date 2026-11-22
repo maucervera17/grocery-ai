@@ -7,7 +7,7 @@ import {
   type ScrapeQuery,
 } from "../contracts/schema.js";
 import { type Options, failure } from "./service.js";
-import { applyChanges } from "./agent.js";
+import { DemoDraftAgent, applyChanges } from "./agent.js";
 import { bounded } from "./deadline.js";
 import { matches, measure, tokens } from "./normalize.js";
 
@@ -23,18 +23,21 @@ export async function productPrices(
     plan: null,
     errors: [] as Response["errors"],
   };
-  if (!options.agent)
+  const agent =
+    options.agent ??
+    (options.mode === "demo" ? new DemoDraftAgent() : undefined);
+  if (!agent)
     return {
       ...base,
       status: "error",
-      reply: "No está configurado el agente para interpretar tu consulta.",
+      reply: "Por ahora no puedo consultar precios. Intenta más tarde.",
     };
   let query: string;
   try {
     const changes = applyChanges(
       [],
       await bounded(
-        () => options.agent!.interpret(input.message, [], signal),
+        () => agent.interpret(input.message, [], signal),
         signal,
       ),
     );
@@ -95,7 +98,12 @@ export async function productPrices(
           r.locationEvidence.storeName === "Super Chedraui Bellavista")) &&
       Date.now() - Date.parse(r.checkedAt) >= 0 &&
       Date.now() - Date.parse(r.checkedAt) < 300000);
-  if (options.mode === "demo") rows = options.fixtures;
+  // Demo prices are fictitious and labelled as such; stamping them as just
+  // checked keeps the client's freshness rules usable without live sources.
+  if (options.mode === "demo") {
+    const checkedAt = new Date().toISOString();
+    rows = options.fixtures.map((r) => ({ ...r, checkedAt }));
+  }
   else {
     if (options.repository)
       try {
