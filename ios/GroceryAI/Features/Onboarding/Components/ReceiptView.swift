@@ -22,6 +22,7 @@ struct ReceiptView: View {
 
     @Environment(\.appTheme) private var theme
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         let colors = theme.colors(for: colorScheme)
@@ -38,11 +39,16 @@ struct ReceiptView: View {
                     }
                 }
                 if let totalPrice {
-                    HStack {
+                    let totalLayout = dynamicTypeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.extraSmall))
+                        : AnyLayout(HStackLayout())
+                    totalLayout {
                         Text(totalLabel ?? "Total")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(colors.textPrimary)
-                        Spacer()
+                        if !dynamicTypeSize.isAccessibilitySize {
+                            Spacer()
+                        }
                         Text(totalPrice)
                             .font(.title3.weight(.semibold))
                             .fontDesign(.rounded)
@@ -112,7 +118,11 @@ struct ReceiptView: View {
     }
 
     private func lineRow(_ line: Line, colors: AppThemeColors) -> some View {
-        HStack(alignment: .center, spacing: AppSpacing.medium) {
+        // Accessibility sizes: price below the label so names never break mid-word.
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.extraSmall))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: AppSpacing.medium))
+        return layout {
             if let logo = line.logoAssetName {
                 logoTile(logo)
             }
@@ -126,13 +136,17 @@ struct ReceiptView: View {
                         .foregroundStyle(colors.textSecondary)
                 }
             }
-            Spacer(minLength: AppSpacing.small)
+            .layoutPriority(1)
+            if !dynamicTypeSize.isAccessibilitySize {
+                Spacer(minLength: AppSpacing.small)
+            }
             Text(line.price)
                 .font(.subheadline.weight(.semibold))
                 .fontDesign(.rounded)
                 .monospacedDigit()
                 .foregroundStyle(line.priceIsSuccess ? stampColor : colors.textPrimary)
-                .fixedSize()
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+                .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize && line.price.count <= 12, vertical: true)
         }
         .accessibilityElement(children: .combine)
     }

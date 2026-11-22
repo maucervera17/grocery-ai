@@ -2,7 +2,7 @@ import { SupabaseListingRepository } from "./supabase-repository.js";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
-import { ScrapedListing } from "../contracts/schema.js";
+import { OnboardingBasket, ScrapedListing } from "../contracts/schema.js";
 import { buildApp } from "./app.js";
 import { FirecrawlScraper } from "../scrapers/firecrawl.js";
 import { AIDraftAgent } from "./ai-agent.js";
@@ -10,6 +10,16 @@ const mode = z.enum(["demo", "live"]).parse(process.env.DATA_MODE ?? "demo");
 const fixtures = z
   .array(ScrapedListing)
   .parse(JSON.parse(await readFile("./fixtures/listings.json", "utf8")));
+const basket = OnboardingBasket.parse(
+  JSON.parse(await readFile("./fixtures/onboarding-basket.json", "utf8")),
+);
+const basketFixtures = z
+  .array(ScrapedListing)
+  .parse(
+    JSON.parse(
+      await readFile("./fixtures/onboarding-basket.listings.json", "utf8"),
+    ),
+  );
 const key = process.env.FIRECRAWL_API_KEY;
 const host = process.env.HOST ?? "127.0.0.1";
 const accessPassword = process.env.BARASU_ACCESS_PASSWORD;
@@ -29,6 +39,8 @@ const agent =
 const app = buildApp({
   mode,
   fixtures,
+  basket,
+  basketFixtures,
   agent,
   repository:
     process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY

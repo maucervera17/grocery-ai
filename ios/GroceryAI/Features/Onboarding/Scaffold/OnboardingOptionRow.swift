@@ -6,6 +6,8 @@ struct OnboardingOptionRow: View {
     var retailerID: RetailerID?
     var logoAssetName: String?
     var badge: String?
+    var detail: String?
+    var isEnabled = true
     let isSelected: Bool
     let action: () -> Void
 
@@ -19,15 +21,22 @@ struct OnboardingOptionRow: View {
             HStack(spacing: AppSpacing.medium) {
                 leadingVisual
 
-                Text(title)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(colors.textPrimary)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(colors.textPrimary)
+                    if let detail {
+                        Text(detail)
+                            .font(.footnote)
+                            .foregroundStyle(colors.textSecondary)
+                    }
+                }
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
 
                 Spacer(minLength: AppSpacing.small)
 
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                Image(systemName: isEnabled ? (isSelected ? "checkmark.circle.fill" : "circle") : "clock")
                     .font(.title3)
                     .foregroundStyle(isSelected ? colors.brandPrimary : colors.textSecondary)
                     .accessibilityHidden(true)
@@ -63,6 +72,8 @@ struct OnboardingOptionRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.55)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

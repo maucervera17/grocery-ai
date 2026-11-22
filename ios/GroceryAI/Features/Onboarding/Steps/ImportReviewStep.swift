@@ -36,13 +36,17 @@ struct ImportReviewStep: View {
                 }
             } else if let message = model.importErrorMessage,
                       model.answers.importedItems.isEmpty {
-                VStack(spacing: AppSpacing.medium) {
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
                     Label(message, systemImage: "exclamationmark.triangle")
                         .font(.callout)
                         .foregroundStyle(colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     SecondaryButton("Intentar de nuevo", systemImage: "arrow.counterclockwise") {
                         model.importErrorMessage = nil
                         model.goBack()
+                    }
+                    SecondaryButton("Usar una lista sugerida", systemImage: "basket") {
+                        model.applySuggestedList()
                     }
                 }
             } else {
@@ -74,7 +78,7 @@ struct ImportReviewStep: View {
                     size: 44
                 )
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(product.name)
+                    Text(ProductNameFormatter.display(product.name))
                         .font(.body.weight(.medium))
                         .foregroundStyle(colors.textPrimary)
                     Text(product.quantityDescription)

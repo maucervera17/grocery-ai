@@ -129,6 +129,7 @@ Reglas:
 - Evitar párrafos largos en tarjetas.
 - No fijar tamaños tipográficos en puntos.
 - Usar `bold()` o estilos semánticos antes de asignar pesos arbitrarios.
+- En onboarding y paywall todos los títulos usan `.title.weight(.semibold)` (el de `OnboardingScaffold`), y ninguna cifra destacada (ahorro, resultado) es más grande que ese título.
 
 ## 6. Espaciado y radios
 

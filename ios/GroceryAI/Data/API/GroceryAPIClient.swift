@@ -45,17 +45,56 @@ enum APIAccess {
         }
     }
 
+    static var hasPassword: Bool {
+        !(password() ?? "").isEmpty
+    }
+
     static func authorize(_ request: inout URLRequest) throws {
         guard let password = password(), !password.isEmpty else {
-            throw GroceryAPIError(message: "Configura el acceso al servidor en Ajustes para usar Barasu.")
+            throw GroceryAPIError(message: "Configura el acceso al servidor en Ajustes para usar Barasu.", isAccessProblem: true)
         }
+        setBasicAuthorization(password: password, on: &request)
+    }
+
+    private static func setBasicAuthorization(password: String, on request: inout URLRequest) {
         let credentials = Data("barasu:\(password)".utf8).base64EncodedString()
         request.setValue("Basic \(credentials)", forHTTPHeaderField: "Authorization")
+    }
+
+    enum Verification: Equatable, Sendable {
+        case valid
+        case invalid
+        case unreachable
+    }
+
+    /// Checks a candidate password with `GET /v1/voice/status`, which needs
+    /// Basic auth on a protected server but spends no search or voice credits.
+    static func verify(
+        password: String,
+        baseURL: URL = APIConfiguration.baseURL,
+        session: URLSession = .shared
+    ) async -> Verification {
+        var request = URLRequest(url: baseURL.appending(path: "v1/voice/status"))
+        request.httpMethod = "GET"
+        // Render may need to wake up on the first request.
+        request.timeoutInterval = 60
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        setBasicAuthorization(password: password, on: &request)
+        guard let (_, response) = try? await session.data(for: request),
+              let http = response as? HTTPURLResponse else {
+            return .unreachable
+        }
+        switch http.statusCode {
+        case 200..<300: return .valid
+        case 401, 403: return .invalid
+        default: return .unreachable
+        }
     }
 }
 
 struct GroceryAPIError: LocalizedError {
     let message: String
+    var isAccessProblem = false
     var errorDescription: String? { message }
 }
 
@@ -185,7 +224,7 @@ struct GroceryAPIClient: AgentServicing, ComparisonServicing {
         ComparisonDiagnostics.event(
             "Search endpoint returned HTTP \(http.statusCode), bytes=\(data.count), action=\(body.action), contentType=\(http.value(forHTTPHeaderField: "Content-Type") ?? "unknown"), cfRay=\(http.value(forHTTPHeaderField: "CF-RAY") ?? "none")"
         )
-        if http.statusCode == 401 { throw GroceryAPIError(message:"Acceso incorrecto. Actualiza la contraseña en Ajustes.") }
+        if http.statusCode == 401 { throw GroceryAPIError(message:"Acceso incorrecto. Actualiza la contraseña en Ajustes.", isAccessProblem: true) }
         guard (200..<300).contains(http.statusCode) else {
             ComparisonDiagnostics.error(
                 "Search origin failed: HTTP \(http.statusCode), cfErrorType=\(http.value(forHTTPHeaderField: "cf-error-type") ?? "none")"

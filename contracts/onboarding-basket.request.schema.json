@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "retailer_id": {
+      "type": "string",
+      "enum": [
+        "walmart",
+        "bodega_aurrera",
+        "chedraui"
+      ]
+    },
+    "postal_code": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{5}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "retailer_id"
+  ],
+  "additionalProperties": false
+}

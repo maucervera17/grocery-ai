@@ -4,9 +4,11 @@ import OSLog
 enum OnboardingEvent {
     case stepViewed(OnboardingStep)
     case answer(step: OnboardingStep, value: String)
+    case accessVerified
+    case accessSkipped
     case importMethod(ImportMethod)
-    case demoFinished(savingsCents: Int)
-    case demoFailed
+    case basketQuoted(savingsCents: Int)
+    case basketFailed
     case paywallViewed
     case subscribed(SubscriptionPlanID)
     case finished
@@ -22,12 +24,16 @@ enum OnboardingEvent {
             Self.logger.info("onboarding.step_viewed \(step.rawValue, privacy: .public)")
         case .answer(let step, let value):
             Self.logger.info("onboarding.answer \(step.rawValue, privacy: .public)=\(value, privacy: .public)")
+        case .accessVerified:
+            Self.logger.info("onboarding.access verified")
+        case .accessSkipped:
+            Self.logger.info("onboarding.access skipped")
         case .importMethod(let method):
             Self.logger.info("onboarding.import_method \(method.rawValue, privacy: .public)")
-        case .demoFinished(let savingsCents):
-            Self.logger.info("onboarding.demo_result savings=\(savingsCents)")
-        case .demoFailed:
-            Self.logger.info("onboarding.demo_result failed")
+        case .basketQuoted(let savingsCents):
+            Self.logger.info("onboarding.basket_result savings=\(savingsCents)")
+        case .basketFailed:
+            Self.logger.info("onboarding.basket_result failed")
         case .paywallViewed:
             Self.logger.info("onboarding.paywall_viewed")
         case .subscribed(let plan):

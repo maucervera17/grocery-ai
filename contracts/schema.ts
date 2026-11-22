@@ -245,3 +245,61 @@ export type ScrapeQuery = {
   pickupStore?: "chedraui-bellavista";
 };
 export type Offer = { listing: RawListing; status: Line["data_status"] };
+export const QuotableRetailerId = z.enum(["walmart", "bodega_aurrera", "chedraui"]);
+export const BasketItem = z
+  .object({
+    id: z.string().regex(/^[a-z0-9-]{1,40}$/),
+    name: z.string().trim().min(1).max(160),
+    brand: z.string().trim().min(1).max(80),
+    query: z.string().trim().min(1).max(160),
+    quantity: Quantity,
+    unit: Unit,
+    category: ProductCategory,
+    monthly_packages: z.number().positive().max(100),
+  })
+  .strict();
+export const OnboardingBasket = z
+  .object({
+    version: z.number().int().positive(),
+    description: z.string(),
+    household_reference: z.literal("threeFour"),
+    items: z
+      .array(BasketItem)
+      .min(1)
+      .max(60)
+      .refine((a) => new Set(a.map((i) => i.id)).size === a.length, "Duplicate basket IDs"),
+  })
+  .strict();
+export const BasketQuoteRequest = z
+  .object({
+    retailer_id: QuotableRetailerId,
+    postal_code: z.string().regex(/^\d{5}$/).nullable().optional(),
+  })
+  .strict();
+export const BasketQuoteResponse = z
+  .object({
+    retailer_id: QuotableRetailerId,
+    retailer_name: z.string().min(1),
+    data_mode: z.enum(["demo", "live"]),
+    requested_postal_code: z.string().nullable(),
+    prices_checked_at: z.string().datetime().nullable(),
+    basket: OnboardingBasket,
+    items: z.array(
+      z
+        .object({
+          basket_item_id: z.string(),
+          status: z.enum(["priced", "unavailable"]),
+          product_name: z.string().nullable(),
+          price_cents: Money.nullable(),
+          product_url: WebUrl.nullable(),
+          checked_at: z.string().datetime().nullable(),
+          data_status: z.enum(["verified", "demo"]).nullable(),
+        })
+        .strict(),
+    ),
+    errors: z.array(SearchError),
+  })
+  .strict();
+export type BasketQuoteInput = z.infer<typeof BasketQuoteRequest>;
+export type BasketQuote = z.infer<typeof BasketQuoteResponse>;
+export type OnboardingBasketData = z.infer<typeof OnboardingBasket>;

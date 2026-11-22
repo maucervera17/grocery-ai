@@ -55,7 +55,7 @@ struct PaywallTrialPage: View {
 
                 VStack(alignment: .leading, spacing: AppSpacing.small) {
                     Text("Prueba 7 días gratis")
-                        .font(AppTypography.screenTitle.weight(.semibold))
+                        .font(.title.weight(.semibold))
                         .foregroundStyle(colors.textPrimary)
                         .accessibilityAddTraits(.isHeader)
                     Text("Sin pago hoy. Te avisamos antes de cobrar")

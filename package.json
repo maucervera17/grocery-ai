@@ -17,6 +17,7 @@
     "smoke": "node --import tsx scripts/smoke.ts",
     "format": "prettier --write backend scrapers contracts tests scripts",
     "smoke:db": "node --env-file-if-exists=.env --import tsx scripts/database-smoke.ts",
+    "basket:precompute": "node --env-file-if-exists=.env --import tsx scripts/precompute-basket.ts",
     "smoke:scrapers": "node --env-file-if-exists=.env --import tsx scripts/scrape-smoke.ts",
     "build:voice": "esbuild web/voice-sdk.js --bundle --format=esm --platform=browser --outfile=dist/web/voice-sdk.js",
     "build:vercel": "npm run build:voice && node scripts/build-vercel-web.mjs",

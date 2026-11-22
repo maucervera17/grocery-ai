@@ -8,6 +8,7 @@ final class LocalAppStateRecord {
     var ordersData: Data
     var messagesData: Data
     var postalCode: String
+    var profileData: Data = Data()
 
     init(
         key: String = "primary",

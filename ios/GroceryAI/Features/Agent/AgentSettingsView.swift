@@ -53,6 +53,11 @@ struct AgentSettingsView: View {
                         Text(accessError).foregroundStyle(.red)
                     }
                 }
+
+                Section("Legal") {
+                    Link("Aviso de privacidad", destination: LegalLinks.privacy)
+                    Link("Términos de uso", destination: LegalLinks.terms)
+                }
             }
             .navigationTitle("Configuración")
             .toolbarTitleDisplayMode(.inlineLarge)

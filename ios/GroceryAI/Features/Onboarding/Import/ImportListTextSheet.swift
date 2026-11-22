@@ -43,7 +43,14 @@ struct ImportListTextSheet: View {
     @FocusState private var isFocused: Bool
 
     private var lineCount: Int {
-        text.components(separatedBy: .newlines)
+        Self.itemCount(in: text)
+    }
+
+    /// Counts list entries the way the backend splits them: lines, commas
+    /// (except decimal commas like "1,5 kg"), semicolons and " y ".
+    static func itemCount(in text: String) -> Int {
+        text.replacing(/\s+y\s+|;|,(?!\d)|\n/, with: "\n")
+            .split(separator: "\n")
             .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
             .count
     }
